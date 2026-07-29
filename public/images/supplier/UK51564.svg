@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+<defs>
+  <linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFAF4"/><stop offset="1" stop-color="#EAE0CB"/></linearGradient>
+  <radialGradient id="spanel" cx="0.35" cy="0.25" r="1.1"><stop offset="0" stop-color="#7A4A1E" stop-opacity="0.92"/><stop offset="1" stop-color="#7A4A1E"/></radialGradient>
+  <linearGradient id="sgold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/></linearGradient>
+</defs>
+<rect width="400" height="500" fill="url(#sbg)"/>
+<ellipse cx="200" cy="452" rx="150" ry="16" fill="#3A3020" opacity="0.14"/>
+<rect x="40" y="44" width="320" height="380" rx="18" fill="url(#spanel)"/>
+<rect x="54" y="58" width="292" height="352" rx="12" fill="none" stroke="url(#sgold)" stroke-width="2"/>
+<!-- עיטור כתר -->
+<path d="M170 108 L177 88 L186 102 L200 82 L214 102 L223 88 L230 108 Z" fill="url(#sgold)"/>
+<!-- שם המוצר -->
+<text x="200" y="216" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="28" font-weight="700" fill="#FBF7EC"><tspan x="200" dy="0">כרית לטבעת מהודרת</tspan><tspan x="200" dy="32">19X19 ס&quot;מ</tspan></text>
+<!-- מידה/חומר -->
+<text x="200" y="336" text-anchor="middle" font-family="'Assistant',sans-serif" font-size="15" fill="#F2DE9E" opacity="0.85">מידה 19 · בד · לבן</text>
+<path d="M120 360 q80 12 160 0" stroke="url(#sgold)" stroke-width="1.4" fill="none" opacity="0.7"/>
+<!-- סימן מותג -->
+<text x="200" y="392" text-anchor="middle" font-family="'Frank Ruhl Libre',serif" font-size="17" font-weight="700" fill="url(#sgold)">אמונה וביטחון</text>
+</svg>

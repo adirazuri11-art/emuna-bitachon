@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="silkA" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#FFFDF8"/><stop offset="0.5" stop-color="#F3E8D8"/><stop offset="1" stop-color="#DEC9AE"/>
+    </linearGradient>
+    <linearGradient id="silkB" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#F6E9DC"/><stop offset="1" stop-color="#D8BC9C"/>
+    </linearGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="200" cy="430" rx="145" ry="15" fill="#3A3020" opacity="0.18" filter="url(#soft)"/>
+
+  <!-- משי שפוך על משטח: גלים רכים -->
+  <path d="M84 176 C130 140 210 138 268 154 C312 166 330 196 322 238
+           C314 282 328 316 306 356 C284 396 240 416 196 410
+           C150 404 112 380 98 340 C84 300 70 230 84 176 Z" fill="url(#silkA)"/>
+  <!-- שכבת קיפול עליונה -->
+  <path d="M120 200 C160 172 226 168 272 184 C300 194 310 218 302 250
+           C294 286 304 314 286 344 C268 374 234 388 200 382
+           C164 376 136 356 128 322 C120 288 110 240 120 200 Z" fill="url(#silkB)" opacity="0.85"/>
+  <!-- קפלים: קווי צל רכים -->
+  <g stroke="#B49676" stroke-width="3" fill="none" opacity="0.35" stroke-linecap="round">
+    <path d="M150 212 C186 250 180 310 158 356"/>
+    <path d="M206 196 C232 252 226 316 202 368"/>
+    <path d="M256 208 C274 254 268 308 246 350"/>
+  </g>
+  <g stroke="#FFFFFF" stroke-width="5" fill="none" opacity="0.5" stroke-linecap="round">
+    <path d="M138 224 C168 260 164 314 146 352"/>
+    <path d="M228 202 C248 252 244 310 224 356"/>
+  </g>
+  <!-- שולי זהב -->
+  <path d="M84 176 C130 140 210 138 268 154" stroke="url(#gd)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M98 340 C112 380 150 404 196 410" stroke="url(#gd)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <!-- דוגמת פייזלי עדינה -->
+  <g stroke="#B58A2C" stroke-width="1.6" fill="none" opacity="0.55">
+    <path d="M176 246 C170 254 172 264 180 268 C186 262 186 252 176 246 Z"/>
+    <path d="M236 266 C230 274 232 284 240 288 C246 282 246 272 236 266 Z"/>
+    <path d="M196 316 C190 324 192 334 200 338 C206 332 206 322 196 316 Z"/>
+    <path d="M158 300 C154 306 155 313 161 316"/>
+    <path d="M254 322 C250 328 251 335 257 338"/>
+  </g>
+</svg>

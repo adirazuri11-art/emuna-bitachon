@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/></linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8"><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/></radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/></linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/></linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter></defs><rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="432" rx="80" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <rect x="180" y="250" width="40" height="120" rx="6" fill="url(#sv)"/>
+     <g fill="#101A38"><rect x="186" y="268" width="9" height="9" transform="rotate(45 190 272)"/><rect x="205" y="268" width="9" height="9" transform="rotate(45 209 272)"/><rect x="186" y="292" width="9" height="9" transform="rotate(45 190 296)"/><rect x="205" y="292" width="9" height="9" transform="rotate(45 209 296)"/><rect x="186" y="316" width="9" height="9" transform="rotate(45 190 320)"/><rect x="205" y="316" width="9" height="9" transform="rotate(45 209 320)"/></g>
+     <path d="M178 250 A22 18 0 0 1 222 250 Z" fill="url(#gd)"/>
+     <rect x="197" y="150" width="6" height="66" fill="url(#gd)"/>
+     <path d="M203 152 L228 160 L203 170 Z" fill="url(#gd)"/>
+     <circle cx="200" cy="146" r="5" fill="url(#gd)"/>
+     <ellipse cx="200" cy="374" rx="36" ry="9" fill="url(#sv)"/>
+     <rect x="186" y="216" width="28" height="12" rx="4" fill="url(#gd)"/>
+     <path d="M186 258 L186 366" stroke="#FFFFFF" stroke-width="3.5" opacity="0.5" stroke-linecap="round"/></svg>

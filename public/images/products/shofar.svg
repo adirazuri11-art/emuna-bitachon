@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="horn" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#F3E3BC"/><stop offset="0.4" stop-color="#D3A868"/><stop offset="0.75" stop-color="#96602A"/><stop offset="1" stop-color="#5E3A17"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="205" cy="408" rx="150" ry="16" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+
+  <!-- קרן איל: עקומה מתרחבת מונחת על המשטח -->
+  <path d="M96 208
+           C86 216 84 230 92 238
+           C136 274 170 288 202 306
+           C244 330 274 348 282 376
+           C287 396 276 406 258 402
+           C282 424 322 414 328 378
+           C334 336 300 300 252 274
+           C214 252 166 232 116 200
+           C108 196 100 202 96 208 Z" fill="url(#horn)"/>
+  <!-- פייה -->
+  <ellipse cx="94" cy="220" rx="9" ry="13" fill="#F6ECD3" transform="rotate(-34 94 220)"/>
+  <ellipse cx="94" cy="220" rx="4.5" ry="7" fill="#C9B282" transform="rotate(-34 94 220)"/>
+  <!-- פתח הפעמון -->
+  <ellipse cx="296" cy="390" rx="33" ry="21" fill="#3A2410" transform="rotate(-30 296 390)"/>
+  <ellipse cx="298" cy="388" rx="25" ry="15" fill="#1E1104" transform="rotate(-30 298 388)"/>
+  <!-- טבעות גדילה של הקרן -->
+  <g stroke="#6E4418" stroke-width="2.2" opacity="0.4" fill="none">
+    <path d="M126 210 C122 222 124 232 132 240"/>
+    <path d="M164 232 C160 244 162 254 170 262"/>
+    <path d="M206 258 C202 272 204 282 214 290"/>
+    <path d="M248 292 C244 306 248 318 258 326"/>
+    <path d="M278 330 C276 344 280 356 288 364"/>
+  </g>
+  <!-- ברק ליטוש עליון -->
+  <path d="M108 208 C160 244 220 272 272 314" stroke="#FFF6DE" stroke-width="8" opacity="0.5" fill="none" stroke-linecap="round"/>
+  <path d="M240 300 C266 320 284 342 290 366" stroke="#FFF6DE" stroke-width="4" opacity="0.35" fill="none" stroke-linecap="round"/>
+  <ellipse cx="205" cy="420" rx="95" ry="6" fill="#96602A" opacity="0.12"/>
+</svg>

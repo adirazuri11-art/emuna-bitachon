@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+  </linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+    <stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+  </radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/>
+    <stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/>
+  </linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+  </linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter><linearGradient id="pk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6D8E0"/><stop offset="0.5" stop-color="#E9B3C2"/><stop offset="1" stop-color="#C77F95"/></linearGradient></defs>
+<rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="420" rx="90" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <path d="M200 130 C191 148 193 164 200 171 C207 164 209 148 200 130 Z" fill="#F8C144"/>
+     <rect x="192" y="175" width="16" height="60" rx="4" fill="#FBF7EC"/>
+     <ellipse cx="200" cy="239" rx="24" ry="7" fill="url(#pk)"/>
+     <path d="M194 244 C189 280 191 310 187 346 L213 346 C209 310 211 280 206 244 Z" fill="url(#pk)"/>
+     <ellipse cx="200" cy="296" rx="15" ry="9" fill="url(#pk)"/>
+     <path d="M170 398 C170 372 184 350 200 346 C216 350 230 372 230 398 Z" fill="url(#pk)"/>
+     <ellipse cx="200" cy="400" rx="44" ry="11" fill="url(#pk)"/>
+     <g fill="#FFFFFF" opacity="0.8"><circle cx="188" cy="290" r="2.5"/><circle cx="200" cy="284" r="2.5"/><circle cx="212" cy="290" r="2.5"/></g>
+     <path d="M192 250 C190 290 192 320 190 342" stroke="#FFFFFF" stroke-width="4" opacity="0.6" fill="none" stroke-linecap="round"/></svg>

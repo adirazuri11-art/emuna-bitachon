@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#A9743C"/><stop offset="0.5" stop-color="#8A5A2B"/><stop offset="1" stop-color="#5F3D1C"/>
+    </linearGradient>
+    <radialGradient id="bread" cx="0.4" cy="0.3" r="1">
+      <stop offset="0" stop-color="#F2C983"/><stop offset="0.6" stop-color="#D99A4E"/><stop offset="1" stop-color="#A5661F"/>
+    </radialGradient>
+    <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.3" stop-color="#F4F8FC"/><stop offset="0.7" stop-color="#C3CDD9"/><stop offset="1" stop-color="#8C99A9"/>
+    </linearGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="200" cy="425" rx="165" ry="17" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+
+  <!-- מגש עץ -->
+  <ellipse cx="200" cy="382" rx="158" ry="40" fill="url(#wood)"/>
+  <ellipse cx="200" cy="376" rx="146" ry="33" fill="#B98150"/>
+  <ellipse cx="200" cy="374" rx="140" ry="30" fill="#A9743C"/>
+  <!-- סיבי עץ -->
+  <g stroke="#8A5A2B" stroke-width="1.4" fill="none" opacity="0.5">
+    <path d="M80 372 C140 360 260 360 320 372"/>
+    <path d="M96 382 C150 372 250 372 304 382"/>
+    <path d="M120 390 C165 383 235 383 280 390"/>
+  </g>
+
+  <!-- חלה קלועה: גבשושיות חופפות עם הפרדה -->
+  <g stroke="#8F5B1D" stroke-width="2.5">
+    <ellipse cx="106" cy="344" rx="33" ry="26" fill="url(#bread)"/>
+    <ellipse cx="141" cy="328" rx="36" ry="29" fill="url(#bread)"/>
+    <ellipse cx="179" cy="318" rx="38" ry="31" fill="url(#bread)"/>
+    <ellipse cx="219" cy="318" rx="38" ry="31" fill="url(#bread)"/>
+    <ellipse cx="257" cy="328" rx="36" ry="29" fill="url(#bread)"/>
+    <ellipse cx="292" cy="344" rx="33" ry="26" fill="url(#bread)"/>
+  </g>
+  <!-- ברק על הקליעה -->
+  <g fill="#FBE1AE" opacity="0.75">
+    <ellipse cx="132" cy="316" rx="12" ry="7" transform="rotate(-20 132 316)"/>
+    <ellipse cx="172" cy="303" rx="13" ry="7" transform="rotate(-10 172 303)"/>
+    <ellipse cx="214" cy="302" rx="13" ry="7" transform="rotate(8 214 302)"/>
+    <ellipse cx="252" cy="313" rx="12" ry="7" transform="rotate(18 252 313)"/>
+  </g>
+  <!-- שומשום -->
+  <g fill="#FFF6E2">
+    <ellipse cx="150" cy="318" rx="3" ry="1.8" transform="rotate(-20 150 318)"/>
+    <ellipse cx="186" cy="306" rx="3" ry="1.8" transform="rotate(15 186 306)"/>
+    <ellipse cx="222" cy="304" rx="3" ry="1.8" transform="rotate(-12 222 304)"/>
+    <ellipse cx="256" cy="316" rx="3" ry="1.8" transform="rotate(22 256 316)"/>
+    <ellipse cx="128" cy="332" rx="3" ry="1.8" transform="rotate(8 128 332)"/>
+    <ellipse cx="200" cy="314" rx="3" ry="1.8" transform="rotate(-25 200 314)"/>
+    <ellipse cx="274" cy="332" rx="3" ry="1.8" transform="rotate(-8 274 332)"/>
+    <ellipse cx="166" cy="324" rx="3" ry="1.8" transform="rotate(30 166 324)"/>
+  </g>
+
+  <!-- סכין חלה -->
+  <g transform="rotate(14 300 412)">
+    <path d="M226 408 C270 404 320 406 336 410 C320 418 268 420 226 418 Z" fill="url(#sv)"/>
+    <path d="M230 409 C268 406 310 407 328 410" stroke="#FFFFFF" stroke-width="2" fill="none" opacity="0.7"/>
+    <rect x="330" y="403" width="48" height="16" rx="8" fill="url(#gd)"/>
+    <circle cx="343" cy="411" r="2" fill="#8F6B1B"/><circle cx="356" cy="411" r="2" fill="#8F6B1B"/>
+  </g>
+</svg>

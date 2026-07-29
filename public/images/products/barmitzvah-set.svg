@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+  </linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+    <stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+  </radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/>
+    <stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/>
+  </linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+  </linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter></defs>
+<rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="430" rx="160" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <g transform="scale(0.62) translate(24 250)">
+       <rect x="84" y="150" width="232" height="248" rx="18" fill="#1F2E63"/>
+       <rect x="106" y="192" width="188" height="164" rx="12" fill="none" stroke="url(#gd)" stroke-width="3"/>
+       <g stroke="url(#gd)" stroke-width="3.4" fill="none" stroke-linejoin="round"><path d="M200 240 L232 296 L168 296 Z"/><path d="M200 318 L168 262 L232 262 Z"/></g>
+     </g>
+     <g transform="scale(0.56) translate(310 180)">
+       <rect x="62" y="148" width="276" height="118" rx="14" fill="#FBF9F2"/>
+       <rect x="62" y="196" width="276" height="14" fill="#1B2032"/><rect x="62" y="216" width="276" height="6" fill="#1B2032"/>
+       <rect x="110" y="158" width="180" height="24" rx="7" fill="url(#sv)"/>
+       <rect x="62" y="266" width="276" height="70" rx="12" fill="#EFEBDD"/>
+       <rect x="62" y="296" width="276" height="10" fill="#1B2032" opacity="0.9"/>
+     </g>
+     <g transform="scale(0.5) translate(420 420)">
+       <path d="M146 210 L170 186 L266 186 L242 210 Z" fill="#33363F"/>
+       <path d="M242 210 L266 186 L266 296 L242 320 Z" fill="#1A1C22"/>
+       <rect x="146" y="210" width="96" height="110" rx="4" fill="#17181D"/>
+     </g>
+     <g stroke="url(#gd)" stroke-width="2" fill="none" opacity="0.7"><path d="M70 434 h260"/></g></svg>

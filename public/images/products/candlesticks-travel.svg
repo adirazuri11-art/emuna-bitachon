@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+  </linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+    <stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+  </radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/>
+    <stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/>
+  </linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+  </linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter></defs>
+<rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="410" rx="130" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <rect x="96" y="330" width="208" height="52" rx="10" fill="url(#sv)"/>
+     <rect x="104" y="338" width="192" height="36" rx="7" fill="#DDE4EB"/>
+     <g transform="translate(150 0)"><path d="M0 196 C-7 210 -5 222 0 228 C5 222 7 210 0 196 Z" fill="#F8C144"/><rect x="-6" y="230" width="12" height="42" rx="3" fill="#FBF7EC"/><path d="M-18 272 L18 272 L12 300 L-12 300 Z" fill="url(#sv)"/><ellipse cx="0" cy="272" rx="18" ry="5" fill="#E8EDF3"/><rect x="-14" y="300" width="28" height="30" rx="4" fill="url(#sv)"/></g>
+     <g transform="translate(250 0)"><path d="M0 196 C-7 210 -5 222 0 228 C5 222 7 210 0 196 Z" fill="#F8C144"/><rect x="-6" y="230" width="12" height="42" rx="3" fill="#FBF7EC"/><path d="M-18 272 L18 272 L12 300 L-12 300 Z" fill="url(#sv)"/><ellipse cx="0" cy="272" rx="18" ry="5" fill="#E8EDF3"/><rect x="-14" y="300" width="28" height="30" rx="4" fill="url(#sv)"/></g>
+     <g stroke="url(#gd)" stroke-width="2" fill="none" stroke-linejoin="round"><path d="M200 344 L206 355 L194 355 Z"/><path d="M200 359 L194 348 L206 348 Z"/></g></svg>

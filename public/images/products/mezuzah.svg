@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+    </linearGradient>
+    <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.3" stop-color="#F4F8FC"/><stop offset="0.7" stop-color="#C3CDD9"/><stop offset="1" stop-color="#8C99A9"/>
+    </linearGradient>
+    <linearGradient id="klaf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBF3DD"/><stop offset="1" stop-color="#E4D5AE"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="200" cy="436" rx="130" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+
+  <!-- בית המזוזה -->
+  <g transform="rotate(7 190 260)">
+    <rect x="160" y="92" width="60" height="296" rx="28" fill="url(#gd)"/>
+    <rect x="160" y="92" width="60" height="296" rx="28" fill="none" stroke="#8F6B1B" stroke-width="1" opacity="0.5"/>
+    <!-- פאנל כסף פנימי -->
+    <rect x="171" y="122" width="38" height="236" rx="17" fill="url(#sv)"/>
+    <!-- ש -->
+    <text x="190" y="186" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="46" font-weight="700" fill="#1B2032">ש</text>
+    <!-- חריטת עיטור אנכית -->
+    <g stroke="#77879A" stroke-width="1.6" opacity="0.7" fill="none">
+      <path d="M190 214 C184 226 184 238 190 250 C196 238 196 226 190 214 Z"/>
+      <path d="M190 262 C184 274 184 286 190 298 C196 286 196 274 190 262 Z"/>
+      <path d="M190 310 C185 320 185 330 190 340 C195 330 195 320 190 310 Z"/>
+    </g>
+    <!-- ברגים -->
+    <circle cx="190" cy="103" r="4.5" fill="#8F6B1B"/><circle cx="190" cy="103" r="1.8" fill="#F2DE9E"/>
+    <circle cx="190" cy="377" r="4.5" fill="#8F6B1B"/><circle cx="190" cy="377" r="1.8" fill="#F2DE9E"/>
+    <!-- ספקולר -->
+    <path d="M172 130 L172 350" stroke="#FFFFFF" stroke-width="5" opacity="0.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- קלף מגולגל על המשטח -->
+  <g transform="translate(282 396) rotate(-14)">
+    <ellipse cx="0" cy="16" rx="52" ry="6" fill="#3A3020" opacity="0.15" filter="url(#soft)"/>
+    <rect x="-48" y="-17" width="96" height="34" rx="16" fill="url(#klaf)"/>
+    <ellipse cx="48" cy="0" rx="8" ry="16" fill="#D9C79A"/>
+    <circle cx="48" cy="0" r="5.5" fill="#B49B66"/>
+    <circle cx="48" cy="0" r="2.2" fill="#8A7345"/>
+    <g stroke="#A78F5C" stroke-width="1.4" opacity="0.85">
+      <path d="M-40 -8 h60"/><path d="M-40 -2 h52"/><path d="M-40 4 h58"/><path d="M-40 10 h46"/>
+    </g>
+  </g>
+</svg>

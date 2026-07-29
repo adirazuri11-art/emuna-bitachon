@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/></linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8"><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/></radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/></linearGradient>
+  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9AA6B2"/><stop offset="0.3" stop-color="#E7ECF1"/><stop offset="0.55" stop-color="#C2CBD5"/><stop offset="1" stop-color="#7E8A97"/></linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/></linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter><linearGradient id="stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#EAD9B4"/><stop offset="0.5" stop-color="#D6C094"/><stop offset="1" stop-color="#B79A66"/></linearGradient></defs><rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="420" rx="150" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <rect x="70" y="330" width="260" height="60" fill="url(#stone)"/>
+     <g stroke="#A88E5E" stroke-width="1" opacity="0.5"><line x1="70" y1="344" x2="330" y2="344"/><line x1="70" y1="358" x2="330" y2="358"/><line x1="70" y1="372" x2="330" y2="372"/></g>
+     <!-- מבנה מרכזי -->
+     <rect x="150" y="200" width="100" height="130" fill="url(#stone)"/>
+     <path d="M150 200 L200 150 L250 200 Z" fill="url(#gd)"/>
+     <rect x="176" y="250" width="48" height="80" rx="24" fill="#7A6238"/>
+     <!-- עמודים -->
+     <rect x="100" y="240" width="22" height="90" fill="url(#stone)"/><rect x="128" y="240" width="22" height="90" fill="url(#stone)"/>
+     <rect x="250" y="240" width="22" height="90" fill="url(#stone)"/><rect x="278" y="240" width="22" height="90" fill="url(#stone)"/>
+     <rect x="96" y="234" width="30" height="8" fill="url(#gd)"/><rect x="124" y="234" width="30" height="8" fill="url(#gd)"/>
+     <rect x="246" y="234" width="30" height="8" fill="url(#gd)"/><rect x="274" y="234" width="30" height="8" fill="url(#gd)"/>
+     <circle cx="200" cy="130" r="6" fill="url(#gd)"/></svg>

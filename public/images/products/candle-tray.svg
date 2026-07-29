@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+  </linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+    <stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+  </radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/>
+    <stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/>
+  </linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+  </linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter><linearGradient id="gl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EAF2F6"/><stop offset="0.5" stop-color="#CBDDE8"/><stop offset="1" stop-color="#A8C2D4"/></linearGradient></defs>
+<rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="420" rx="150" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <path d="M80 340 L320 340 L336 396 L64 396 Z" fill="url(#gl)" opacity="0.9"/>
+     <path d="M80 340 L320 340 L324 352 L76 352 Z" fill="#FFFFFF" opacity="0.6"/>
+     <g stroke="url(#gd)" stroke-width="2" fill="none" opacity="0.8"><path d="M92 386 h216"/></g>
+     <g transform="translate(150 0)"><path d="M0 208 C-7 222 -5 234 0 240 C5 234 7 222 0 208 Z" fill="#F8C144"/><rect x="-7" y="242" width="14" height="70" rx="3" fill="#FBF7EC"/><ellipse cx="0" cy="316" rx="17" ry="5" fill="url(#gl)"/><path d="M-15 318 L15 318 L11 338 L-11 338 Z" fill="url(#gl)"/></g><g transform="translate(200 0)"><path d="M0 208 C-7 222 -5 234 0 240 C5 234 7 222 0 208 Z" fill="#F8C144"/><rect x="-7" y="242" width="14" height="70" rx="3" fill="#FBF7EC"/><ellipse cx="0" cy="316" rx="17" ry="5" fill="url(#gl)"/><path d="M-15 318 L15 318 L11 338 L-11 338 Z" fill="url(#gl)"/></g><g transform="translate(250 0)"><path d="M0 208 C-7 222 -5 234 0 240 C5 234 7 222 0 208 Z" fill="#F8C144"/><rect x="-7" y="242" width="14" height="70" rx="3" fill="#FBF7EC"/><ellipse cx="0" cy="316" rx="17" ry="5" fill="url(#gl)"/><path d="M-15 318 L15 318 L11 338 L-11 338 Z" fill="url(#gl)"/></g></svg>

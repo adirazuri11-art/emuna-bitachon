@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+  </linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+    <stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+  </radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/>
+    <stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/>
+  </linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+  </linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter></defs>
+<rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="400" rx="110" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <ellipse cx="200" cy="300" rx="150" ry="118" fill="#1F2E63" opacity="0.06" filter="url(#soft)"/>
+     <path d="M52 96 C108.24 150 170 186 200 196 C230 186 291.76 150 348 96"
+       stroke="url(#gd)" stroke-width="5" fill="none" stroke-dasharray="7 4" stroke-linecap="round"/>
+     <circle cx="200" cy="202" r="7" fill="none" stroke="url(#gd)" stroke-width="4"/>
+     <text x="200" y="316" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="104" font-weight="700" fill="url(#gd)" stroke="#8F6B1B" stroke-width="1">חי</text></svg>

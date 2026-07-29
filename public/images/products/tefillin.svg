@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="blackTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4A4E5C"/><stop offset="1" stop-color="#26282F"/>
+    </linearGradient>
+    <linearGradient id="blackFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#33363F"/><stop offset="1" stop-color="#0F1013"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="200" cy="420" rx="155" ry="17" fill="#3A3020" opacity="0.26" filter="url(#soft)"/>
+
+  <!-- רצועות מפותלות על המשטח -->
+  <g stroke="#141519" stroke-width="15" fill="none" stroke-linecap="round">
+    <path d="M132 360 C84 382 66 404 96 416 C136 432 210 424 262 412"/>
+    <path d="M268 356 C318 376 340 398 308 414 C290 422 268 424 250 422"/>
+  </g>
+  <g stroke="#3A3D48" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.9">
+    <path d="M132 356 C86 378 70 400 98 412"/>
+    <path d="M268 352 C316 372 336 394 306 410"/>
+  </g>
+
+  <!-- תיתורא (בסיס) -->
+  <path d="M118 322 L282 322 L296 352 L104 352 Z" fill="url(#blackFront)"/>
+  <path d="M118 322 L282 322 L278 330 L122 330 Z" fill="#3A3D48"/>
+  <path d="M104 352 L296 352 L296 360 L104 360 Z" fill="#0C0D10"/>
+
+  <!-- הבית (קובייה) -->
+  <path d="M146 210 L170 186 L266 186 L242 210 Z" fill="url(#blackTop)"/>
+  <path d="M242 210 L266 186 L266 296 L242 320 Z" fill="#1A1C22"/>
+  <rect x="146" y="210" width="96" height="110" rx="4" fill="url(#blackFront)"/>
+  <!-- ש מובלט -->
+  <text x="194" y="288" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="56" font-weight="700" fill="#000000" opacity="0.55">ש</text>
+  <text x="193" y="286" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="56" font-weight="700" fill="#52565F">ש</text>
+  <!-- ברק עדין על העור -->
+  <path d="M152 216 L152 314" stroke="#6A6E7A" stroke-width="3.5" opacity="0.7" stroke-linecap="round"/>
+  <path d="M160 190 L250 190" stroke="#787C88" stroke-width="2" opacity="0.6" stroke-linecap="round"/>
+  <ellipse cx="176" cy="238" rx="18" ry="30" fill="#FFFFFF" opacity="0.05" filter="url(#soft)"/>
+</svg>

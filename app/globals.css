@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0b132b;
+  --navy-deep: #0f172a;
+  --gold: #d4af37;
+  --gold-soft: #c5a059;
+  --cream: #faf9f6;
+  --a11y-font-scale: 1;
+}
+
+/* ===== ווידג'ט נגישות ===== */
+html {
+  font-size: calc(100% * var(--a11y-font-scale, 1));
+}
+.a11y-contrast {
+  filter: contrast(1.28) saturate(1.08);
+}
+.a11y-links a {
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+.a11y-readable * {
+  font-family: Arial, 'Assistant', system-ui, sans-serif !important;
+  letter-spacing: normal !important;
+}
+.a11y-no-motion *,
+.a11y-no-motion *::before,
+.a11y-no-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-cream text-navy-deep antialiased;
+}
+
+::selection {
+  background: rgba(212, 175, 55, 0.35);
+}
+
+/* Scrollbar יוקרתי */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold), var(--gold-soft));
+  border-radius: 8px;
+  border: 2px solid var(--cream);
+}
+
+@layer components {
+  /* Glassmorphism עדין */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl;
+  }
+  .glass-dark {
+    @apply bg-navy/70 backdrop-blur-xl;
+  }
+
+  /* מסגרת גרדיאנט זהב — טריק double background */
+  .gold-ring {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--cream), var(--cream)) padding-box,
+      linear-gradient(135deg, #d4af37, #f5e7a3 45%, #c5a059) border-box;
+  }
+
+  /* טקסט בגרדיאנט זהב */
+  .gold-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, #e8d48b, #d4af37 40%, #c5a059 80%);
+  }
+
+  /* Skeleton טעינה */
+  .skeleton {
+    @apply animate-shimmer rounded-lg;
+    background: linear-gradient(
+      90deg,
+      rgba(11, 19, 43, 0.05) 25%,
+      rgba(212, 175, 55, 0.12) 50%,
+      rgba(11, 19, 43, 0.05) 75%
+    );
+    background-size: 200% 100%;
+  }
+}
+
+/* נגישות מקלדת — טבעת פוקוס אחידה בכל האתר */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* כיבוד prefers-reduced-motion גם ב-CSS (פרמר מטופל ב-MotionConfig) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

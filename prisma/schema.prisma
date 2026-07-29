@@ -1,0 +1,367 @@
+// ============================================================
+//  אמונה וביטחון — Emuna & Bitachon
+//  Production-grade relational schema for luxury Judaica commerce
+//  PostgreSQL + pgvector (semantic search embeddings)
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
+}
+
+// ---------------------------------------------
+// Enums
+// ---------------------------------------------
+
+enum Role {
+  CUSTOMER
+  SUPPLIER
+  ADMIN
+}
+
+enum Nusach {
+  ASHKENAZ
+  SEFARD
+  EDOT_MIZRACH
+  CHABAD
+  TEIMANI
+}
+
+enum KashrutLevel {
+  STANDARD
+  MEHADRIN
+  BADATZ
+  STAM_CERTIFIED // סת"ם — מזוזות, תפילין, ספרי תורה
+}
+
+enum CertificateStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  REJECTED
+}
+
+enum IntegrationType {
+  API
+  WEBHOOK
+  MANUAL
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PRODUCTION // מוצרים בהתאמה אישית (חריטה / רקמה)
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum Currency {
+  ILS
+  USD
+  EUR
+}
+
+enum CustomizationType {
+  ENGRAVING // חריטת לייזר — גביעי קידוש, פמוטים
+  EMBROIDERY // רקמה — תיקי טלית ותפילין
+  WEAVING // אריגה — ציציות, כיפות
+  PRINT
+}
+
+enum AIFeature {
+  HALACHIC_ASSISTANT
+  SEMANTIC_SEARCH
+  VISUAL_SEARCH
+  PERSONALIZATION
+}
+
+// ---------------------------------------------
+// Users & Halachic Preferences
+// ---------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  phone        String?
+  role         Role     @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  preferences    HalachicPreference?
+  addresses      Address[]
+  orders         Order[]
+  aiInteractions AIInteraction[]
+
+  @@index([email])
+}
+
+model HalachicPreference {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  nusach                Nusach?
+  preferredKashrutOrgs  String[] // למשל: ["בד\"ץ העדה החרדית", "הרב לנדא"]
+  tzitzitKnotStyle      String? // אשכנז / ספרד / חב"ד / רמב"ם / תכלת
+  preferredMezuzahScript String? // כתב בית יוסף / אר"י / ולישקר
+  notes                 String?
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id       String  @id @default(cuid())
+  userId   String
+  fullName String
+  street   String
+  city     String
+  zip      String
+  country  String  @default("IL")
+  phone    String?
+  isDefault Boolean @default(false)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+}
+
+// ---------------------------------------------
+// Catalog
+// ---------------------------------------------
+
+model Category {
+  id       String  @id @default(cuid())
+  slug     String  @unique
+  nameHe   String
+  nameEn   String
+  parentId String?
+  sortOrder Int    @default(0)
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+}
+
+model Supplier {
+  id                   String          @id @default(cuid())
+  name                 String // "משכן התכלת", "חדד כלי כסף", "חלבין"
+  integrationType      IntegrationType @default(MANUAL)
+  apiEndpoint          String?
+  webhookSecret        String?
+  contactEmail         String?
+  leadTimeDays         Int             @default(7)
+  wholesaleDiscountPct Decimal         @default(0) @db.Decimal(5, 2)
+  active               Boolean         @default(true)
+  createdAt            DateTime        @default(now())
+
+  products     Product[]
+  certificates KashrutCertificate[]
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  sku           String        @unique
+  slug          String        @unique
+  titleHe       String
+  titleEn       String?
+  descriptionHe String?
+  descriptionEn String?
+  basePrice     Decimal       @db.Decimal(10, 2)
+  discountPrice Decimal?      @db.Decimal(10, 2)
+  currency      Currency      @default(ILS)
+  material      String? // כסף 925, צמר טהור, קלף עור
+  weightGrams   Int?
+  dimensions    Json? // { height, width, depth } בס"מ
+  stock         Int           @default(0)
+  lowStockAlert Int           @default(3)
+  kashrutLevel  KashrutLevel?
+  isCustomizable Boolean      @default(false)
+  images        String[]
+  categoryId    String?
+  supplierId    String?
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Embedding לחיפוש סמנטי (text-embedding / voyage) — pgvector
+  embedding Unsupported("vector(1536)")?
+
+  category           Category?            @relation(fields: [categoryId], references: [id])
+  supplier           Supplier?            @relation(fields: [supplierId], references: [id])
+  variants           ProductVariant[]
+  customizationRules CustomizationRule[]
+  certificates       KashrutCertificate[]
+  orderItems         OrderItem[]
+  recommendations    Recommendation[]
+
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([active, stock])
+}
+
+model ProductVariant {
+  id         String  @id @default(cuid())
+  productId  String
+  sku        String  @unique
+  nameHe     String // "מידה 60", "זהב לבן", "נוסח ספרד"
+  priceDelta Decimal @default(0) @db.Decimal(10, 2)
+  stock      Int     @default(0)
+  attributes Json? // { size, color, nusach }
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([productId])
+}
+
+model CustomizationRule {
+  id                 String            @id @default(cuid())
+  productId          String
+  type               CustomizationType
+  maxChars           Int               @default(30)
+  allowedFonts       String[] // ["פרנק-ריהל", "כתב סת\"ם", "דוד"]
+  surcharge          Decimal           @default(0) @db.Decimal(10, 2)
+  previewTemplateUrl String? // תבנית לתצוגה חיה בקסטומייזר
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+// ---------------------------------------------
+// Kashrut Certification (אימות אוטומטי)
+// ---------------------------------------------
+
+model KashrutCertificate {
+  id                String            @id @default(cuid())
+  productId         String?
+  supplierId        String?
+  organization      String // "בד\"ץ העדה החרדית", "משכן התכלת"
+  certificateNumber String?
+  issuedAt          DateTime
+  expiresAt         DateTime
+  documentUrl       String // צילום התעודה
+  status            CertificateStatus @default(PENDING)
+  lastVerifiedAt    DateTime?
+
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+
+  @@index([productId, status])
+  @@index([expiresAt]) // ל-cron שמסמן תעודות שפגו
+}
+
+// ---------------------------------------------
+// Orders
+// ---------------------------------------------
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique // EB-2026-00001
+  userId            String
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  currency          Currency      @default(ILS)
+  subtotal          Decimal       @db.Decimal(10, 2)
+  shippingCost      Decimal       @default(0) @db.Decimal(10, 2)
+  total             Decimal       @db.Decimal(10, 2)
+  shippingAddressId String?
+  trackingUrl       String?
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user            User        @relation(fields: [userId], references: [id])
+  shippingAddress Address?    @relation(fields: [shippingAddressId], references: [id])
+  items           OrderItem[]
+
+  @@index([userId])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  productId     String
+  variantId     String?
+  quantity      Int     @default(1)
+  unitPrice     Decimal @db.Decimal(10, 2)
+  // מטא-דאטה של התאמה אישית: { type: "ENGRAVING", text: "לכבוד החתן...", font: "..." }
+  customization Json?
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+}
+
+// ---------------------------------------------
+// AI Interactions & Conversion Tracking
+// ---------------------------------------------
+
+model AIInteraction {
+  id              String    @id @default(cuid())
+  userId          String?
+  sessionId       String // גם למשתמשים אנונימיים
+  feature         AIFeature
+  query           String // השאילתה המקורית (טקסט / תיאור תמונה)
+  responseSummary String?
+  converted       Boolean   @default(false) // האם הובילה לרכישה
+  createdAt       DateTime  @default(now())
+
+  user            User?            @relation(fields: [userId], references: [id])
+  recommendations Recommendation[]
+
+  @@index([sessionId])
+  @@index([feature, createdAt])
+}
+
+model Recommendation {
+  id            String  @id @default(cuid())
+  interactionId String
+  productId     String
+  score         Float // ציון דמיון סמנטי 0–1
+  clicked       Boolean @default(false)
+  purchased     Boolean @default(false)
+
+  interaction AIInteraction @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+  product     Product       @relation(fields: [productId], references: [id])
+
+  @@index([interactionId])
+}
+
+// ---------------------------------------------
+// מועדון לקוחות — קופון אישי חד-פעמי + חברוּת
+// כל נרשם מקבל קוד ייחודי משלו. couponUsed נאכף בצד-שרת (מימוש פעם אחת).
+// עצם קיום הרשומה = חבר מועדון → זכאי למחירי-חבר על פריטים נבחרים.
+// ---------------------------------------------
+model ClubMember {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  couponCode    String    @unique // קוד הטבה אישי, ייחודי לאדם
+  couponUsed    Boolean   @default(false) // חד-פעמי — נחסם אחרי מימוש
+  couponUsedAt  DateTime?
+  couponExpires DateTime // תוקף הקוד (למשל 7 ימים)
+  createdAt     DateTime  @default(now())
+
+  @@index([couponCode])
+  @@index([email])
+}

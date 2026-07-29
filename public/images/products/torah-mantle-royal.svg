@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/></linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8"><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/></radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/></linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/></linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter><radialGradient id="mv" cx="0.4" cy="0.25" r="1.1"><stop offset="0" stop-color="#1F3A6E"/><stop offset="0.55" stop-color="#152A52"/><stop offset="1" stop-color="#0C1A38"/></radialGradient></defs><rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="430" rx="130" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <ellipse cx="152" cy="150" rx="16" ry="10" fill="url(#gd)"/><ellipse cx="248" cy="150" rx="16" ry="10" fill="url(#gd)"/>
+     <rect x="146" y="120" width="12" height="40" rx="4" fill="url(#gd)"/><rect x="242" y="120" width="12" height="40" rx="4" fill="url(#gd)"/>
+     <path d="M120 168 C120 160 130 156 200 156 C270 156 280 160 280 168 L280 390 C280 402 270 406 200 406 C130 406 120 402 120 390 Z" fill="url(#mv)"/>
+     <rect x="134" y="188" width="132" height="196" rx="6" fill="none" stroke="url(#gd)" stroke-width="2.6"/>
+     <path d="M186 210 L182 194 L192 204 L200 190 L208 204 L218 194 L214 210 Z" fill="url(#gd)"/>
+     <g stroke="url(#gd)" stroke-width="2.2" fill="none" stroke-linejoin="round"><path d="M200 236 L228 286 L172 286 Z"/><path d="M200 318 L172 268 L228 268 Z"/></g>
+     <text x="200" y="368" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="18" font-weight="700" fill="url(#gd)">כתר תורה</text>
+     <path d="M132 176 L132 382" stroke="#FFFFFF" stroke-width="4" opacity="0.14" stroke-linecap="round"/></svg>

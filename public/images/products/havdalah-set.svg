@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.3" stop-color="#F4F8FC"/><stop offset="0.7" stop-color="#C3CDD9"/><stop offset="1" stop-color="#8C99A9"/>
+    </linearGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/>
+    </linearGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="200" cy="428" rx="160" ry="17" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+
+  <!-- מגש -->
+  <ellipse cx="200" cy="404" rx="158" ry="26" fill="url(#sv)"/>
+  <ellipse cx="200" cy="398" rx="144" ry="20" fill="#E8EDF3"/>
+  <ellipse cx="200" cy="396" rx="132" ry="16" fill="#F4F8FC"/>
+
+  <!-- גביע (שמאל) -->
+  <g transform="translate(116 0)">
+    <path d="M-34 242 C-36 274 -26 300 -12 312 L-8 314 L-10 330 L-12 372 L14 372 L12 330 L10 314 L14 312
+             C28 300 38 274 36 242 C24 250 12 253 0 253 C-12 253 -24 250 -34 242 Z" fill="url(#sv)"/>
+    <ellipse cx="0" cy="243" rx="36" ry="8" fill="url(#sv)"/>
+    <ellipse cx="0" cy="243.5" rx="30" ry="5.5" fill="url(#gd)"/>
+    <ellipse cx="0" cy="336" rx="9" ry="6" fill="url(#sv)"/>
+    <ellipse cx="1" cy="376" rx="30" ry="7" fill="url(#sv)"/>
+    <path d="M-30 268 C-16 276 16 276 30 268 L30 280 C16 288 -16 288 -30 280 Z" fill="url(#gd)"/>
+    <path d="M-22 254 C-24 284 -18 302 -10 310" stroke="#FFFFFF" stroke-width="4.5" fill="none" opacity="0.6" stroke-linecap="round"/>
+  </g>
+
+  <!-- מגדל בשמים (מרכז) -->
+  <g transform="translate(212 0)">
+    <rect x="-21" y="240" width="42" height="118" rx="5" fill="url(#sv)"/>
+    <g fill="#2A3448" opacity="0.85">
+      <rect x="-12" y="258" width="9" height="9" transform="rotate(45 -7.5 262.5)"/>
+      <rect x="4" y="258" width="9" height="9" transform="rotate(45 8.5 262.5)"/>
+      <rect x="-12" y="286" width="9" height="9" transform="rotate(45 -7.5 290.5)"/>
+      <rect x="4" y="286" width="9" height="9" transform="rotate(45 8.5 290.5)"/>
+      <rect x="-4" y="314" width="9" height="9" transform="rotate(45 0.5 318.5)"/>
+    </g>
+    <path d="M-23 240 A23 19 0 0 1 23 240 Z" fill="url(#gd)"/>
+    <rect x="-1.5" y="192" width="3" height="30" fill="url(#gd)"/>
+    <path d="M1.5 194 L20 201 L1.5 209 Z" fill="url(#gd)"/>
+    <circle cx="0" cy="190" r="3" fill="url(#gd)"/>
+    <ellipse cx="0" cy="362" rx="29" ry="7" fill="url(#sv)"/>
+    <path d="M-14 246 L-14 352" stroke="#FFFFFF" stroke-width="3.5" opacity="0.55" stroke-linecap="round"/>
+  </g>
+
+  <!-- נר הבדלה קלוע (ימין) -->
+  <g transform="translate(302 0)">
+    <path d="M0 190 C-11 220 11 246 0 276 C-11 306 11 332 0 362" stroke="#3B5BDB" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M0 190 C11 220 -11 246 0 276 C11 306 -11 332 0 362" stroke="#F6F1E3" stroke-width="9" fill="none" stroke-linecap="round"/>
+    <path d="M0 186 C-3 178 -1 170 1 166 C5 173 4 181 0 186 Z" fill="#F8C144"/>
+    <path d="M0.5 180 C-1 176 0 172 1 170 C3 174 2 178 0.5 180 Z" fill="#FFF9E0"/>
+    <ellipse cx="0" cy="368" rx="24" ry="6.5" fill="url(#sv)"/>
+  </g>
+</svg>

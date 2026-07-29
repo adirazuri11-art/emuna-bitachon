@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/>
+    </radialGradient>
+    <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/>
+      <stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/>
+    </linearGradient>
+    <linearGradient id="candle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#E8E2D2"/><stop offset="0.35" stop-color="#FFFEF8"/><stop offset="1" stop-color="#D9D2BE"/>
+    </linearGradient>
+    <radialGradient id="flame" cx="0.5" cy="0.72" r="0.75">
+      <stop offset="0" stop-color="#FFF9E0"/><stop offset="0.5" stop-color="#F8C144"/><stop offset="1" stop-color="#E07B1F"/>
+    </radialGradient>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <rect width="400" height="500" fill="url(#vig)"/>
+  <ellipse cx="200" cy="435" rx="150" ry="16" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+
+  <g id="stick">
+    <!-- זוהר הלהבה -->
+    <circle cx="135" cy="120" r="30" fill="#F8C144" opacity="0.16" filter="url(#soft)"/>
+    <path d="M135 96 C126 114 128 130 135 137 C142 130 144 114 135 96 Z" fill="url(#flame)"/>
+    <path d="M135 122 C132 128 133 134 135 136 C137 134 138 128 135 122 Z" fill="#FFF9E0" opacity="0.9"/>
+    <rect x="134" y="134" width="2" height="7" fill="#3A3020"/>
+    <!-- נר -->
+    <rect x="127" y="141" width="16" height="68" rx="3" fill="url(#candle)"/>
+    <ellipse cx="135" cy="141" rx="8" ry="2.6" fill="#FFFEF8"/>
+    <!-- כוסית ומגש טפטוף -->
+    <path d="M120 209 L150 209 L146 228 L124 228 Z" fill="url(#sv)"/>
+    <ellipse cx="135" cy="209" rx="15" ry="4" fill="#DDE4EB"/>
+    <ellipse cx="135" cy="232" rx="27" ry="7" fill="url(#sv)"/>
+    <ellipse cx="135" cy="229" rx="20" ry="4.5" fill="#E8EDF3"/>
+    <!-- גזע בלוסטר -->
+    <path d="M129 238 C124 262 128 278 124 300 C120 322 126 344 122 372 L148 372 C144 344 150 322 146 300 C142 278 146 262 141 238 Z" fill="url(#sv)"/>
+    <ellipse cx="135" cy="288" rx="17" ry="10" fill="url(#sv)"/>
+    <ellipse cx="131" cy="285" rx="5" ry="3.5" fill="#FFFFFF" opacity="0.85"/>
+    <!-- בסיס מדורג -->
+    <ellipse cx="135" cy="376" rx="34" ry="8" fill="url(#sv)"/>
+    <ellipse cx="135" cy="388" rx="46" ry="10" fill="#DDE4EB"/>
+    <ellipse cx="135" cy="402" rx="56" ry="12" fill="url(#sv)"/>
+    <!-- ספקולר -->
+    <path d="M128 244 C124 290 128 330 126 368" stroke="#FFFFFF" stroke-width="4" fill="none" opacity="0.55" stroke-linecap="round"/>
+  </g>
+  <use href="#stick" x="130"/>
+
+  <ellipse cx="200" cy="448" rx="120" ry="7" fill="#8E9CAC" opacity="0.12"/>
+</svg>

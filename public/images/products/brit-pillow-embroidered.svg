@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500"><defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCFAF4"/><stop offset="0.72" stop-color="#F3EDE0"/><stop offset="1" stop-color="#E2D8C3"/></linearGradient>
+  <radialGradient id="vig" cx="0.5" cy="0.42" r="0.8"><stop offset="0.6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#4A3A1E" stop-opacity="0.1"/></radialGradient>
+  <linearGradient id="sv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8E9CAC"/><stop offset="0.18" stop-color="#F2F6FA"/><stop offset="0.36" stop-color="#FFFFFF"/><stop offset="0.6" stop-color="#B4BFCC"/><stop offset="0.84" stop-color="#6E7D8E"/><stop offset="1" stop-color="#9FABB9"/></linearGradient>
+  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9AA6B2"/><stop offset="0.3" stop-color="#E7ECF1"/><stop offset="0.55" stop-color="#C2CBD5"/><stop offset="1" stop-color="#7E8A97"/></linearGradient>
+  <linearGradient id="gd" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#B58A2C"/><stop offset="0.3" stop-color="#F2DE9E"/><stop offset="0.55" stop-color="#D4AF37"/><stop offset="1" stop-color="#8F6B1B"/></linearGradient>
+  <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter><radialGradient id="vel" cx="0.35" cy="0.25" r="1.1"><stop offset="0" stop-color="#2C3D78"/><stop offset="0.6" stop-color="#1F2E63"/><stop offset="1" stop-color="#131F49"/></radialGradient></defs><rect width="400" height="500" fill="url(#bg)"/><rect width="400" height="500" fill="url(#vig)"/><ellipse cx="200" cy="400" rx="150" ry="15" fill="#3A3020" opacity="0.22" filter="url(#soft)"/>
+     <path d="M90 180 Q90 160 112 158 L288 158 Q310 160 310 180 L310 360 Q310 382 288 384 L112 384 Q90 382 90 360 Z" fill="url(#vel)"/>
+     <path d="M96 168 L304 372" stroke="#FFFFFF" stroke-width="50" opacity="0.05" stroke-linecap="round"/>
+     <rect x="112" y="182" width="176" height="176" rx="10" fill="none" stroke="url(#gd)" stroke-width="2.4"/>
+     <text x="200" y="244" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="26" font-weight="700" fill="url(#gd)">ברוך הבא</text>
+     <text x="200" y="284" text-anchor="middle" font-family="'Frank Ruhl Libre','Times New Roman',serif" font-size="20" font-weight="700" fill="url(#gd)">בזאת הברית</text>
+     <g stroke="url(#gd)" stroke-width="2" fill="none" opacity="0.85"><path d="M140 312 q60 14 120 0"/></g>
+     <!-- גדילי פינה -->
+     <g fill="url(#gd)"><circle cx="96" cy="168" r="6"/><circle cx="304" cy="168" r="6"/><circle cx="96" cy="374" r="6"/><circle cx="304" cy="374" r="6"/></g></svg>
