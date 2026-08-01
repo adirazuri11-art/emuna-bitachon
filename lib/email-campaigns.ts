@@ -23,7 +23,7 @@ export interface EmailTemplate {
 export const WELCOME_EMAIL: EmailTemplate = {
   id: 'welcome-club',
   type: 'welcome',
-  subject: 'הצטרפת למועדון אמונה וביטחון — קופון 15% ממתין לך! 🎁',
+  subject: 'הצטרפת למועדון אמונה וביטחון — קופון 10% ממתין לך! 🎁',
   previewText: 'קופון בלעדי לחברי המועדון בלבד',
   variables: ['firstName', 'email', 'couponCode', 'expiryDate'],
 };

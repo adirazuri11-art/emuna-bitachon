@@ -49,8 +49,8 @@ export function TrustAndSocialProof() {
 
       {/* Call to action למועדון */}
       <div className="mt-12 rounded-2xl border border-gold/25 bg-gradient-to-r from-navy/5 to-gold/5 p-8 text-center">
-        <h3 className="font-display text-2xl font-bold text-navy">הצטרפו למועדון - קבלו 15% הנחה</h3>
-        <p className="mt-2 text-navy/70">כל הזמנה ראשונה כחבר מועדון זוכה ל-15% הנחה בקופון שנשלח במייל</p>
+        <h3 className="font-display text-2xl font-bold text-navy">הצטרפו למועדון - קבלו 10% הנחה</h3>
+        <p className="mt-2 text-navy/70">כל הזמנה ראשונה כחבר מועדון זוכה ל-10% הנחה בקופון שנשלח במייל</p>
         <p className="mt-1 text-sm text-gold">+ תקבלו עדכונים על קולקציות חדשות ומבצעים בלעדיים</p>
       </div>
     </section>

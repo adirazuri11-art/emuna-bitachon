@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const COUPON_PCT = 15; // אחוז הנחת הצטרפות חברים חדשים
+const COUPON_PCT = 10; // אחוז הנחת הצטרפות חברים חדשים
 const VALID_DAYS = 7; // תוקף הקוד האישי
 
 // קוד נקי וממותג: "אמונה-" + 5 ספרות (בלי אותיות אנגלית הזויות)
