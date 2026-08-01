@@ -192,6 +192,16 @@ export function ProductCard({ product, onQuickView }: Props) {
                   {formatPrice(price)}
                   {product.minOrderUnits && <span className="text-[11px] font-medium text-navy/50"> ליחידה</span>}
                 </span>
+
+                {/* הנחה של 15% לחברי מועדון חדשים */}
+                <div className="mt-2 space-y-1 rounded-lg bg-emerald-50 p-2">
+                  <p className="text-[11px] font-bold text-emerald-700">✨ לחברי מועדון</p>
+                  <p className="text-sm font-bold text-emerald-600">
+                    {formatPrice(Math.round(price * 0.85))}
+                  </p>
+                  <p className="text-[10px] text-emerald-600">15% הנחה למשך 7 ימים</p>
+                </div>
+
                 {product.minOrderUnits && (
                   <span className="mt-0.5 block text-[11px] font-medium text-gold-soft">
                     מארז {product.minOrderUnits} יח' · {formatPrice(price * product.minOrderUnits)}

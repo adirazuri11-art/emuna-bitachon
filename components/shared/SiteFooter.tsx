@@ -45,6 +45,7 @@ export function SiteFooter() {
             <li><Link href="/gift-card" className="transition-colors hover:text-gold">שובר מתנה</Link></li>
             <li><Link href="/quote" className="transition-colors hover:text-gold">הזמנות בכמות</Link></li>
             <li><Link href="/wishlist" className="transition-colors hover:text-gold">המועדפים</Link></li>
+            <li><Link href="/blog" className="transition-colors hover:text-gold">בלוג</Link></li>
             <li><Link href="/accessibility" className="transition-colors hover:text-gold">נגישות</Link></li>
           </ul>
         </nav>

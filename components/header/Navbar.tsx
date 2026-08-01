@@ -62,6 +62,7 @@ export function Navbar() {
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [mounted, setMounted] = useState(false);
+  const [openCategoryDropdown, setOpenCategoryDropdown] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const cartCount = useCartStore(selectCartCount);
@@ -272,23 +273,35 @@ export function Navbar() {
 
         {/* ===== Categories + תפריט-על ===== */}
         <nav className="hidden justify-center gap-6 border-t border-gold/10 py-2.5 lg:flex" aria-label="קטגוריות">
+          <Link href="/blog"
+            className="relative text-sm font-medium text-navy/80 transition-colors hover:text-navy">
+            בלוג
+            <span className="absolute -bottom-1 end-0 start-0 h-px scale-x-0 bg-gradient-to-l from-gold to-gold-soft transition-transform duration-300 hover:scale-x-100" />
+          </Link>
           {CATEGORIES.map((cat) => (
-            <div key={cat.href} className="group relative">
+            <div
+              key={cat.href}
+              className="group relative"
+              onMouseEnter={() => setOpenCategoryDropdown(cat.slug)}
+              onMouseLeave={() => setOpenCategoryDropdown(null)}>
               <Link href={cat.href}
+                onClick={() => setOpenCategoryDropdown(null)}
                 className="relative text-sm font-medium text-navy/80 transition-colors hover:text-navy">
                 {cat.label}
                 <span className="absolute -bottom-1 end-0 start-0 h-px scale-x-0 bg-gradient-to-l from-gold to-gold-soft transition-transform duration-300 group-hover:scale-x-100" />
               </Link>
-              {cat.subcategories.length > 1 && (
-                <div className="invisible absolute start-1/2 top-full z-50 -translate-x-1/2 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+              {cat.subcategories.length > 1 && openCategoryDropdown === cat.slug && (
+                <div className="absolute start-1/2 top-full z-50 -translate-x-1/2 pt-3">
                   <div className="min-w-[180px] rounded-2xl border border-gold/20 bg-white p-2 shadow-2xl">
                     {cat.subcategories.map((sub) => (
                       <Link key={sub} href={`/category/${cat.slug}?sub=${encodeURIComponent(sub)}`}
+                        onClick={() => setOpenCategoryDropdown(null)}
                         className="block rounded-lg px-3 py-2 text-sm text-navy/75 transition-colors hover:bg-gold/10 hover:text-navy">
                         {sub}
                       </Link>
                     ))}
                     <Link href={cat.href}
+                      onClick={() => setOpenCategoryDropdown(null)}
                       className="mt-1 block border-t border-navy/5 px-3 pb-1 pt-2 text-xs font-bold text-gold-soft hover:text-navy">
                       לכל {cat.label} ←
                     </Link>
@@ -315,6 +328,10 @@ export function Navbar() {
                     <Search className="h-4 w-4" />
                   </button>
                 </form>
+                <Link href="/blog" onClick={() => setMobileOpen(false)}
+                  className="border-b border-navy/5 py-3 text-sm font-medium text-navy/80">
+                  בלוג
+                </Link>
                 {CATEGORIES.map((cat) => (
                   <Link key={cat.href} href={cat.href} onClick={() => setMobileOpen(false)}
                     className="border-b border-navy/5 py-3 text-sm font-medium text-navy/80">

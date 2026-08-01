@@ -9,6 +9,7 @@ import { WhatsAppButton } from '@/components/shared/WhatsAppButton';
 import { GiftFinderBubble } from '@/components/shared/GiftFinderBubble';
 import { AccessibilityWidget } from '@/components/shared/AccessibilityWidget';
 import { NewsletterPopup } from '@/components/shared/NewsletterPopup';
+import { WebVitalsReporter } from '@/components/analytics/WebVitalsReporter';
 import { SiteFooter } from '@/components/shared/SiteFooter';
 import { Toaster } from '@/components/ui/Toaster';
 import './globals.css';
@@ -72,6 +73,7 @@ gtag('config', '${GA_ID}');`}
           </>
         )}
         <Providers>
+          <WebVitalsReporter />
           <Navbar />
           <main>{children}</main>
           <CartSlideOver />

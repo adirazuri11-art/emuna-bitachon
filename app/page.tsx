@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Building2, Gift, PenLine, Sparkles } from 'lucide-react';
 import { Hero } from '@/components/home/Hero';
 import { TrustSection } from '@/components/home/TrustSection';
+import { TrustAndSocialProof } from '@/components/cro/TrustAndSocialProof';
 import { CategoriesShowcase } from '@/components/home/CategoriesShowcase';
 import { LivingTradition } from '@/components/home/LivingTradition';
 import { NewsletterClub } from '@/components/home/NewsletterClub';
@@ -216,6 +217,9 @@ export default async function HomePage() {
           {newArrivals.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       </section>
+
+      {/* Trust & Social Proof */}
+      <TrustAndSocialProof />
 
       {/* מומלצים במיוחד */}
       <section className="border-y border-gold/15 bg-white py-14">

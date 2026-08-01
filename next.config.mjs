@@ -16,6 +16,7 @@ const nextConfig = isStaticExport
           { protocol: 'https', hostname: 'images.unsplash.com' },
           { protocol: 'https', hostname: '**.wolt.com' },
           { protocol: 'https', hostname: '**.cloudinary.com' },
+          { protocol: 'https', hostname: 'www.israel-judaica.com' },
         ],
         formats: ['image/avif', 'image/webp'],
       },

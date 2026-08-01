@@ -102,7 +102,7 @@ export function CategoryClient({
     <div className="mx-auto max-w-7xl px-4 py-8">
       {/* תת-קטגוריות */}
       {subcategories.length > 1 && (
-        <div className="mb-5 flex flex-wrap justify-center gap-2">
+        <div className="mb-5 flex flex-wrap justify-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
           <button onClick={() => setSubFilter(null)}
             className={cn('rounded-full border px-4 py-1.5 text-sm transition-colors',
               !subFilter ? 'border-gold bg-navy font-bold text-gold' : 'border-navy/15 text-navy/70 hover:border-gold/60')}>

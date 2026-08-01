@@ -5,6 +5,7 @@
 // ============================================================
 
 import type { CatalogProduct } from '@/lib/catalog';
+import { isMemberOnlyProduct, getMemberDiscount } from '@/lib/member-pricing';
 
 export interface CustomizationSelections {
   text?: string;
@@ -19,6 +20,7 @@ export interface PriceInput {
   variantSelections?: Record<string, string>; // groupId -> optionId
   customization?: CustomizationSelections;
   quantity?: number;
+  isMember?: boolean; // האם המשתמש הוא חבר מועדון (לחישוב הנחה)
 }
 
 export interface PriceLine {
@@ -31,8 +33,9 @@ export interface PriceResult {
   lines: PriceLine[]; // פירוט ליחידה
   quantity: number;
   bulkDiscountPct: number;
+  memberDiscountPct: number; // הנחת חבר מועדון (אם תקף)
   subtotal: number; // לפני הנחת כמות
-  discountAmount: number;
+  discountAmount: number; // סה"כ הנחה (bulk + member)
   total: number;
 }
 
@@ -41,6 +44,7 @@ export function computePrice({
   variantSelections = {},
   customization = {},
   quantity = 1,
+  isMember = false,
 }: PriceInput): PriceResult {
   const lines: PriceLine[] = [];
   const base = product.discountPrice ?? product.basePrice;
@@ -77,20 +81,27 @@ export function computePrice({
 
   const unitPrice = lines.reduce((s, l) => s + l.amount, 0);
 
+  // בדיקה: האם יש הנחת חבר מועדון
+  const memberDiscountPct = isMember && isMemberOnlyProduct(product.id) ? getMemberDiscount() : 0;
+
   // הנחת כמות (הגבוהה ביותר שמתקיימת)
   const bulkDiscountPct =
     (cfg?.bulkDiscounts ?? [])
       .filter((d) => quantity >= d.minQty)
       .reduce((max, d) => Math.max(max, d.pct), 0) ?? 0;
 
+  // בחירת הנחה גדולה יותר (אין stacking)
+  const effectiveDiscountPct = Math.max(bulkDiscountPct, memberDiscountPct);
+
   const subtotal = unitPrice * quantity;
-  const discountAmount = Math.round((subtotal * bulkDiscountPct) / 100);
+  const discountAmount = Math.round((subtotal * effectiveDiscountPct) / 100);
 
   return {
     unitPrice,
     lines,
     quantity,
     bulkDiscountPct,
+    memberDiscountPct,
     subtotal,
     discountAmount,
     total: subtotal - discountAmount,
