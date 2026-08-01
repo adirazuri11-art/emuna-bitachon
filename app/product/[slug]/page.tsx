@@ -79,6 +79,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <h1 className="sr-only">{product.titleHe}</h1>
       <ProductPageClient product={product} related={related} categorySlug={category?.slug} />
     </>
   );

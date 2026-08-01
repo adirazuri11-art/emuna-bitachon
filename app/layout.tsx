@@ -45,6 +45,7 @@ export const metadata: Metadata = {
     'מתנות לבר מצווה', 'מתנה לחתונה', 'מתנות יהודיות', 'מתנה לברית', 'מתנות יודאיקה',
     'יודאיקה בהתאמה אישית', 'עיצוב יהודי',
   ],
+  robots: { index: true, follow: true, nocache: false },
   openGraph: {
     type: 'website',
     locale: 'he_IL',

@@ -14,6 +14,8 @@ const nextConfig = isStaticExport
         remotePatterns: [
           { protocol: 'https', hostname: '**.supabase.co' },
           { protocol: 'https', hostname: 'images.unsplash.com' },
+          { protocol: 'https', hostname: '**.wolt.com' },
+          { protocol: 'https', hostname: '**.cloudinary.com' },
         ],
       },
     };

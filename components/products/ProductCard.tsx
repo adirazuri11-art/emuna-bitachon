@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Check, Eye, Flame, Gem, Gift, Heart, PenLine, Scroll, ShieldCheck, ShoppingBag, Shirt, Sparkle, Wine,
@@ -75,9 +76,14 @@ export function ProductCard({ product, onQuickView }: Props) {
       <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-b from-white to-cream">
         <Link href={href} aria-label={product.titleHe}>
           {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.imageUrl} alt={product.titleHe} loading="lazy"
-              className="h-full w-full object-contain p-3 transition-transform duration-500 group-hover:scale-105" />
+            <Image
+              src={product.imageUrl}
+              alt={product.titleHe}
+              fill
+              className="object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              loading="lazy"
+            />
           ) : (
             <span className="flex h-full items-center justify-center">
               <Icon className="h-16 w-16 text-gold/60" strokeWidth={1.2} />
@@ -88,8 +94,7 @@ export function ProductCard({ product, onQuickView }: Props) {
         {/* לוגו-שכבה על תמונות מרוחקות — תואם לצילומים עם הלוגו הצרוב */}
         {isRemote && (
           <span className="pointer-events-none absolute bottom-2 start-2 z-[1] flex items-center rounded-md bg-white/85 px-1.5 py-0.5 shadow-sm backdrop-blur-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/emuna-vebitachon-logo.png" alt="אמונה וביטחון" className="h-4 w-auto opacity-90" />
+            <Image src="/brand/emuna-vebitachon-logo.png" alt="אמונה וביטחון" width={16} height={16} className="opacity-90" />
           </span>
         )}
 
