@@ -65,6 +65,8 @@ export default function CheckoutPage() {
     trackEvent('add_payment_info', { value: total });
     // TODO: Server Action → יצירת Order ב-Prisma → getPaymentProvider().createPaymentPage()
     // → redirect לעמוד הסליקה (Cardcom / PayPlus). ראו lib/payments.ts
+    // ⚠️ חשוב: בשרת, בדוק אם הלקוח הוא חבר מועדון לפני החלת 10% הנחה זמנית.
+    // רק קופון שרת-side (חברות מועדון) יופעל בקופה.
     // מימוש הקופון האישי (חד-פעמי, נאכף בשרת) לפני סגירת ההזמנה
     if (coupon?.server) {
       const r = await redeemClubCoupon(coupon.code);
