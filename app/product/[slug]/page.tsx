@@ -19,8 +19,11 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     ...(product.isCustomizable ? ['בהתאמה אישית', 'הטבעה אישית', 'לאירועים'] : []),
     'יודאיקה', 'תשמישי קדושה',
   ].filter(Boolean);
+  const titleTemplate = product.isCustomizable
+    ? `${product.titleHe} בהתאמה אישית — ${product.category}`
+    : product.titleHe;
   return {
-    title: product.titleHe,
+    title: titleTemplate,
     description: product.shortDescription,
     keywords,
     alternates: { canonical: `/product/${product.slug}` },
