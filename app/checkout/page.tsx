@@ -43,8 +43,14 @@ export default function CheckoutPage() {
   const showToast = useToastStore((s) => s.show);
   const subtotal = useCartStore(selectCartTotal);
   const shipping = calcShipping(subtotal);
-  const couponDiscount = coupon ? calcDiscount(coupon, subtotal) : 0;
-  const couponLabel = coupon?.label ?? null;
+
+  // בדיקה: אם לא יש קופון אבל יש קוד מועדון בlocalStorage — החל 10% אוטומטי
+  const memberCode = typeof window !== 'undefined' ? localStorage.getItem('emuna-club-code') : null;
+  const memberCoupon = memberCode ? { code: memberCode, type: 'pct' as const, value: 10, label: '10% הנחת מועדון', server: true } : null;
+  const effectiveCoupon = (coupon || memberCoupon) as typeof coupon | null;
+
+  const couponDiscount = effectiveCoupon ? calcDiscount(effectiveCoupon, subtotal) : 0;
+  const couponLabel = effectiveCoupon?.label ?? null;
   const total = subtotal + shipping - couponDiscount;
 
   useEffect(() => setMounted(true), []);
