@@ -50,11 +50,18 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     '@graph': [
       {
         '@type': 'Product',
+        '@id': `${SITE_URL}/product/${product.slug}#product`,
         name: product.titleHe,
         sku: product.sku,
         description: product.shortDescription,
         image: `${SITE_URL}${product.imageUrl}`,
+        url: `${SITE_URL}/product/${product.slug}`,
         material: product.materials.join(', '),
+        category: product.category,
+        ...(product.certification && {
+          certificateNumber: product.certification,
+          certificationDetails: { '@type': 'Text', value: product.certification },
+        }),
         offers: {
           '@type': 'Offer',
           url: `${SITE_URL}/product/${product.slug}`,

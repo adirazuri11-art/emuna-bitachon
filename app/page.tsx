@@ -43,6 +43,25 @@ function buildJsonLd() {
     '@context': 'https://schema.org',
     '@graph': [
       {
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: 'אמונה וביטחון',
+        url: SITE_URL,
+        logo: `${SITE_URL}/brand/emuna-vebitachon-logo.png`,
+        description:
+          'חנות יודאיקה יוקרתית בהתאמה אישית — כיפות לאירועים, גביעי קידוש מכסף, מזוזות מהודרות, טליתות, פמוטי שבת ומתנות יהודיות',
+        sameAs: [
+          'https://www.instagram.com/emunavebitachon',
+          'https://www.whatsapp.com',
+        ],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'Customer Support',
+          telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ? `+${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER.replace(/^972/, '972')}` : '+972-50-3096969',
+          email: 'support@emunavebitachon.co.il',
+        },
+      },
+      {
         '@type': 'OnlineStore',
         '@id': `${SITE_URL}/#store`,
         name: 'אמונה וביטחון',
