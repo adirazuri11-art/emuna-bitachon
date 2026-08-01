@@ -7,6 +7,7 @@
 // ============================================================
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import NextImage from 'next/image';
 import { AlertTriangle, Check, ImagePlus, Minus, Plus, Save, ShoppingBag, X } from 'lucide-react';
 import { METHOD_LABELS, type CatalogProduct } from '@/lib/catalog';
 import { computePrice, nextBulkTier } from '@/lib/pricing';
@@ -310,8 +311,9 @@ export function ProductCustomizer({ product, variantSelections }: Props) {
               </span>
               {state.logoDataUrl ? (
                 <div className="flex items-center gap-2 rounded-xl border border-navy/10 p-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={state.logoDataUrl} alt="הלוגו שהועלה" className="h-10 w-10 rounded object-contain" />
+                  <div className="relative h-10 w-10 flex-shrink-0 rounded">
+                    <NextImage src={state.logoDataUrl} alt="הלוגו שהועלה" fill className="object-contain" sizes="40px" />
+                  </div>
                   <span className="flex-1 truncate text-xs text-navy/70">{state.logoName}</span>
                   <button type="button" aria-label="הסרת הלוגו"
                     onClick={() => { patch({ logoDataUrl: null, logoName: null }); setLogoWarning(null); }}

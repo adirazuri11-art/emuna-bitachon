@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Check, ChevronLeft, FileText, Heart, MessageCircle, ShieldCheck, ShoppingBag, Truck } from 'lucide-react';
 import {
   BADGE_LABELS,
@@ -166,17 +167,17 @@ export function ProductPageClient({
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && setZoomed((z) => !z)}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={view.src}
               alt={`${product.titleHe} — ${view.label}`}
-              className="aspect-square w-full object-contain p-6 transition-transform duration-500"
+              fill
+              className="object-contain p-6 transition-transform duration-500"
               style={{ transform: `scale(${zoomed ? 1.8 : 1})` }}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 70vw, 50vw"
             />
             {view.src.startsWith('http') && (
               <span className="pointer-events-none absolute bottom-2 start-2 z-[1] flex items-center rounded-md bg-white/85 px-2 py-1 shadow-sm backdrop-blur-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/emuna-vebitachon-logo.png" alt="אמונה וביטחון" className="h-5 w-auto opacity-90" />
+                <Image src="/brand/emuna-vebitachon-logo.png" alt="אמונה וביטחון" width={20} height={20} className="opacity-90" />
               </span>
             )}
             {product.isPlaceholderImage && (
@@ -196,8 +197,9 @@ export function ProductPageClient({
                 )}
                 aria-label={g.label}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={g.src} alt="" className="aspect-square w-full object-contain p-2" />
+                <div className="relative aspect-square w-full">
+                  <Image src={g.src} alt={g.label} fill className="object-contain p-2" sizes="100px" />
+                </div>
                 <span className="block bg-white py-1 text-center text-[10px] text-navy/60">{g.label}</span>
               </button>
             ))}

@@ -4,6 +4,7 @@
 // המנגנון עובד באמת: הטופס נשלח כהודעת וואטסאפ מסודרת (אין צורך בשרת).
 
 import { Suspense, useState, type FormEvent } from 'react';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Building2, CalendarDays, MessageCircle, Package } from 'lucide-react';
 import { getProduct } from '@/lib/catalog';
@@ -68,8 +69,9 @@ function QuoteForm() {
 
       {product && (
         <div className="mx-auto mt-6 flex max-w-md items-center gap-3 rounded-2xl border border-gold/25 bg-white p-3 shadow-card">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={product.imageUrl!} alt={product.titleHe} className="h-16 w-14 rounded-xl object-cover" />
+          <div className="relative h-16 w-14 flex-shrink-0">
+            <Image src={product.imageUrl!} alt={product.titleHe} fill className="rounded-xl object-cover" sizes="56px" />
+          </div>
           <div>
             <p className="text-sm font-medium text-navy">{product.titleHe}</p>
             <p className="text-xs text-navy/50">מק"ט {product.sku}</p>

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -210,8 +211,9 @@ export function Navbar() {
                         onClick={() => setSuggestionsOpen(false)}
                         className={cn('flex items-center gap-3 px-3 py-2 transition-colors',
                           i === activeIndex ? 'bg-gold/10' : 'hover:bg-cream')}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={product.imageUrl!} alt="" className="h-11 w-9 rounded-lg object-cover" />
+                        <div className="relative h-11 w-9 flex-shrink-0">
+                          <Image src={product.imageUrl!} alt={product.titleHe} fill className="rounded-lg object-cover" sizes="36px" />
+                        </div>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm text-navy">{product.titleHe}</span>
                           <span className="text-xs text-gold-soft">{product.category}</span>

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ShieldCheck, ShoppingBag, X } from 'lucide-react';
 import type { CatalogProduct } from '@/lib/catalog';
@@ -51,8 +52,7 @@ export function QuickViewModal({
 
             <div className="grid sm:grid-cols-2">
               <div className="relative aspect-square bg-gradient-to-b from-white to-cream sm:aspect-auto">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={product.imageUrl!} alt={product.titleHe} className="h-full w-full object-contain p-4" />
+                <Image src={product.imageUrl!} alt={product.titleHe} fill className="object-contain p-4" sizes="(max-width: 640px) 100vw, 50vw" />
                 {product.isPlaceholderImage && (
                   <span className="absolute bottom-2 start-2 rounded-full bg-navy/80 px-2 py-0.5 text-[10px] text-cream/70">
                     תמונת המחשה
