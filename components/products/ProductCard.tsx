@@ -194,12 +194,12 @@ export function ProductCard({ product, onQuickView }: Props) {
                 </span>
 
                 {/* הנחה של 15% לחברי מועדון חדשים */}
-                <div className="mt-2 space-y-1 rounded-lg bg-emerald-50 p-2">
-                  <p className="text-[11px] font-bold text-emerald-700">✨ לחברי מועדון</p>
-                  <p className="text-sm font-bold text-emerald-600">
+                <div className="mt-2 rounded-lg border border-gold/30 bg-gradient-to-br from-gold/5 to-transparent px-3 py-2 shadow-sm">
+                  <p className="text-[10px] font-semibold text-gold uppercase tracking-wide">✨ הטבת מועדון</p>
+                  <p className="mt-1 text-base font-bold text-navy">
                     {formatPrice(Math.round(price * 0.85))}
                   </p>
-                  <p className="text-[10px] text-emerald-600">15% הנחה למשך 7 ימים</p>
+                  <p className="text-[9px] text-navy/60">15% הנחה • 7 ימים</p>
                 </div>
 
                 {product.minOrderUnits && (
