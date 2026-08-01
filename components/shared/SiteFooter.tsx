@@ -26,14 +26,14 @@ export function SiteFooter() {
 
         <nav aria-label="קטגוריות בפוטר">
           <p className="mb-3 text-sm font-bold text-gold">הקטגוריות</p>
-          <ul className="space-y-2 text-sm">
-            {CATEGORIES.slice(0, 5).map((c) => (
+          <ul className="space-y-1.5 text-xs leading-snug">
+            {CATEGORIES.slice(0, 8).map((c) => (
               <li key={c.slug}>
-                <Link href={`/category/${c.slug}`} className="transition-colors hover:text-gold">{c.nameHe}</Link>
+                <Link href={`/category/${c.slug}`} className="transition-colors hover:text-gold text-cream/70 hover:text-gold">{c.nameHe}</Link>
               </li>
             ))}
             <li>
-              <Link href="/search" className="text-gold/70 transition-colors hover:text-gold">לכל הקטגוריות →</Link>
+              <Link href="/search" className="text-gold/70 transition-colors hover:text-gold font-bold text-xs">לכל {CATEGORIES.length} קטגוריות →</Link>
             </li>
           </ul>
         </nav>
