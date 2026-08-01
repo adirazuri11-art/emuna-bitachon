@@ -17,7 +17,12 @@ const nextConfig = isStaticExport
           { protocol: 'https', hostname: '**.wolt.com' },
           { protocol: 'https', hostname: '**.cloudinary.com' },
         ],
+        formats: ['image/avif', 'image/webp'],
       },
+      compress: true,
+      poweredByHeader: false,
+      productionBrowserSourceMaps: false,
+      reactStrictMode: true,
     };
 
 export default nextConfig;
