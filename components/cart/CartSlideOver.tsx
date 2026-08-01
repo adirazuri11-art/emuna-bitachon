@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Minus, Plus, ShoppingBag, Trash2, Truck, X } from 'lucide-react';
-import { useState } from 'react';
+import { Minus, Plus, ShoppingBag, Trash2, Truck, X, Gift } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useCartStore, selectCartTotal } from '@/store/cart';
 import { useUIStore } from '@/store/ui';
 import { useToastStore } from '@/store/toast';
@@ -20,6 +20,15 @@ export function CartSlideOver() {
   const showToast = useToastStore((s) => s.show);
   const [couponInput, setCouponInput] = useState('');
   const [applying, setApplying] = useState(false);
+  const [showMemberPrompt, setShowMemberPrompt] = useState(false);
+
+  // בדוק אם הלקוח הוא חבר מועדון כשהסל נפתח
+  useEffect(() => {
+    if (isCartOpen && items.length > 0) {
+      const memberCode = typeof window !== 'undefined' ? localStorage.getItem('emuna-club-code') : null;
+      setShowMemberPrompt(!memberCode); // הצע הצטרפות אם אין קוד
+    }
+  }, [isCartOpen, items.length]);
 
   const couponDiscount = coupon ? calcDiscount(coupon, total) : 0;
 
@@ -56,10 +65,43 @@ export function CartSlideOver() {
   };
 
   return (
-    <AnimatePresence>
-      {isCartOpen && (
-        <>
-          <motion.div
+    <>
+      {showMemberPrompt && isCartOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-4 left-4 right-4 z-[60] max-w-sm rounded-xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent p-4 shadow-lg backdrop-blur-sm md:left-auto md:right-20"
+        >
+          <div className="flex gap-3">
+            <Gift className="h-5 w-5 flex-shrink-0 text-gold" />
+            <div className="flex-1">
+              <p className="font-bold text-navy">✨ קבל 10% הנחה!</p>
+              <p className="mt-1 text-sm text-navy/70">הצטרף למועדון בחינם והנחה מיידית על הזמנה זו</p>
+              <button
+                onClick={() => {
+                  setShowMemberPrompt(false);
+                  showToast('עבור להצטרפות למועדון', 'info');
+                }}
+                className="mt-2 text-sm font-bold text-gold hover:underline"
+              >
+                הצטרף עכשיו →
+              </button>
+            </div>
+            <button
+              onClick={() => setShowMemberPrompt(false)}
+              className="text-navy/30 hover:text-navy"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      <AnimatePresence>
+        {isCartOpen && (
+          <>
+            <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -204,6 +246,7 @@ export function CartSlideOver() {
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   );
 }
