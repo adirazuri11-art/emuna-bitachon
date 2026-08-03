@@ -188,6 +188,63 @@ export const AUDIENCE_LABELS: Record<Audience, string> = {
 
 export const OCCASIONS = ['בר מצווה', 'חתונה', 'בית חדש', 'יולדת', 'חג', 'שבת'] as const;
 
+// ============================================================
+// Category → Audience/Occasions Mapping
+// This ensures gift finder can recommend products effectively
+// ============================================================
+
+export const CATEGORY_TO_AUDIENCE_MAP: Record<string, Audience[]> = {
+  'tzitzit-tallit': ['men', 'family'],
+  'kippot': ['men', 'kids', 'family'],
+  'headscarves': ['women', 'family'],
+  'kiddush-cups': ['men', 'women', 'family'],
+  'candlesticks': ['women', 'family'],
+  'home-judaica': ['family'],
+  'mezuzot': ['family'],
+  'challah-covers': ['women', 'family'],
+  'havdalah': ['family'],
+  'washing-cups': ['family'],
+  'blessings': ['family'],
+  'books-siddurim': ['men', 'women', 'family'],
+  'gifts-events': ['men', 'women', 'kids', 'family'],
+  'judaica-jewelry': ['women'],
+  'jewish-art': ['family'],
+  'holidays-moadim': ['family'],
+  'kids': ['kids', 'family'],
+  'brit-newborn': ['family'],
+  'jerusalem-gifts': ['men', 'women', 'kids', 'family'],
+};
+
+export const CATEGORY_TO_OCCASIONS_MAP: Record<string, string[]> = {
+  'tzitzit-tallit': ['בר מצווה', 'שבת', 'חג'],
+  'kippot': ['בר מצווה', 'שבת', 'חג'],
+  'headscarves': ['שבת', 'חג'],
+  'kiddush-cups': ['חתונה', 'בר מצווה', 'שבת', 'חג', 'בית חדש'],
+  'candlesticks': ['חתונה', 'שבת', 'חג', 'בית חדש'],
+  'home-judaica': ['בית חדש', 'שבת', 'חג'],
+  'mezuzot': ['בית חדש'],
+  'challah-covers': ['שבת', 'חג'],
+  'havdalah': ['שבת', 'חג'],
+  'washing-cups': ['שבת', 'חג'],
+  'blessings': ['בית חדש', 'יולדת'],
+  'books-siddurim': ['בר מצווה', 'שבת', 'חג'],
+  'gifts-events': ['חתונה', 'בר מצווה', 'יולדת', 'בית חדש', 'חג'],
+  'judaica-jewelry': ['חתונה', 'בר מצווה', 'יולדת'],
+  'jewish-art': ['בית חדש', 'חתונה'],
+  'holidays-moadim': ['חג', 'שבת'],
+  'kids': ['בר מצווה', 'יולדת', 'חג'],
+  'brit-newborn': ['יולדת'],
+  'jerusalem-gifts': ['חתונה', 'בר מצווה', 'יולדת', 'בית חדש', 'חג'],
+};
+
+export const getAudienceForCategory = (category: string): Audience[] => {
+  return CATEGORY_TO_AUDIENCE_MAP[category] || [];
+};
+
+export const getOccasionsForCategory = (category: string): string[] => {
+  return CATEGORY_TO_OCCASIONS_MAP[category] || [];
+};
+
 export interface VariantOption {
   id: string;
   label: string;
@@ -915,7 +972,18 @@ void EXTENDED_PRODUCTS_3;
 void BOOK_PRODUCTS;
 void LEGACY_SUBCATS;
 
-export const PRODUCTS: CatalogProduct[] = [...SUPPLIER_PRODUCTS];
+// Enrich products with audience and occasions based on category
+const enrichProductMetadata = (products: CatalogProduct[]): CatalogProduct[] => {
+  return products.map((p) => ({
+    ...p,
+    // Add or overwrite audience from category mapping if not already set
+    audience: p.audience?.length ? p.audience : getAudienceForCategory(p.category),
+    // Add or overwrite occasions from category mapping if not already set
+    occasions: p.occasions?.length ? p.occasions : getOccasionsForCategory(p.category),
+  }));
+};
+
+export const PRODUCTS: CatalogProduct[] = enrichProductMetadata([...SUPPLIER_PRODUCTS]);
 
 // ---------- Helpers ----------
 
