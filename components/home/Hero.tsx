@@ -1,11 +1,10 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ShieldCheck, Sparkles, Star, Truck } from 'lucide-react';
 import Link from 'next/link';
-import { useUIStore } from '@/store/ui';
+import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 
-export interface HeroProps {
+interface HeroProps {
   badge: string;
   title: string;
   highlight: string;
@@ -14,8 +13,14 @@ export interface HeroProps {
 }
 
 const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.14, delayChildren: 0.1 } },
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
 };
 
 const item = {
@@ -24,8 +29,6 @@ const item = {
 };
 
 export function Hero({ badge, title, highlight, subtitle, primaryCta }: HeroProps) {
-  const openAssistant = useUIStore((s) => s.openAssistant);
-
   return (
     <section className="relative flex min-h-[82vh] items-center overflow-hidden bg-navy-deep">
       {/* שכבות רקע — זוהר זהב עדין */}
@@ -84,28 +87,6 @@ export function Hero({ badge, title, highlight, subtitle, primaryCta }: HeroProp
             {primaryCta}
             <span className="absolute inset-0 -translate-x-full bg-gradient-to-l from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
           </Link>
-          <button
-            onClick={() => openAssistant()}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-gold/40 bg-white/5 px-8 py-3.5 font-bold text-cream backdrop-blur-sm transition-all hover:border-gold hover:bg-gold/10"
-          >
-            <Sparkles className="h-4 w-4 text-gold" />
-            התאמת מוצר באמצעות AI
-          </button>
-        </motion.div>
-
-        <motion.div
-          variants={item}
-          className="mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-cream/60"
-        >
-          <span className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-gold" /> אישורי כשרות מאומתים
-          </span>
-          <span className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-gold" /> אחריות לכל החיים
-          </span>
-          <span className="flex items-center gap-2">
-            <Truck className="h-4 w-4 text-gold" /> משלוח אקספרס לכל הארץ
-          </span>
         </motion.div>
       </motion.div>
     </section>
