@@ -30,7 +30,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://hdeoeycbpuxwtabuhawz.supabase.co",
+      "connect-src 'self' https://www.google-analytics.com https://www.googletagmanager.com https://hdeoeycbpuxwtabuhawz.supabase.co https://www.hebcal.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
