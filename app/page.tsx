@@ -134,7 +134,7 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd()) }} />
       
       {/* מאתר המתנה המושלמת — ראשון באתר */}
-      <section className="min-h-screen bg-navy-deep px-4 py-12">
+      <section className="min-h-[100vh] border-b-4 border-gold bg-navy-deep px-4 py-12">
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-10">
             <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-navy">
