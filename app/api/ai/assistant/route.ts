@@ -1,5 +1,4 @@
-import { anthropic } from '@ai-sdk/anthropic';
-import { convertToCoreMessages, streamText } from 'ai';
+import Anthropic from '@anthropic-ai/sdk';
 
 export const maxDuration = 30;
 
@@ -19,24 +18,41 @@ const SYSTEM_PROMPT = `אתה "היועץ ההלכתי והאופנתי" של ח
 - תשובות קצרות וממוקדות (עד 150 מילים), אלא אם התבקש פירוט.`;
 
 export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return Response.json(
+        { error: 'יועץ ההלכתי עדיין לא מחובר — יש להגדיר ANTHROPIC_API_KEY בקובץ .env כדי להפעיל אותו' },
+        { status: 503 }
+      );
+    }
+
+    const { messages } = await req.json();
+
+    const client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-5',
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: messages,
+    });
+
+    const textContent = response.content.find((c) => c.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      return Response.json(
+        { error: 'No text response from AI' },
+        { status: 500 }
+      );
+    }
+
+    return Response.json({ content: textContent.text });
+  } catch (error) {
+    console.error('AI Assistant error:', error);
     return Response.json(
-      { error: 'ANTHROPIC_API_KEY is not configured' },
-      { status: 503 }
+      { error: 'Failed to process request' },
+      { status: 500 }
     );
   }
-
-  const { messages } = await req.json();
-
-  const result = await streamText({
-    model: anthropic('claude-sonnet-5'),
-    system: SYSTEM_PROMPT,
-    messages: convertToCoreMessages(messages),
-    maxTokens: 1024,
-    temperature: 0.7,
-  });
-
-  // TODO: לרשום את האינטראקציה ב-AIInteraction (Prisma) לצורך מדידת המרות
-
-  return result.toDataStreamResponse();
 }

@@ -4,11 +4,10 @@ out/
 build/
 .env
 .env.local
-.env.production
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
 .vercel
 .supplier-orig
-.env*
 .env
+.env.local
