@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { Anthropic } from '@anthropic-ai/sdk';
 
 export const maxDuration = 30;
 
@@ -19,7 +19,8 @@ const SYSTEM_PROMPT = `אתה "היועץ ההלכתי והאופנתי" של ח
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
       return Response.json(
         { error: 'יועץ ההלכתי עדיין לא מחובר — יש להגדיר ANTHROPIC_API_KEY בקובץ .env כדי להפעיל אותו' },
         { status: 503 }
@@ -28,30 +29,41 @@ export async function POST(req: Request) {
 
     const { messages } = await req.json();
 
-    const client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    const client = new Anthropic({ apiKey });
 
-    const response = await client.messages.create({
+    const stream = client.messages.stream({
       model: 'claude-sonnet-5',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: messages,
     });
 
-    const textContent = response.content.find((c) => c.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      return Response.json(
-        { error: 'No text response from AI' },
-        { status: 500 }
-      );
-    }
+    // Create a readable stream for streaming the response
+    const reader = await stream;
+    const encoder = new TextEncoder();
+    
+    const customReadable = new ReadableStream({
+      async start(controller) {
+        for await (const chunk of reader) {
+          if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: chunk.delta.text })}\n\n`));
+          }
+        }
+        controller.close();
+      },
+    });
 
-    return Response.json({ content: textContent.text });
+    return new Response(customReadable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('AI Assistant error:', error);
     return Response.json(
-      { error: 'Failed to process request' },
+      { error: 'Failed to process request', details: String(error) },
       { status: 500 }
     );
   }
