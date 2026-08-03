@@ -1,7 +1,9 @@
 'use client';
 
-import { useChat } from 'ai/react';
+import { useState, type FormEvent } from 'react';
 import { Sparkles, Send, Loader2 } from 'lucide-react';
+
+type Msg = { role: 'user' | 'assistant'; content: string };
 
 const SUGGESTIONS = [
   'תן לי סיכום קצר של מצב העסק',
@@ -11,9 +13,39 @@ const SUGGESTIONS = [
 ];
 
 export function Copilot() {
-  const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
-    api: '/api/crm/copilot',
-  });
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const ask = async (q: string) => {
+    const question = q.trim();
+    if (!question || loading) return;
+    const next: Msg[] = [...messages, { role: 'user', content: question }];
+    setMessages(next);
+    setInput('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/crm/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: next }),
+      });
+      const j = await res.json().catch(() => ({}));
+      const text =
+        j.text ||
+        (j.detail ? `לא הצלחתי לענות (${j.error}): ${j.detail}` : 'לא הצלחתי לענות כרגע.');
+      setMessages((m) => [...m, { role: 'assistant', content: text }]);
+    } catch {
+      setMessages((m) => [...m, { role: 'assistant', content: 'שגיאת רשת — נסו שוב.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    ask(input);
+  };
 
   return (
     <div className="flex h-full flex-col rounded-2xl border border-gold/20 bg-white/5">
@@ -34,7 +66,7 @@ export function Copilot() {
             {SUGGESTIONS.map((q) => (
               <button
                 key={q}
-                onClick={() => append({ role: 'user', content: q })}
+                onClick={() => ask(q)}
                 className="block w-full rounded-xl border border-gold/15 bg-white/5 px-4 py-2.5 text-start text-sm text-cream/80 transition-colors hover:border-gold/50 hover:text-gold"
               >
                 {q}
@@ -42,11 +74,8 @@ export function Copilot() {
             ))}
           </div>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={m.role === 'user' ? 'flex justify-start' : 'flex justify-end'}
-            >
+          messages.map((m, i) => (
+            <div key={i} className={m.role === 'user' ? 'flex justify-start' : 'flex justify-end'}>
               <div
                 className={
                   m.role === 'user'
@@ -59,24 +88,24 @@ export function Copilot() {
             </div>
           ))
         )}
-        {isLoading && (
+        {loading && (
           <div className="flex items-center gap-2 text-sm text-cream/50">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> חושב…
           </div>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t border-white/10 p-3">
+      <form onSubmit={onSubmit} className="border-t border-white/10 p-3">
         <div className="flex items-center gap-2">
           <input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="שאלו על העסק…"
             className="flex-1 rounded-full border border-gold/20 bg-white/10 px-4 py-2.5 text-sm text-cream outline-none placeholder:text-cream/40 focus:border-gold"
           />
           <button
             type="submit"
-            disabled={isLoading || !input.trim()}
+            disabled={loading || !input.trim()}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-l from-gold to-gold-soft text-navy transition-transform hover:scale-105 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />

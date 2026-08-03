@@ -1,13 +1,10 @@
 // ============================================================
 // CRM AI Copilot — Hebrew business assistant.
-// Grounded: it receives ONLY an aggregated, non-PII snapshot of real CRM
-// data and must answer strictly from it (or say it doesn't have the number).
-// No customer emails / raw rows are ever sent to the model.
-// Gated by the CRM session cookie.
+// Calls the Anthropic Messages API directly (no SDK version coupling).
+// Grounded: receives ONLY an aggregated, non-PII snapshot of real CRM data
+// and must answer strictly from it. Gated by the CRM session cookie.
 // ============================================================
 
-import { anthropic } from '@ai-sdk/anthropic';
-import { convertToCoreMessages, streamText } from 'ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { isCrmAuthed } from '@/lib/crm/auth';
 import { getCrmContext } from '@/lib/crm/data';
@@ -15,15 +12,14 @@ import { getCrmContext } from '@/lib/crm/data';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
-export async function POST(req: NextRequest) {
-  if (!isCrmAuthed(req)) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: 'AI not configured' }, { status: 503 });
-  }
+const MODEL = 'claude-sonnet-5';
 
-  const { messages } = await req.json();
+export async function POST(req: NextRequest) {
+  if (!isCrmAuthed(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return NextResponse.json({ error: 'AI not configured' }, { status: 503 });
+
+  const { messages } = await req.json().catch(() => ({ messages: [] }));
   const context = await getCrmContext();
 
   const system = `אתה ה-Copilot העסקי של מרכז השליטה (CRM) של חנות היודאיקה "אמונה וביטחון".
@@ -39,13 +35,36 @@ export async function POST(req: NextRequest) {
 נתוני ה-CRM (מצב אמיתי, נכון ל-${context.asOf}):
 ${JSON.stringify(context, null, 2)}`;
 
-  const result = await streamText({
-    model: anthropic('claude-sonnet-5'),
-    system,
-    messages: convertToCoreMessages(messages ?? []),
-    maxTokens: 700,
-    temperature: 0.3,
-  });
+  const apiMessages = (Array.isArray(messages) ? messages : [])
+    .filter((m: { role?: string }) => m?.role === 'user' || m?.role === 'assistant')
+    .map((m: { role: string; content: unknown }) => ({
+      role: m.role,
+      content: String(m.content ?? '').slice(0, 4000),
+    }))
+    .slice(-12);
 
-  return result.toDataStreamResponse();
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: MODEL, max_tokens: 700, system, messages: apiMessages }),
+    });
+
+    if (!res.ok) {
+      const detail = (await res.text()).slice(0, 300);
+      return NextResponse.json({ error: 'ai_error', detail }, { status: 200 });
+    }
+    const data = await res.json();
+    const text =
+      Array.isArray(data?.content)
+        ? data.content.map((c: { text?: string }) => c.text ?? '').join('').trim()
+        : '';
+    return NextResponse.json({ text: text || 'לא התקבלה תשובה.' });
+  } catch (e) {
+    return NextResponse.json({ error: 'ai_exception', detail: String(e).slice(0, 200) }, { status: 200 });
+  }
 }
