@@ -67,7 +67,7 @@ export function Navbar() {
 
   const cartCount = useCartStore(selectCartCount);
   const wishlistCount = useWishlistStore((s) => s.slugs.length);
-  const { openCart, openAssistant } = useUIStore();
+  const { openCart } = useUIStore();
 
   useEffect(() => setMounted(true), []);
 
@@ -185,11 +185,6 @@ export function Navbar() {
                 className="gold-ring w-full rounded-full bg-white py-2.5 pe-4 ps-24 text-sm outline-none placeholder:text-navy/40 focus:shadow-gold"
               />
               <div className="absolute inset-y-0 start-1.5 flex items-center gap-1">
-                <button type="button" onClick={() => query.trim() && openAssistant(query.trim())}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-navy text-gold transition-colors hover:bg-gold hover:text-navy"
-                  aria-label="שאלו את היועץ החכם" title="שאלו את היועץ החכם">
-                  <Sparkles className="h-4 w-4" />
-                </button>
                 <button type="submit" aria-label="חיפוש"
                   className="flex h-8 w-8 items-center justify-center rounded-full text-navy/50 transition-colors hover:text-gold">
                   <Search className="h-4 w-4" />
