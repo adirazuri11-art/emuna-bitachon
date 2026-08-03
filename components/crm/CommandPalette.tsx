@@ -11,6 +11,9 @@ interface Member {
 
 const NAV = [
   { label: 'סקירה כללית', href: '/crm', icon: LayoutDashboard },
+  { label: 'לקוחות', href: '/crm/customers', icon: User },
+  { label: 'מאתר המתנה', href: '/crm/gift-finder', icon: LayoutDashboard },
+  { label: 'קופונים', href: '/crm/coupons', icon: Ticket },
 ];
 
 export function CommandPalette() {

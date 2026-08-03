@@ -67,6 +67,83 @@ export async function getRecentClubMembers(limit = 25): Promise<ClubMemberRow[]>
   }
 }
 
+// ---------- Customers (club members = real customers) ----------
+export interface CustomerRow extends ClubMemberRow {
+  couponUsedAt: string | null;
+  status: 'used' | 'active' | 'expired';
+  daysSinceJoin: number;
+}
+
+const dayDiff = (iso: string) =>
+  Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+
+function memberStatus(m: { couponUsed: boolean; couponExpires: Date }): CustomerRow['status'] {
+  if (m.couponUsed) return 'used';
+  if (m.couponExpires.getTime() < Date.now()) return 'expired';
+  return 'active';
+}
+
+export async function getAllCustomers(search = '', limit = 200): Promise<CustomerRow[]> {
+  try {
+    const q = search.trim();
+    const rows = await prisma.clubMember.findMany({
+      where: q
+        ? { OR: [{ email: { contains: q, mode: 'insensitive' } }, { couponCode: { contains: q, mode: 'insensitive' } }] }
+        : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return rows.map((m) => ({
+      email: m.email,
+      couponCode: m.couponCode,
+      couponUsed: m.couponUsed,
+      couponUsedAt: m.couponUsedAt ? m.couponUsedAt.toISOString() : null,
+      couponExpires: m.couponExpires.toISOString(),
+      createdAt: m.createdAt.toISOString(),
+      status: memberStatus(m),
+      daysSinceJoin: dayDiff(m.createdAt.toISOString()),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export interface CustomerTimelineEvent {
+  date: string;
+  title: string;
+  kind: 'join' | 'coupon' | 'note';
+}
+
+export async function getCustomer(email: string): Promise<{
+  customer: CustomerRow | null;
+  timeline: CustomerTimelineEvent[];
+}> {
+  try {
+    const m = await prisma.clubMember.findUnique({ where: { email } });
+    if (!m) return { customer: null, timeline: [] };
+    const customer: CustomerRow = {
+      email: m.email,
+      couponCode: m.couponCode,
+      couponUsed: m.couponUsed,
+      couponUsedAt: m.couponUsedAt ? m.couponUsedAt.toISOString() : null,
+      couponExpires: m.couponExpires.toISOString(),
+      createdAt: m.createdAt.toISOString(),
+      status: memberStatus(m),
+      daysSinceJoin: dayDiff(m.createdAt.toISOString()),
+    };
+    const timeline: CustomerTimelineEvent[] = [
+      { date: customer.createdAt, title: 'הצטרפ/ה למועדון וקיבל/ה קוד הטבה אישי', kind: 'join' },
+    ];
+    if (customer.couponUsedAt) {
+      timeline.push({ date: customer.couponUsedAt, title: 'מימש/ה את קוד ההטבה', kind: 'coupon' });
+    }
+    timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return { customer, timeline };
+  } catch {
+    return { customer: null, timeline: [] };
+  }
+}
+
 // ---------- Gift Finder analytics (new table — real once instrumented) ----------
 export interface GiftFinderStats {
   tableReady: boolean;
