@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Sparkles, Ticket, Gift } from 'lucide-react';
+import { LayoutDashboard, Users, Sparkles, Ticket, Gift, Instagram } from 'lucide-react';
 
 const NAV = [
   { href: '/crm', label: 'סקירה', icon: LayoutDashboard, exact: true },
   { href: '/crm/customers', label: 'לקוחות', icon: Users },
   { href: '/crm/gift-finder', label: 'מאתר המתנה', icon: Sparkles },
+  { href: '/crm/social', label: 'רשתות חברתיות', icon: Instagram },
   { href: '/crm/coupons', label: 'קופונים', icon: Ticket },
 ];
 
