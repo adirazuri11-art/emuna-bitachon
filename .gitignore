@@ -11,3 +11,4 @@ next-env.d.ts
 .vercel
 .supplier-orig
 .env*
+.env
