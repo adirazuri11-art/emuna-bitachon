@@ -31,9 +31,18 @@ export function Copilot() {
         body: JSON.stringify({ messages: next }),
       });
       const j = await res.json().catch(() => ({}));
-      const text =
-        j.text ||
-        (j.detail ? `לא הצלחתי לענות (${j.error}): ${j.detail}` : 'לא הצלחתי לענות כרגע.');
+      let text: string = j.text;
+      if (!text) {
+        const detail = String(j.detail ?? '');
+        if (/credit balance|billing|quota/i.test(detail)) {
+          text =
+            'ה-Copilot מוכן ופעיל — אך חסר קרדיט בחשבון ה-AI (Anthropic). ברגע שתתווסף יתרה, התשובות יעבדו מיד, ללא שינוי נוסף.';
+        } else if (res.status === 503) {
+          text = 'שירות ה-AI עדיין לא הוגדר במערכת.';
+        } else {
+          text = 'לא הצלחתי לענות כרגע — נסו שוב בעוד רגע.';
+        }
+      }
       setMessages((m) => [...m, { role: 'assistant', content: text }]);
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'שגיאת רשת — נסו שוב.' }]);
