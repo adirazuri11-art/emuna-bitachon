@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Gift, LayoutDashboard } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
+import { CommandPalette } from '@/components/crm/CommandPalette';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,7 @@ export default function CrmLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <nav className="flex items-center gap-1 text-sm">
+            <CommandPalette />
             <Link
               href="/crm"
               className="flex items-center gap-2 rounded-full px-4 py-2 text-cream/80 transition-colors hover:bg-white/5 hover:text-gold"

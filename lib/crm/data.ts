@@ -136,6 +136,65 @@ export async function getGiftFinderStats(): Promise<GiftFinderStats> {
   };
 }
 
+// ---------- Signup trend (real, 30d) ----------
+export interface TrendPoint {
+  date: string; // ISO day
+  count: number;
+}
+
+export async function getSignupTrend(days = 30): Promise<TrendPoint[]> {
+  const start = daysAgo(days - 1);
+  start.setHours(0, 0, 0, 0);
+  // Seed all days with 0 so the chart is continuous.
+  const buckets = new Map<string, number>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+    buckets.set(d.toISOString().slice(0, 10), 0);
+  }
+  try {
+    const rows = await prisma.clubMember.findMany({
+      where: { createdAt: { gte: start } },
+      select: { createdAt: true },
+    });
+    for (const r of rows) {
+      const k = r.createdAt.toISOString().slice(0, 10);
+      if (buckets.has(k)) buckets.set(k, (buckets.get(k) ?? 0) + 1);
+    }
+  } catch {
+    /* return zero-seeded series */
+  }
+  return Array.from(buckets.entries()).map(([date, count]) => ({ date, count }));
+}
+
+// ---------- Aggregated, non-PII snapshot for the AI Copilot ----------
+export async function getCrmContext() {
+  const [club, gift, coupons] = await Promise.all([
+    getClubStats(),
+    getGiftFinderStats(),
+    getCouponStats(),
+  ]);
+  return {
+    asOf: new Date().toISOString(),
+    clubMembers: {
+      total: club.total,
+      joinedLast30d: club.joined30d,
+      couponUsed: club.usedCoupon,
+      couponActive: club.activeCoupon,
+    },
+    coupons: coupons.tableReady ? { total: coupons.total, used: coupons.used } : null,
+    giftFinder: gift.tableReady
+      ? {
+          totalSessions: gift.total,
+          last30d: gift.last30d,
+          clickRatePct: Math.round(gift.clickRate * 100),
+          topOccasions: gift.topOccasions,
+          topCategories: gift.topCategories,
+        }
+      : null,
+    notes: gift.tableReady ? undefined : 'Gift Finder analytics not yet enabled (migration 001 pending).',
+  };
+}
+
 // ---------- Coupons (Supabase — real, defensive) ----------
 export interface CouponStats {
   tableReady: boolean;

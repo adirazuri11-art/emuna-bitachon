@@ -7,13 +7,17 @@ import {
   MousePointerClick,
   Sparkles,
   Database,
+  TrendingUp,
 } from 'lucide-react';
 import {
   getClubStats,
   getRecentClubMembers,
   getGiftFinderStats,
   getCouponStats,
+  getSignupTrend,
 } from '@/lib/crm/data';
+import { AreaChart } from '@/components/crm/AreaChart';
+import { Copilot } from '@/components/crm/Copilot';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +36,7 @@ function Tile({
   sub?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gold/15 bg-white/5 p-5">
+    <div className="rounded-2xl border border-gold/15 bg-white/5 p-5 transition-colors hover:border-gold/30">
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gold/15">
         <Icon className="h-5 w-5 text-gold" />
       </div>
@@ -64,12 +68,14 @@ function BarList({ items }: { items: { label: string; count: number }[] }) {
 }
 
 export default async function CrmDashboard() {
-  const [club, members, gift, coupons] = await Promise.all([
+  const [club, members, gift, coupons, trend] = await Promise.all([
     getClubStats(),
-    getRecentClubMembers(25),
+    getRecentClubMembers(12),
     getGiftFinderStats(),
     getCouponStats(),
+    getSignupTrend(30),
   ]);
+  const trendTotal = trend.reduce((s, d) => s + d.count, 0);
 
   return (
     <div className="space-y-8">
@@ -77,16 +83,39 @@ export default async function CrmDashboard() {
         <h1 className="font-display text-2xl font-bold text-cream">סקירה כללית</h1>
         <p className="mt-1 flex items-center gap-2 text-sm text-cream/50">
           <Database className="h-3.5 w-3.5" />
-          נתונים אמיתיים בזמן אמת מ-Supabase · ללא נתוני דמו
+          נתונים אמיתיים בזמן אמת מ-Supabase · ללא נתוני דמו · לחיפוש מהיר: ⌘K
         </p>
       </div>
 
-      {/* KPI tiles — real */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Tile icon={Users} label="חברי מועדון" value={club.total} sub={club.ok ? undefined : 'אין חיבור ל-DB'} />
-        <Tile icon={UserPlus} label="הצטרפו ב-30 יום" value={club.joined30d} />
-        <Tile icon={TicketCheck} label="קופוני מועדון שמומשו" value={club.usedCoupon} />
-        <Tile icon={Ticket} label="קופוני מועדון פעילים" value={club.activeCoupon} />
+      {/* Top row: KPIs + Copilot */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <Tile icon={Users} label="חברי מועדון" value={club.total} sub={club.ok ? undefined : 'אין חיבור ל-DB'} />
+            <Tile icon={UserPlus} label="הצטרפו ב-30 יום" value={club.joined30d} />
+            <Tile icon={TicketCheck} label="קופונים שמומשו" value={club.usedCoupon} />
+            <Tile icon={Ticket} label="קופונים פעילים" value={club.activeCoupon} />
+          </div>
+
+          {/* Trend chart — real */}
+          <div className="rounded-2xl border border-gold/15 bg-white/5 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-gold" />
+                <h2 className="font-display text-lg font-bold text-cream">הצטרפות חברים · 30 יום</h2>
+              </div>
+              <span className="text-sm text-cream/50">
+                סה"כ <b className="text-gold">{trendTotal}</b>
+              </span>
+            </div>
+            <AreaChart data={trend} />
+          </div>
+        </div>
+
+        {/* Copilot */}
+        <div className="lg:col-span-1">
+          <Copilot />
+        </div>
       </div>
 
       {/* Gift Finder analytics */}
