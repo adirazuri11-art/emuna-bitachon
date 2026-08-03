@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Assistant, Frank_Ruhl_Libre } from 'next/font/google';
-import Script from 'next/script';
 import { Providers } from '@/components/providers/Providers';
 import { Navbar } from '@/components/header/Navbar';
 import { CartSlideOver } from '@/components/cart/CartSlideOver';
@@ -10,6 +9,7 @@ import { GiftFinderBubble } from '@/components/shared/GiftFinderBubble';
 import { AccessibilityWidget } from '@/components/shared/AccessibilityWidget';
 import { NewsletterPopup } from '@/components/shared/NewsletterPopup';
 import { WebVitalsReporter } from '@/components/analytics/WebVitalsReporter';
+import { ConsentBanner } from '@/components/consent/ConsentBanner';
 import { SiteFooter } from '@/components/shared/SiteFooter';
 import { Toaster } from '@/components/ui/Toaster';
 import './globals.css';
@@ -61,18 +61,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl" className={`${assistant.variable} ${frankRuhl.variable}`}>
       <body className="font-sans">
-        {GA_ID && (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="lazyOnload" />
-            <Script id="ga4-init" strategy="lazyOnload">
-              {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA_ID}');`}
-            </Script>
-          </>
-        )}
         <Providers>
+          <ConsentBanner />
           <WebVitalsReporter />
           <Navbar />
           <main>{children}</main>

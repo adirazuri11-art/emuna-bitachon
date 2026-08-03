@@ -15,6 +15,28 @@ export const dynamic = 'force-dynamic';
 const COUPON_PCT = 10; // אחוז הנחת הצטרפות חברים חדשים
 const VALID_DAYS = 7; // תוקף הקוד האישי
 
+// Rate limiting — In-memory, 10 הצטרפויות חדשות דקה ל-IP
+const joinLimits = new Map<string, { count: number; resetAt: number }>();
+
+function getRateLimitKey(req: NextRequest): string {
+  return req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+}
+
+function checkJoinRateLimit(req: NextRequest): boolean {
+  const key = getRateLimitKey(req);
+  const now = Date.now();
+  const limit = joinLimits.get(key);
+
+  if (!limit || now > limit.resetAt) {
+    joinLimits.set(key, { count: 1, resetAt: now + 60000 });
+    return true;
+  }
+
+  if (limit.count >= 10) return false;
+  limit.count++;
+  return true;
+}
+
 // קוד נקי וממותג: "אמונה-" + 5 ספרות (בלי אותיות אנגלית הזויות)
 const genCode = () => `אמונה-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -33,6 +55,14 @@ export async function POST(req: NextRequest) {
 
   // ---- הצטרפות: קוד ייחודי לכל אדם ----
   if (action === 'join') {
+    // Rate limiting
+    if (!checkJoinRateLimit(req)) {
+      return NextResponse.json(
+        { ok: false, error: 'יותר מדי בקשות — אנא חכו דקה' },
+        { status: 429 }
+      );
+    }
+
     const email = String(body.email ?? '').trim().toLowerCase();
     if (!isEmail(email)) return NextResponse.json({ ok: false, error: 'אימייל לא תקין' }, { status: 400 });
 
