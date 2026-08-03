@@ -19,9 +19,9 @@ import { cn } from '@/lib/utils';
 
 const BUDGETS = [
   { id: 'b100', label: 'עד ₪100', max: 100 },
-  { id: 'b250', label: 'עד ₪250', max: 250 },
-  { id: 'b600', label: 'עד ₪600', max: 600 },
-  { id: 'lux', label: 'יוקרתי — בלי הגבלה', max: Infinity },
+  { id: 'b250', label: '₪100–250', max: 250 },
+  { id: 'b600', label: '₪250–600', max: 600 },
+  { id: 'lux', label: 'מעל ₪600', max: Infinity },
 ];
 
 const priceOf = (p: CatalogProduct) => p.discountPrice ?? p.basePrice;
@@ -73,7 +73,7 @@ export default function GiftFinderPage() {
 
   const steps = [
     {
-      title: 'למי המתנה?',
+      title: 'למי מיועדת המתנה?',
       content: (
         <div className="flex flex-wrap justify-center gap-2.5">
           {(Object.keys(AUDIENCE_LABELS) as Audience[]).map((a) => (
@@ -81,7 +81,7 @@ export default function GiftFinderPage() {
               {AUDIENCE_LABELS[a]}
             </button>
           ))}
-          <button onClick={() => setAudience(null)} className={chip(audience === null)}>לא משנה</button>
+          <button onClick={() => setAudience(null)} className={chip(audience === null)}>עדיין לא בטוח</button>
         </div>
       ),
     },
@@ -94,12 +94,12 @@ export default function GiftFinderPage() {
               {o}
             </button>
           ))}
-          <button onClick={() => setOccasion(null)} className={chip(occasion === null)}>סתם לפנק</button>
+          <button onClick={() => setOccasion(null)} className={chip(occasion === null)}>ללא אירוע מיוחד</button>
         </div>
       ),
     },
     {
-      title: 'מה התקציב?',
+      title: 'מה התקציב המתאים לכם?',
       content: (
         <div className="flex flex-wrap justify-center gap-2.5">
           {BUDGETS.map((b) => (
@@ -111,11 +111,11 @@ export default function GiftFinderPage() {
       ),
     },
     {
-      title: 'רוצים התאמה אישית (שם / הקדשה)?',
+      title: 'האם תרצו אפשרות להקדשה או להתאמה אישית?',
       content: (
         <div className="flex flex-wrap justify-center gap-2.5">
-          <button onClick={() => setWantCustom(true)} className={chip(wantCustom === true)}>כן, שיהיה אישי ✨</button>
-          <button onClick={() => setWantCustom(null)} className={chip(wantCustom === null)}>לא משנה</button>
+          <button onClick={() => setWantCustom(true)} className={chip(wantCustom === true)}>כן, חשוב לנו</button>
+          <button onClick={() => setWantCustom(null)} className={chip(wantCustom === null)}>אפשרי, אבל לא חובה</button>
         </div>
       ),
     },
@@ -127,8 +127,8 @@ export default function GiftFinderPage() {
         <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Gift className="h-6 w-6 text-gold" />
         </span>
-        <h1 className="font-display text-3xl font-bold text-navy">מאתר המתנה המושלמת</h1>
-        <p className="mt-2 text-navy/60">ארבע שאלות קצרות — ואנחנו מציעים בדיוק את המתנות הנכונות.</p>
+        <h1 className="font-display text-3xl font-bold text-navy">מוצאים את המתנה המושלמת</h1>
+        <p className="mt-2 text-navy/60">כמה שאלות קצרות, והמלצות מדויקות מתוך הקטלוג שלנו</p>
       </div>
 
       {!showResults ? (
@@ -146,7 +146,7 @@ export default function GiftFinderPage() {
           <div className="mt-7 flex justify-between">
             <button onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}
               className="rounded-full px-4 py-2 text-sm text-navy/50 hover:text-navy disabled:invisible">
-              → חזרה
+              חזרה
             </button>
             {step < steps.length - 1 ? (
               <button onClick={() => setStep((s) => s + 1)}
@@ -165,7 +165,7 @@ export default function GiftFinderPage() {
         <div className="mt-10">
           <div className="mb-6 flex items-center justify-between">
             <p className="text-sm text-navy/60">
-              {results.length > 0 ? `${results.length} מתנות שנבחרו במיוחד עבורכם:` : ''}
+              {results.length > 0 ? `${results.length} מתנות שיכולות להתאים לבחירות שלכם:` : ''}
             </p>
             <button onClick={reset} className="flex items-center gap-1.5 text-sm text-gold-soft hover:text-navy">
               <RotateCcw className="h-4 w-4" /> חיפוש חדש
