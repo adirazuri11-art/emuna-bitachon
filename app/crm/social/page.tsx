@@ -1,11 +1,11 @@
-import { Instagram, Facebook, Users, Image as ImageIcon, Heart, MessageCircle, ExternalLink, Zap } from 'lucide-react';
-import { getSocialData } from '@/lib/crm/meta';
+import { Instagram, Facebook, Image as ImageIcon, Heart, MessageCircle, ExternalLink, Zap, ShieldCheck, ShieldAlert, TrendingUp, Activity } from 'lucide-react';
+import { getSocialData, getTokenHealth } from '@/lib/crm/meta';
+import { AreaChart } from '@/components/crm/AreaChart';
 
 export const dynamic = 'force-dynamic';
 
 const IG_URL = 'https://www.instagram.com/emunavebitachon';
 const FB_URL = 'https://www.facebook.com/profile.php?id=61593009291594';
-
 const nf = (n: number) => n.toLocaleString('he-IL');
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -17,17 +17,44 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function ChartCard({ title, icon: Icon, data, suffix }: { title: string; icon: any; data: { date: string; count: number }[]; suffix?: string }) {
+  const total = data.reduce((s, d) => s + d.count, 0);
+  return (
+    <div className="rounded-2xl border border-gold/15 bg-white/5 p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-cream/70"><Icon className="h-4 w-4 text-gold" /> {title}</div>
+        <div className="font-display text-lg font-bold text-cream">{nf(total)}{suffix}</div>
+      </div>
+      <AreaChart data={data} height={90} />
+      <div className="mt-1 text-[11px] text-cream/35">30 ימים אחרונים</div>
+    </div>
+  );
+}
+
 export default async function SocialPage() {
-  const data = await getSocialData();
+  const [data, health] = await Promise.all([getSocialData(), getTokenHealth()]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-cream">רשתות חברתיות</h1>
-        <p className="mt-1 text-sm text-cream/50">
-          {data.configured ? 'נתונים חיים מ-Meta Graph API' : 'מחובר לפרופילים · ממתין לחיבור נתונים חיים'}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-cream">רשתות חברתיות</h1>
+          <p className="mt-1 text-sm text-cream/50">
+            {data.configured ? 'נתונים חיים מ-Meta Graph API' : 'מחובר לפרופילים · ממתין לחיבור נתונים חיים'}
+          </p>
+        </div>
+        {data.configured && <TokenBadge health={health} source={data.token.source} />}
       </div>
+
+      {/* Live insight charts */}
+      {data.configured && (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <ChartCard title="חשיפה — אינסטגרם" icon={TrendingUp} data={data.insights.igReach} />
+          <ChartCard title="עוקבים חדשים" icon={Activity} data={data.insights.igFollowerGrowth} />
+          <ChartCard title="חשיפה — פייסבוק" icon={TrendingUp} data={data.insights.fbImpressions} />
+          <ChartCard title="מעורבות — פייסבוק" icon={Activity} data={data.insights.fbEngagement} />
+        </div>
+      )}
 
       {/* Instagram */}
       <div className="rounded-2xl border border-gold/15 bg-white/5 p-6">
@@ -38,22 +65,19 @@ export default async function SocialPage() {
             </span>
             <div>
               <div className="font-display font-bold text-cream">אינסטגרם</div>
-              <a href={IG_URL} target="_blank" rel="noopener" className="text-xs text-cream/50 hover:text-gold" dir="ltr">
-                @emunavebitachon
-              </a>
+              <a href={IG_URL} target="_blank" rel="noopener" className="text-xs text-cream/50 hover:text-gold" dir="ltr">@emunavebitachon</a>
             </div>
           </div>
-          <a href={IG_URL} target="_blank" rel="noopener" className="flex items-center gap-1 text-sm text-cream/60 hover:text-gold">
-            פתיחה <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          <a href={IG_URL} target="_blank" rel="noopener" className="flex items-center gap-1 text-sm text-cream/60 hover:text-gold">פתיחה <ExternalLink className="h-3.5 w-3.5" /></a>
         </div>
 
         {data.instagram ? (
           <>
-            <div className="mb-5 grid grid-cols-3 gap-3">
+            <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="עוקבים" value={nf(data.instagram.followers)} />
               <Stat label="פוסטים" value={nf(data.instagram.mediaCount)} />
               <Stat label="עוקב אחרי" value={nf(data.instagram.following)} />
+              <Stat label="שיעור מעורבות" value={`${data.instagram.engagementRate}%`} />
             </div>
             {data.instagram.recentPosts.length > 0 && (
               <>
@@ -94,9 +118,7 @@ export default async function SocialPage() {
               <a href={FB_URL} target="_blank" rel="noopener" className="text-xs text-cream/50 hover:text-gold">עמוד העסק</a>
             </div>
           </div>
-          <a href={FB_URL} target="_blank" rel="noopener" className="flex items-center gap-1 text-sm text-cream/60 hover:text-gold">
-            פתיחה <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          <a href={FB_URL} target="_blank" rel="noopener" className="flex items-center gap-1 text-sm text-cream/60 hover:text-gold">פתיחה <ExternalLink className="h-3.5 w-3.5" /></a>
         </div>
         {data.facebook ? (
           <div className="grid grid-cols-3 gap-3">
@@ -112,19 +134,35 @@ export default async function SocialPage() {
   );
 }
 
+function TokenBadge({ health, source }: { health: Awaited<ReturnType<typeof getTokenHealth>>; source: string }) {
+  const ok = !health.known || health.neverExpires || (health.daysLeft ?? 99) > 7;
+  return (
+    <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs ${ok ? 'border-emerald-400/30 text-emerald-300' : 'border-amber-400/40 text-amber-300'}`}>
+      {ok ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldAlert className="h-3.5 w-3.5" />}
+      {health.neverExpires
+        ? 'טוקן קבוע'
+        : health.daysLeft != null
+          ? `טוקן תקף ${health.daysLeft} ימים`
+          : source === 'supabase'
+            ? 'טוקן מתחדש אוטומטית'
+            : 'מחובר'}
+    </div>
+  );
+}
+
 function NotConnected() {
   return (
     <div className="rounded-xl border border-gold/20 bg-navy/40 p-5 text-sm leading-relaxed text-cream/70">
       <div className="mb-2 flex items-center gap-2 font-bold text-gold">
         <Zap className="h-4 w-4" /> לחיבור נתונים חיים (עוקבים, חשיפה, מעורבות, פוסטים)
       </div>
-      <p>נדרש חיבור Meta Graph API חד-פעמי. הצעדים (שלך — לעולם לא בצ'אט):</p>
+      <p>נדרש חיבור Meta Graph API חד-פעמי (מומלץ טוקן System User — קבוע, ללא חידוש). הצעדים (שלך — לעולם לא בצ'אט):</p>
       <ol className="mt-2 list-decimal space-y-1 pe-5 text-cream/60">
-        <li>ודא שהאינסטגרם הוא חשבון עסקי/יוצר ומקושר לעמוד הפייסבוק.</li>
-        <li>צור אפליקציה ב-developers.facebook.com והפק Long-Lived Page Access Token + מזהה IG Business.</li>
+        <li>ודא שהאינסטגרם עסקי/יוצר ומקושר לעמוד הפייסבוק.</li>
+        <li>ב-Business Manager צור System User עם הרשאות לעמוד + הפק טוקן קבוע.</li>
         <li>הוסף ב-Vercel (Server-only): <code className="text-gold" dir="ltr">META_PAGE_ACCESS_TOKEN</code>, <code className="text-gold" dir="ltr">META_IG_USER_ID</code>, <code className="text-gold" dir="ltr">META_PAGE_ID</code>.</li>
       </ol>
-      <p className="mt-2 text-cream/50">ברגע שהערכים יתווספו — המסך הזה יתמלא אוטומטית בנתונים אמיתיים.</p>
+      <p className="mt-2 text-cream/50">ברגע שהערכים יתווספו — המסך יתמלא אוטומטית בנתונים אמיתיים.</p>
     </div>
   );
 }

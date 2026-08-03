@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Search, User, LayoutDashboard, Ticket, CornerDownLeft } from 'lucide-react';
+import { Search, User, LayoutDashboard, Ticket, CornerDownLeft, Instagram, BarChart3 } from 'lucide-react';
 
 interface Member {
   email: string;
@@ -13,6 +13,8 @@ const NAV = [
   { label: 'סקירה כללית', href: '/crm', icon: LayoutDashboard },
   { label: 'לקוחות', href: '/crm/customers', icon: User },
   { label: 'מאתר המתנה', href: '/crm/gift-finder', icon: LayoutDashboard },
+  { label: 'רשתות חברתיות', href: '/crm/social', icon: Instagram },
+  { label: 'אנליטיקס', href: '/crm/analytics', icon: BarChart3 },
   { label: 'קופונים', href: '/crm/coupons', icon: Ticket },
 ];
 
