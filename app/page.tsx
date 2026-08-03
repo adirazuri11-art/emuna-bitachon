@@ -36,13 +36,17 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="min-h-screen bg-navy-deep px-4 py-12">
-        <div className="mx-auto max-w-6xl text-center">
+      <section className="min-h-screen bg-navy-deep px-4 py-12 flex items-center">
+        <div className="mx-auto max-w-6xl text-center w-full">
           <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-navy">
             <Gift className="h-6 w-6 text-gold" />
           </span>
           <h1 className="font-display text-4xl font-bold text-cream mb-3">מאתר המתנה המושלמת</h1>
-          <p className="text-cream/70">ארבע שאלות קצרות — ותמצאו בדיוק את המתנה שתרצו לתת</p>
+          <p className="text-cream/70 mb-8">ארבע שאלות קצרות — ותמצאו בדיוק את המתנה שתרצו לתת</p>
+          <Link href="/gift-finder" className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-l from-gold to-gold-soft px-8 py-3.5 font-bold text-navy shadow-gold transition-transform hover:scale-[1.03] active:scale-[0.98]">
+            <Sparkles className="h-5 w-5" />
+            מצאו מתנה עכשיו
+          </Link>
         </div>
       </section>
 
