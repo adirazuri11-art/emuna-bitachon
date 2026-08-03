@@ -180,6 +180,12 @@ const COMING_SOON: Record<string, string> = {
   UK12430: '09/08/2026',
   UK12414: '09/08/2026',
   UK12422: '09/08/2026',
+  UK40299: '21/08/2026',
+  UK40300: '21/08/2026',
+  UK40301: '21/08/2026',
+  UK40302: '21/08/2026',
+  UK40303: '21/08/2026',
+  UK49179: '21/08/2026',
 };
 
 function toProduct(item: RawItem): CatalogProduct {
