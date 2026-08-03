@@ -161,6 +161,24 @@ const STAND_PACKS: Record<string, number> = {
   UK82038: 24, // סטנד כלי בשמים זכוכית עם תערובת פרחים מעורב
   UK46232: 12, // סטנד פקקים מעורב לבקבוק יין
   UK47495: 72, // סטנד מעורב צמידים עם אורנמנטים
+  UK83062: 24, // סטנד 24 יח מעורב של ברכות פרספקס לרכב
+};
+
+// מוצרים שאצל הספק מסומנים "מגיע בקרוב". הערך = תאריך הגעה משוער (כפי שמופיע
+// אצל הספק), או '' כאשר אין תאריך. מסמן stockStatus='coming-soon' ומציג הערה.
+const COMING_SOON: Record<string, string> = {
+  UK67961: '09/08/2026',
+  UK67963: '09/08/2026',
+  UK67964: '09/08/2026',
+  UK59877: '21/08/2026',
+  UK59878: '21/08/2026',
+  UK59202: '',
+  UK59217: '',
+  UK12424: '09/08/2026',
+  UK12429: '09/08/2026',
+  UK12430: '09/08/2026',
+  UK12414: '09/08/2026',
+  UK12422: '09/08/2026',
 };
 
 function toProduct(item: RawItem): CatalogProduct {
@@ -186,6 +204,10 @@ function toProduct(item: RawItem): CatalogProduct {
   const standNote = standUnits
     ? `המחיר עבור סטנד מלא הכולל ${standUnits} יחידות. המוצר אינו נמכר כיחידה בודדת.`
     : '';
+  // "מגיע בקרוב" — לפי סימון הספק. cs=תאריך, ''=בקרוב ללא תאריך, undefined=במלאי.
+  const cs = COMING_SOON[item.id];
+  const isComingSoon = cs !== undefined;
+  const comingNote = isComingSoon ? (cs ? `יגיע למלאי בתאריך ${cs}. ` : 'יגיע למלאי בקרוב. ') : '';
   const packNote = standUnits ? `סטנד ${standUnits} יח'` : packQty > 1 ? `מארז ${packQty} יח'` : '';
   const dims = item.sz && /^\d/.test(item.sz) ? `${item.sz} ס"מ` : item.sz;
   const details = [item.mat && `חומר: ${item.mat}`, item.col && `צבע: ${item.col}`, dims && `מידה: ${dims}`]
@@ -212,7 +234,7 @@ function toProduct(item: RawItem): CatalogProduct {
     isCustomizable: engravable,
     ...(engravable ? { customization: PLAIN_KIPPAH_EMBOSS } : {}),
     iconKey: CAT_ICON[item.c] ?? 'gift',
-    shortDescription: `${standNote ? `${standNote} ` : ''}${about.short}${details ? ` ${details}.` : ''} ${packNote ? `${packNote} · ` : ''}${deliveryShort}`,
+    shortDescription: `${comingNote}${standNote ? `${standNote} ` : ''}${about.short}${details ? ` ${details}.` : ''} ${packNote ? `${packNote} · ` : ''}${deliveryShort}`,
     longDescription: [
       `${item.t}.${details ? ` ${details}.` : ''}`,
       `${about.short} ${about.long}`,
@@ -227,7 +249,7 @@ function toProduct(item: RawItem): CatalogProduct {
     isNew: NEWLY_ADDED.has(item.id),
     tags: [item.s, ...(item.mat ? [item.mat] : [])],
     relatedSlugs: related(item),
-    stockStatus: 'in-stock',
+    stockStatus: isComingSoon ? 'coming-soon' : 'in-stock',
     badges: [
       ...(BESTSELLER.has(item.id) ? (['bestseller'] as const) : []),
       ...(RECOMMENDED.has(item.id) ? (['recommended'] as const) : []),
