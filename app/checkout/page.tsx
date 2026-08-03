@@ -260,6 +260,13 @@ export default function CheckoutPage() {
               <dd>{formatPrice(total)}</dd>
             </div>
           </dl>
+          <p className="mt-3 text-[11px] leading-relaxed text-navy/40">
+            בהשלמת ההזמנה אתם מאשרים את{' '}
+            <Link href="/returns" className="underline hover:text-gold-soft">
+              מדיניות המשלוחים, ההחזרות והביטולים
+            </Link>
+            .
+          </p>
         </aside>
       </div>
     </div>

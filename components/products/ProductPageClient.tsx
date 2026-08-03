@@ -265,6 +265,25 @@ export function ProductPageClient({
             </p>
           </div>
 
+          {/* מדיניות ביטול / החזרה */}
+          {product.customization ? (
+            <p className="mt-3 rounded-lg border border-gold/25 bg-gold/5 p-3 text-xs leading-relaxed text-navy/70">
+              מוצר זה מיוצר או מותאם במיוחד עבורכם. לאחר תחילת ההתאמה לא ניתן לבטל את ההזמנה עקב שינוי
+              דעת, בכפוף להוראות הדין. במקרה של פגם או אי־התאמה להזמנה — נטפל ללא עלות נוספת.{' '}
+              <Link href="/returns" className="text-gold-soft underline hover:text-navy">
+                מדיניות מלאה
+              </Link>
+            </p>
+          ) : (
+            <p className="mt-3 text-xs text-navy/50">
+              ניתן לבטל או להחזיר בהתאם ל
+              <Link href="/returns" className="text-gold-soft underline hover:text-navy">
+                מדיניות ההחזרות
+              </Link>{' '}
+              ולהוראות חוק הגנת הצרכן.
+            </p>
+          )}
+
           {/* וריאציות */}
           {(product.variantGroups ?? []).map((group) => (
             <div key={group.id} className="mt-5">
