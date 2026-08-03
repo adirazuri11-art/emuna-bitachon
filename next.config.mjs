@@ -71,3 +71,4 @@ const nextConfig = isStaticExport
     };
 
 export default nextConfig;
+/* Vercel rebuild trigger: 1785754085N */
