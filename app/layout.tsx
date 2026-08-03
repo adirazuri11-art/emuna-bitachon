@@ -3,7 +3,6 @@ import { Assistant, Frank_Ruhl_Libre } from 'next/font/google';
 import { Providers } from '@/components/providers/Providers';
 import { Navbar } from '@/components/header/Navbar';
 import { CartSlideOver } from '@/components/cart/CartSlideOver';
-import { AIJudaicaAssistant } from '@/components/ai/AIJudaicaAssistant';
 import { WhatsAppButton } from '@/components/shared/WhatsAppButton';
 import { GiftFinderBubble } from '@/components/shared/GiftFinderBubble';
 import { AccessibilityWidget } from '@/components/shared/AccessibilityWidget';
@@ -67,7 +66,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main>{children}</main>
           <CartSlideOver />
-          <AIJudaicaAssistant />
           <WhatsAppButton />
           <GiftFinderBubble />
           <AccessibilityWidget />
