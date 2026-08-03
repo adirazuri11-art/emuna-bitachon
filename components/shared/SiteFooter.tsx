@@ -53,9 +53,10 @@ export function SiteFooter() {
         <nav aria-label="דפים משפטיים">
           <p className="mb-3 text-sm font-bold text-gold">משפטי</p>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/terms" className="transition-colors hover:text-gold">תנאים וסוג</Link></li>
-            <li><Link href="/privacy" className="transition-colors hover:text-gold">פרטיות</Link></li>
-            <li><Link href="/returns" className="transition-colors hover:text-gold">החזרות ומשלוח</Link></li>
+            <li><Link href="/terms" className="transition-colors hover:text-gold">תנאי שימוש</Link></li>
+            <li><Link href="/privacy" className="transition-colors hover:text-gold">מדיניות פרטיות</Link></li>
+            <li><Link href="/returns" className="transition-colors hover:text-gold">משלוחים, החזרות וביטולים</Link></li>
+            <li><Link href="/cancel" className="transition-colors hover:text-gold">ביטול עסקה</Link></li>
             <li><Link href="/cookies" className="transition-colors hover:text-gold">מדיניות Cookies</Link></li>
           </ul>
         </nav>
