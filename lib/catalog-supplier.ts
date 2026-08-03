@@ -149,6 +149,20 @@ function related(item: RawItem): string[] {
     .map((o) => `art-${o.id.toLowerCase()}`);
 }
 
+// ============================================================
+// סטנדים הנמכרים כמארז שלם — המחיר באתר צריך לשקף את הסטנד כולו,
+// לא יחידה בודדת. המפתח הוא ה-SKU המדויק (4 מוצרים בלבד).
+// המחיר מחושב כ: retail(cost) × מספר היחידות בסטנד.
+// ⚠️ idempotent — נגזר תמיד מחדש מ-retail(cost); לעולם לא מוכפל פעמיים.
+// יחידת המכירה/מלאי נשארת "סטנד אחד" (כמות 1 בעגלה = סטנד שלם).
+// ============================================================
+const STAND_PACKS: Record<string, number> = {
+  UK82037: 24, // סטנד כלי בשמים זכוכית עם ציפורן מעורב
+  UK82038: 24, // סטנד כלי בשמים זכוכית עם תערובת פרחים מעורב
+  UK46232: 12, // סטנד פקקים מעורב לבקבוק יין
+  UK47495: 72, // סטנד מעורב צמידים עם אורנמנטים
+};
+
 function toProduct(item: RawItem): CatalogProduct {
   // תמונה: מקומית עם לוגו צרוב (178 הישנים) או מרוחקת (hotlink) עם לוגו-שכבה (החדשים).
   const remote = Boolean(item.img);
@@ -166,7 +180,13 @@ function toProduct(item: RawItem): CatalogProduct {
   const basicBulk = item.c === 'kippot' && !/עור|זמש|קטיפה|סרוג/.test(item.s);
   const minOrderUnits = basicBulk && item.cost <= 8 ? 5 : undefined;
   const price = retail(item.cost * packQty);
-  const packNote = packQty > 1 ? `מארז ${packQty} יח'` : '';
+  // סטנד מלא — מכפילים את מחיר היחידה במספר היחידות בסטנד (רק ל-4 ה-SKU שהוגדרו).
+  const standUnits = STAND_PACKS[item.id];
+  const finalPrice = standUnits ? price * standUnits : price;
+  const standNote = standUnits
+    ? `המחיר עבור סטנד מלא הכולל ${standUnits} יחידות. המוצר אינו נמכר כיחידה בודדת.`
+    : '';
+  const packNote = standUnits ? `סטנד ${standUnits} יח'` : packQty > 1 ? `מארז ${packQty} יח'` : '';
   const dims = item.sz && /^\d/.test(item.sz) ? `${item.sz} ס"מ` : item.sz;
   const details = [item.mat && `חומר: ${item.mat}`, item.col && `צבע: ${item.col}`, dims && `מידה: ${dims}`]
     .filter(Boolean)
@@ -187,12 +207,12 @@ function toProduct(item: RawItem): CatalogProduct {
     category: CAT_NAME[item.c] ?? 'מתנות ואירועים',
     subcategory: item.s,
     material: [item.mat, packNote].filter(Boolean).join(' · ') || undefined,
-    basePrice: price,
+    basePrice: finalPrice,
     ...(minOrderUnits ? { minOrderUnits } : {}),
     isCustomizable: engravable,
     ...(engravable ? { customization: PLAIN_KIPPAH_EMBOSS } : {}),
     iconKey: CAT_ICON[item.c] ?? 'gift',
-    shortDescription: `${about.short}${details ? ` ${details}.` : ''} ${packNote ? `${packNote} · ` : ''}${deliveryShort}`,
+    shortDescription: `${standNote ? `${standNote} ` : ''}${about.short}${details ? ` ${details}.` : ''} ${packNote ? `${packNote} · ` : ''}${deliveryShort}`,
     longDescription: [
       `${item.t}.${details ? ` ${details}.` : ''}`,
       `${about.short} ${about.long}`,
