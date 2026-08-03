@@ -11,6 +11,7 @@ import { WebVitalsReporter } from '@/components/analytics/WebVitalsReporter';
 import { ConsentBanner } from '@/components/consent/ConsentBanner';
 import { SiteFooter } from '@/components/shared/SiteFooter';
 import { Toaster } from '@/components/ui/Toaster';
+import { HideOnCrm } from '@/components/shared/HideOnCrm';
 import './globals.css';
 
 const assistant = Assistant({
@@ -64,17 +65,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="he" dir="rtl" translate="no" className={`notranslate ${assistant.variable} ${frankRuhl.variable}`}>
       <body className="font-sans">
         <Providers>
-          <ConsentBanner />
+          <HideOnCrm>
+            <ConsentBanner />
+          </HideOnCrm>
           <WebVitalsReporter />
-          <Navbar />
+          <HideOnCrm>
+            <Navbar />
+          </HideOnCrm>
           <main>{children}</main>
-          <CartSlideOver />
-          <WhatsAppButton />
-          <GiftFinderBubble />
-          <AccessibilityWidget />
-          <NewsletterPopup />
+          <HideOnCrm>
+            <CartSlideOver />
+            <WhatsAppButton />
+            <GiftFinderBubble />
+            <AccessibilityWidget />
+            <NewsletterPopup />
+          </HideOnCrm>
           <Toaster />
-          <SiteFooter />
+          <HideOnCrm>
+            <SiteFooter />
+          </HideOnCrm>
         </Providers>
       </body>
     </html>
