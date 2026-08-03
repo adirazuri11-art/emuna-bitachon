@@ -3,7 +3,7 @@
 // מאתר המתנה המושלמת — אשף 4 שלבים שמסנן את הקטלוג
 // לפי נמען, אירוע, תקציב והתאמה אישית.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Gift, RotateCcw, Sparkles } from 'lucide-react';
 import {
@@ -25,6 +25,21 @@ const BUDGETS = [
 ];
 
 const priceOf = (p: CatalogProduct) => p.discountPrice ?? p.basePrice;
+
+// Fire-and-forget CRM instrumentation. Never blocks or breaks the wizard:
+// any failure (offline, misconfig, table missing) is silently ignored.
+function sendGiftFinderEvent(payload: Record<string, unknown>) {
+  try {
+    fetch('/api/crm/gift-finder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* no-op */
+  }
+}
 
 export default function GiftFinderPage() {
   const [step, setStep] = useState(0);
@@ -108,6 +123,33 @@ export default function GiftFinderPage() {
     return [...primary, ...overflow].slice(0, 6).map(({ p }) => p);
   }, [showResults, audience, occasion, budget, wantCustom]);
 
+  // One session id per run; used to correlate 'complete' + 'click' events.
+  const sessionIdRef = useRef('');
+  const postedRef = useRef(false);
+
+  // Persist the completed session (answers + recommendations) exactly once,
+  // when results are ready. Asynchronous and non-blocking.
+  useEffect(() => {
+    if (!showResults || postedRef.current) return;
+    if (!sessionIdRef.current) {
+      sessionIdRef.current =
+        globalThis.crypto?.randomUUID?.() ?? `gf_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    }
+    postedRef.current = true;
+    sendGiftFinderEvent({
+      action: 'complete',
+      sessionId: sessionIdRef.current,
+      audience,
+      occasion,
+      budgetId: budget?.id ?? null,
+      budgetMax: budget && budget.max !== Infinity ? budget.max : null,
+      wantCustom,
+      resultsCount: results.length,
+      recommendedProductIds: results.map((p) => p.id),
+      recommendedCategories: Array.from(new Set(results.map((p) => p.category))),
+    });
+  }, [showResults, results, audience, occasion, budget, wantCustom]);
+
   const finish = () => {
     trackEvent('gift_finder', {
       query: [audience, occasion, budget?.label, wantCustom ? 'התאמה' : ''].filter(Boolean).join(' | '),
@@ -117,6 +159,8 @@ export default function GiftFinderPage() {
 
   const reset = () => {
     setStep(0); setAudience(null); setOccasion(null); setBudget(null); setWantCustom(null); setShowResults(false);
+    postedRef.current = false;
+    sessionIdRef.current = '';
   };
 
   const chip = (active: boolean) =>
@@ -244,7 +288,16 @@ export default function GiftFinderPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
-              {results.map((p) => <ProductCard key={p.id} product={p} />)}
+              {results.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={() =>
+                    sendGiftFinderEvent({ action: 'click', sessionId: sessionIdRef.current, productId: p.id })
+                  }
+                >
+                  <ProductCard product={p} />
+                </div>
+              ))}
             </div>
           )}
         </div>
