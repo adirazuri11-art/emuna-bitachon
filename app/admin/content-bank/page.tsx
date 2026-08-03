@@ -99,7 +99,7 @@ export default function ContentBankPage() {
     if (sortBy === 'category') {
       result.sort((a, b) => a.category.localeCompare(b.category, 'he'));
     } else if (sortBy === 'family') {
-      result.sort((a, b) => a.designFamily - b.designFamily);
+      result.sort((a, b) => a.family - b.family);
     }
 
     return result;
