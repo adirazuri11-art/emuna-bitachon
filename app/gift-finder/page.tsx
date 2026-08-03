@@ -36,22 +36,50 @@ export default function GiftFinderPage() {
 
   const results = useMemo(() => {
     if (!showResults) return [];
-    return PRODUCTS.filter((p) => p.priceType !== 'quote')
+    return PRODUCTS.filter((p) => p.priceType !== 'quote' && p.stockStatus !== 'coming-soon')
       .map((p) => {
         let score = 0;
-        if (audience && p.audience?.includes(audience)) score += 3;
-        if (occasion && (p.occasions?.includes(occasion) || p.tags.some((t) => t.includes(occasion)))) score += 3;
-        if (wantCustom && p.isCustomizable) score += 2;
-        if (p.badges.includes('bestseller') || p.badges.includes('recommended')) score += 1;
+
+        // Audience matching (hard signal: products are enriched with category-based audience)
+        if (audience && p.audience?.includes(audience)) score += 40;
+
+        // Occasion matching (hard signal: products are enriched with category-based occasions)
+        if (occasion && p.occasions?.includes(occasion)) score += 35;
+
+        // Customization bonus (soft signal: nice-to-have)
+        if (wantCustom && p.customization) score += 15;
+
+        // Popularity signal (soft signal: tie-breaker)
+        if (p.badges.includes('recommended')) score += 5;
+        if (p.badges.includes('bestseller')) score += 3;
+
         return { p, score };
       })
       .filter(({ p, score }) => {
+        // Hard constraint: budget
         if (budget && priceOf(p) > budget.max) return false;
-        // אם נבחרו העדפות — דורשים לפחות התאמה אחת
+
+        // Hard constraint: if user selected preferences, require minimum score
+        // (products should have at least one matching dimension)
         const hasPrefs = audience || occasion || wantCustom;
-        return hasPrefs ? score > 0 : true;
+        if (hasPrefs && score < 5) return false;
+
+        return true;
       })
-      .sort((a, b) => b.score - a.score || priceOf(b.p) - priceOf(a.p))
+      .sort((a, b) => {
+        // Primary sort: score (descending)
+        if (b.score !== a.score) return b.score - a.score;
+        // Secondary sort: price (prefer mid-range over extremes)
+        const priceA = priceOf(a.p);
+        const priceB = priceOf(b.p);
+        if (budget) {
+          const midPrice = budget.max * 0.6;
+          const distA = Math.abs(priceA - midPrice);
+          const distB = Math.abs(priceB - midPrice);
+          return distA - distB;
+        }
+        return priceB - priceA;
+      })
       .slice(0, 8)
       .map(({ p }) => p);
   }, [showResults, audience, occasion, budget, wantCustom]);
