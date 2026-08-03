@@ -18,8 +18,8 @@ import { savePersonalCoupon } from '@/lib/coupons';
 import { joinClub, saveMemberCode } from '@/lib/club-client';
 import { sendCouponEmail } from '@/lib/email';
 
-const TARGET_EMAIL = process.env.NEXT_PUBLIC_NEWSLETTER_EMAIL ?? 'lalevmedia@gmail.com';
-const ENDPOINT = `https://formsubmit.co/ajax/${encodeURIComponent(TARGET_EMAIL)}`;
+// NewsLetter subscription via backend API (FormSubmit handled server-side)
+const ENDPOINT = '/api/newsletter/subscribe';
 
 const PERKS = ['מבצעים והטבות חברים', 'גישה מוקדמת לקולקציות חג', 'טיפים והשראה לפני כל חג'];
 
@@ -55,39 +55,11 @@ export function NewsletterClub() {
       const emailSent = await sendCouponEmail({
         toEmail: email.trim(), toName: name.trim(), code, validUntil,
       });
-      // התראה לבעל האתר; autoresponse רק כגיבוי אם EmailJS לא שלח.
-      const payload: Record<string, string> = {
-        _subject: 'הרשמה חדשה למועדון — אמונה וביטחון',
-        name: name.trim() || '—',
-        email: email.trim(),
-        מקור: 'טופס מועדון באתר',
-        'קוד ההטבה': code,
-        _template: 'box',
-        _captcha: 'false',
-      };
-      if (!emailSent) {
-        payload._autoresponse = [
-          'שלום וברכה 🌿',
-          '',
-          'תודה שהצטרפת למועדון "אמונה וביטחון".',
-          '',
-          `🎁 קוד ההטבה שלך: ${code}`,
-          `${join.pct}% הנחה על ההזמנה הראשונה.`,
-          '',
-          `• בתוקף עד ${validUntil} (7 ימים)`,
-          '• לשימוש חד-פעמי',
-          '• איך משתמשים: מזינים את הקוד בסל הקניות לפני התשלום',
-          '',
-          'לצפייה בקטלוג: https://emuna-bitachon.vercel.app',
-          '',
-          'בברכה, צוות אמונה וביטחון',
-        ].join('\n');
-      }
-      // התראה לבעל האתר — לא חוסמת את ההרשמה אם נכשלת
+      // התראה לבעל האתר דרך API (FormSubmit מטופל בצד-שרת)
       await fetch(ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), name: name.trim() }),
       }).catch(() => {});
       // שמירה מקומית — לזיהוי חבר בקופה ולהצגת הקוד
       saveMemberCode(code);

@@ -12,8 +12,8 @@ import { savePersonalCoupon } from '@/lib/coupons';
 import { joinClub, saveMemberCode } from '@/lib/club-client';
 import { sendCouponEmail } from '@/lib/email';
 
-const TARGET_EMAIL = process.env.NEXT_PUBLIC_NEWSLETTER_EMAIL ?? 'lalevmedia@gmail.com';
-const ENDPOINT = `https://formsubmit.co/ajax/${encodeURIComponent(TARGET_EMAIL)}`;
+// Newsletter via backend API (FormSubmit handled server-side)
+const ENDPOINT = '/api/newsletter/subscribe';
 const FIRST_DELAY = 30_000; // 30 שניות
 const REPEAT_DELAY = 120_000; // כל 2 דקות
 
@@ -61,39 +61,14 @@ export function NewsletterPopup() {
     });
     try {
       // מייל ההטבה ללקוח — דרך EmailJS (אמין, מעוצב). false אם לא הוגדר.
-      const emailSent = await sendCouponEmail({
+      await sendCouponEmail({
         toEmail: email.trim(), code, validUntil,
       });
-      const payload: Record<string, string> = {
-        _subject: 'הרשמה חדשה למועדון (פופ-אפ) — אמונה וביטחון',
-        email: email.trim(),
-        מקור: 'פופ-אפ מועדון',
-        'קוד ההטבה': code,
-        _template: 'box',
-        _captcha: 'false',
-      };
-      if (!emailSent) {
-        payload._autoresponse = [
-          'שלום וברכה 🌿',
-          '',
-          'תודה שהצטרפת למועדון "אמונה וביטחון".',
-          '',
-          `🎁 קוד ההטבה שלך: ${code}`,
-          `${join.pct}% הנחה על ההזמנה הראשונה.`,
-          '',
-          `• בתוקף עד ${validUntil} (7 ימים)`,
-          '• לשימוש חד-פעמי',
-          '• איך משתמשים: מזינים את הקוד בסל הקניות לפני התשלום',
-          '',
-          'לצפייה בקטלוג: https://emuna-bitachon.vercel.app',
-          '',
-          'בברכה, צוות אמונה וביטחון',
-        ].join('\n');
-      }
+      // התראה לבעל האתר דרך API (FormSubmit מטופל בצד-שרת)
       await fetch(ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
       }).catch(() => {});
       saveMemberCode(code);
       savePersonalCoupon({
