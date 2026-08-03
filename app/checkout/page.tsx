@@ -95,7 +95,8 @@ export default function CheckoutPage() {
       total,
       cashback,
     };
-    trackEvent('purchase', { value: total });
+    // ⚠️ אין לירות purchase ללא תשלום אמיתי. אירוע ה-purchase (עם value/currency/
+    // transaction_id) ייורה בצד השרת רק לאחר אישור התשלום מספק הסליקה (מחר).
     setOrder(snapshot);
     clearCart();
     window.scrollTo({ top: 0 });
