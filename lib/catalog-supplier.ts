@@ -65,8 +65,8 @@ const CAT_ABOUT: Record<string, { short: string; long: string }> = {
     long: 'הגימור מוקפד והתפרים נקיים, כך שהכיפה שומרת על צורתה ועל המראה שלה לאורך זמן. בחירה נכונה לשימוש יום-יומי, לשבתות וחגים ולאירועים משפחתיים.',
   },
   mezuzot: {
-    short: 'בית מזוזה בעיצוב נקי שמשתלב יפה בכל פתח. שימו לב: המזוזה מגיעה ללא קלף.',
-    long: 'עשוי בגימור מוקפד ועמיד, נעים למגע ומחזיק מעמד לאורך שנים בכל תנאי מזג אוויר. משתלב יפה בפתחי הבית והעסק. שימו לב: המזוזה מגיעה ללא קלף. מי שמעוניין בקלף בנוסף — מוזמן לפנות אלינו ונשמח לסייע.',
+    short: 'בית מזוזה בעיצוב נקי שמשתלב יפה בכל פתח.',
+    long: 'עשוי בגימור מוקפד ועמיד, נעים למגע ומחזיק מעמד לאורך שנים בכל תנאי מזג אוויר. משתלב יפה בפתחי הבית והעסק.',
   },
   'challah-covers': {
     short: 'כיסוי חלה שמוסיף כבוד וחגיגיות לשולחן השבת והחג.',
@@ -208,6 +208,11 @@ function toProduct(item: RawItem): CatalogProduct {
   const cs = COMING_SOON[item.id];
   const isComingSoon = cs !== undefined;
   const comingNote = isComingSoon ? (cs ? `יגיע למלאי בתאריך ${cs}. ` : 'יגיע למלאי בקרוב. ') : '';
+  // כל מוצר מזוזה (בכל קטגוריה) — הבהרה שהמזוזה מגיעה ללא קלף.
+  const isMezuzah = item.c === 'mezuzot' || /מזוז/.test(item.t);
+  const mezuzahNote = isMezuzah
+    ? 'שימו לב: המזוזה מגיעה ללא קלף. מי שמעוניין בקלף בנוסף — מוזמן לפנות אלינו. '
+    : '';
   const packNote = standUnits ? `סטנד ${standUnits} יח'` : packQty > 1 ? `מארז ${packQty} יח'` : '';
   const dims = item.sz && /^\d/.test(item.sz) ? `${item.sz} ס"מ` : item.sz;
   const details = [item.mat && `חומר: ${item.mat}`, item.col && `צבע: ${item.col}`, dims && `מידה: ${dims}`]
@@ -234,10 +239,11 @@ function toProduct(item: RawItem): CatalogProduct {
     isCustomizable: engravable,
     ...(engravable ? { customization: PLAIN_KIPPAH_EMBOSS } : {}),
     iconKey: CAT_ICON[item.c] ?? 'gift',
-    shortDescription: `${comingNote}${standNote ? `${standNote} ` : ''}${about.short}${details ? ` ${details}.` : ''} ${packNote ? `${packNote} · ` : ''}${deliveryShort}`,
+    shortDescription: `${comingNote}${mezuzahNote}${standNote ? `${standNote} ` : ''}${about.short}${details ? ` ${details}.` : ''} ${packNote ? `${packNote} · ` : ''}${deliveryShort}`,
     longDescription: [
       `${item.t}.${details ? ` ${details}.` : ''}`,
       `${about.short} ${about.long}`,
+      mezuzahNote ? mezuzahNote.trim() : '',
       packNote ? `שימו לב: המחיר הוא ל${packNote} (מארז שלם).` : '',
       minOrderUnits ? `נמכר ביחידות, במינימום הזמנה של ${minOrderUnits} יחידות.` : '',
       deliveryLong,
