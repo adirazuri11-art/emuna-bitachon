@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { Building2, Gift, PenLine, Sparkles } from 'lucide-react';
-import { Hero } from '@/components/home/Hero';
 import { TrustSection } from '@/components/home/TrustSection';
 import { TrustAndSocialProof } from '@/components/cro/TrustAndSocialProof';
 import { CategoriesShowcase } from '@/components/home/CategoriesShowcase';
@@ -11,9 +10,6 @@ import { getHomepageContext } from '@/lib/hebcal';
 import { PRODUCTS } from '@/lib/catalog';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-
-// דף הבית הדינמי: התוכן מוכתב ע"י הלוח העברי (Hebcal).
-// כל הרצועות נגזרות מהקטלוג — אפס מוצרים קשיחים בקומפוננטה.
 
 const pick = (list: typeof PRODUCTS, n = 4) => (list.length >= n ? list : PRODUCTS).slice(0, n);
 const bestsellers = pick(PRODUCTS.filter((p) => p.badges.includes('bestseller')));
@@ -136,7 +132,19 @@ export default async function HomePage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildJsonLd()) }} />
-      <Hero {...context.hero} />
+      
+      {/* מאתר המתנה המושלמת — ראשון באתר */}
+      <section className="min-h-screen bg-navy-deep px-4 py-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-10">
+            <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-navy">
+              <Gift className="h-6 w-6 text-gold" />
+            </span>
+            <h1 className="font-display text-4xl font-bold text-cream mb-3">מאתר המתנה המושלמת</h1>
+            <p className="text-cream/70">ארבע שאלות קצרות — ותמצאו בדיוק את המתנה שתרצו לתת</p>
+          </div>
+        </div>
+      </section>
 
       {/* פס דינמי לפי הלוח העברי */}
       {context.mode === 'shabbat' && context.shabbat?.candleLighting && (
@@ -150,34 +158,6 @@ export default async function HomePage() {
           ✨ {context.holiday.titleHe} בעוד {context.holiday.daysUntil} ימים — הקולקציה המיוחדת כבר כאן
         </div>
       )}
-
-      {/* מאתר המתנות — ראשון באתר */}
-      <section className="mx-auto max-w-7xl px-4 pt-8 pb-12">
-        <div className="relative overflow-hidden rounded-3xl bg-navy-deep px-6 py-12 text-center">
-          <div className="pointer-events-none absolute -top-16 start-1/4 h-64 w-64 rounded-full bg-gold/15 blur-[90px]" />
-          <Gift className="mx-auto h-10 w-10 text-gold" strokeWidth={1.4} />
-          <h2 className="mt-3 font-display text-3xl font-bold text-cream md:text-4xl">לא יודעים מה לקנות?</h2>
-          <p className="mx-auto mt-2 max-w-md text-cream/60">
-            עונים על 4 שאלות קצרות — למי, לאיזה אירוע, באיזה תקציב — ומקבלים את המתנות המדויקות מתוך הקטלוג.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/gift-finder"
-              className="rounded-full bg-gradient-to-l from-gold to-gold-soft px-8 py-3.5 text-lg font-bold text-navy shadow-gold transition-transform hover:scale-[1.03]">
-              למאתר המתנה המושלמת ✨
-            </Link>
-          </div>
-          {/* מתנות לפי תקציב */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2 text-sm">
-            <span className="py-1.5 text-cream/50">או לפי תקציב:</span>
-            {[['עד ₪100', 'מתנה עד 100'], ['עד ₪250', 'מתנה עד 250'], ['יוקרתי', 'יוקרתי']].map(([label, q]) => (
-              <Link key={label} href={`/search?q=${encodeURIComponent(q)}`}
-                className="rounded-full border border-gold/30 px-4 py-1.5 text-cream/80 transition-colors hover:bg-gold/10">
-                {label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <CategoriesShowcase />
 
