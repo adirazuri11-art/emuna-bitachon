@@ -19,6 +19,7 @@ interface RawItem {
   c: string; // category slug
   s: string; // subcategory
   img?: string; // מזהה תמונה מרוחקת (ארט יודאיקה webp); קיים = תמונת hotlink + לוגו-שכבה
+  imgFull?: string; // כתובת תמונה מלאה (למשל /big/<code>.jpg) — גובר על img
   pk?: number; // כמות יחידות במארז (המחיר הוא למארז שלם)
 }
 
@@ -183,10 +184,12 @@ const COMING_SOON: Record<string, string> = {
 
 function toProduct(item: RawItem): CatalogProduct {
   // תמונה: מקומית עם לוגו צרוב (178 הישנים) או מרוחקת (hotlink) עם לוגו-שכבה (החדשים).
-  const remote = Boolean(item.img);
-  const src = remote
-    ? `https://www.israel-judaica.com/webp/${item.img}.webp`
-    : `/images/supplier-real/${item.id}.jpg`;
+  const remote = Boolean(item.img) || Boolean(item.imgFull);
+  const src = item.imgFull
+    ? item.imgFull
+    : item.img
+      ? `https://www.israel-judaica.com/webp/${item.img}.webp`
+      : `/images/supplier-real/${item.id}.jpg`;
   // ⚠️ רק כיפות סרוגות נמכרות במארז; כל שאר הכיפות — ביחידה בלבד.
   const isSruga = item.c === 'kippot' && item.s === 'כיפות סרוגות';
   // הטבעה אישית (מינ' 100 יח') — כיפות חלקות (פריק/סאטן/אירועים), לא סרוגות.
