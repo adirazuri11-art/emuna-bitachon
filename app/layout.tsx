@@ -54,11 +54,14 @@ export const metadata: Metadata = {
     description: 'כיפות לאירועים בהתאמה אישית, גביעי קידוש מכסף, מזוזות מהודרות, טליתות ומתנות יהודיות — הטבעה ורקמה אישית, כשרות מאומתת ומשלוח מהיר לכל הארץ.',
   },
   alternates: { canonical: '/' },
+  // האתר כתוב עברית תקנית; מונע מ-Google Translate/Chrome לתרגם אותו
+  // עברית→עברית ולשבש מילים (למשל "מטפחות"→"מפות", "כוסות"→"כושות").
+  other: { google: 'notranslate' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl" className={`${assistant.variable} ${frankRuhl.variable}`}>
+    <html lang="he" dir="rtl" translate="no" className={`notranslate ${assistant.variable} ${frankRuhl.variable}`}>
       <body className="font-sans">
         <Providers>
           <ConsentBanner />
