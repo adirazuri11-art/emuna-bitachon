@@ -3,6 +3,7 @@ import { Assistant, Frank_Ruhl_Libre } from 'next/font/google';
 import { Providers } from '@/components/providers/Providers';
 import { Navbar } from '@/components/header/Navbar';
 import { CartSlideOver } from '@/components/cart/CartSlideOver';
+import { AIJudaicaAssistant } from '@/components/ai/AIJudaicaAssistant';
 import { WhatsAppButton } from '@/components/shared/WhatsAppButton';
 import { GiftFinderBubble } from '@/components/shared/GiftFinderBubble';
 import { AccessibilityWidget } from '@/components/shared/AccessibilityWidget';
@@ -27,7 +28,7 @@ const frankRuhl = Frank_Ruhl_Libre({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID; // Google Analytics 4 — מזהה מדידה
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main>{children}</main>
           <CartSlideOver />
+          <AIJudaicaAssistant />
           <WhatsAppButton />
           <GiftFinderBubble />
           <AccessibilityWidget />
