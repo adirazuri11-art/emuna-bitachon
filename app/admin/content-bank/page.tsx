@@ -14,7 +14,7 @@ interface ContentPost {
   productName: string;
   productUrl: string;
   category: string;
-  price?: string;
+  price?: string | null;
   ig: string;
   fb: string;
   tags: string[];
