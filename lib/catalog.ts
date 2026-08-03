@@ -189,52 +189,54 @@ export const AUDIENCE_LABELS: Record<Audience, string> = {
 export const OCCASIONS = ['בר מצווה', 'חתונה', 'בית חדש', 'יולדת', 'חג', 'שבת'] as const;
 
 // ============================================================
-// Category → Audience/Occasions Mapping
-// This ensures gift finder can recommend products effectively
+// Category → Audience/Occasions Mapping (מאתר המתנה)
+// ⚠️ Keyed by the Hebrew category NAME that products actually carry
+// (CatalogProduct.category = CAT_NAME[slug], e.g. "כיפות"), NOT the slug.
+// The slug is kept in a trailing comment for maintainability.
 // ============================================================
 
 export const CATEGORY_TO_AUDIENCE_MAP: Record<string, Audience[]> = {
-  'tzitzit-tallit': ['men', 'family'],
-  'kippot': ['men', 'kids', 'family'],
-  'headscarves': ['women', 'family'],
-  'kiddush-cups': ['men', 'women', 'family'],
-  'candlesticks': ['women', 'family'],
-  'home-judaica': ['family'],
-  'mezuzot': ['family'],
-  'challah-covers': ['women', 'family'],
-  'havdalah': ['family'],
-  'washing-cups': ['family'],
-  'blessings': ['family'],
-  'books-siddurim': ['men', 'women', 'family'],
-  'gifts-events': ['men', 'women', 'kids', 'family'],
-  'judaica-jewelry': ['women'],
-  'jewish-art': ['family'],
-  'holidays-moadim': ['family'],
-  'kids': ['kids', 'family'],
-  'brit-newborn': ['family'],
-  'jerusalem-gifts': ['men', 'women', 'kids', 'family'],
+  'ציציות וטליתות': ['men', 'family'],        // tzitzit-tallit
+  'כיפות': ['men', 'kids', 'family'],          // kippot
+  'מטפחות מעוצבות': ['women', 'family'],       // headscarves
+  'כוסות קידוש': ['men', 'women', 'family'],   // kiddush-cups
+  'פמוטים': ['women', 'family'],               // candlesticks
+  'תשמישי קדושה לבית': ['family'],             // home-judaica
+  'מזוזות': ['family'],                        // mezuzot
+  'כיסויי חלה': ['women', 'family'],           // challah-covers
+  'הבדלה': ['family'],                         // havdalah
+  'נטלות ומים אחרונים': ['family'],            // washing-cups
+  'ברכות': ['family'],                         // blessings
+  'ספרים וסידורים': ['men', 'women', 'family'],// books-siddurim
+  'מתנות ואירועים': ['men', 'women', 'kids', 'family'], // gifts-events
+  'תכשיטי יודאיקה': ['women'],                 // judaica-jewelry
+  'אמנות ועיצוב יהודי': ['family'],            // jewish-art
+  'חגים ומועדים': ['family'],                  // holidays-moadim
+  'מוצרים לילדים': ['kids', 'family'],         // kids
+  'ברית ולידה': ['family'],                    // brit-newborn
+  'מזכרות מירושלים': ['men', 'women', 'kids', 'family'], // jerusalem-gifts
 };
 
 export const CATEGORY_TO_OCCASIONS_MAP: Record<string, string[]> = {
-  'tzitzit-tallit': ['בר מצווה', 'שבת', 'חג'],
-  'kippot': ['בר מצווה', 'שבת', 'חג'],
-  'headscarves': ['שבת', 'חג'],
-  'kiddush-cups': ['חתונה', 'בר מצווה', 'שבת', 'חג', 'בית חדש'],
-  'candlesticks': ['חתונה', 'שבת', 'חג', 'בית חדש'],
-  'home-judaica': ['בית חדש', 'שבת', 'חג'],
-  'mezuzot': ['בית חדש'],
-  'challah-covers': ['שבת', 'חג'],
-  'havdalah': ['שבת', 'חג'],
-  'washing-cups': ['שבת', 'חג'],
-  'blessings': ['בית חדש', 'יולדת'],
-  'books-siddurim': ['בר מצווה', 'שבת', 'חג'],
-  'gifts-events': ['חתונה', 'בר מצווה', 'יולדת', 'בית חדש', 'חג'],
-  'judaica-jewelry': ['חתונה', 'בר מצווה', 'יולדת'],
-  'jewish-art': ['בית חדש', 'חתונה'],
-  'holidays-moadim': ['חג', 'שבת'],
-  'kids': ['בר מצווה', 'יולדת', 'חג'],
-  'brit-newborn': ['יולדת'],
-  'jerusalem-gifts': ['חתונה', 'בר מצווה', 'יולדת', 'בית חדש', 'חג'],
+  'ציציות וטליתות': ['בר מצווה', 'שבת', 'חג'],                    // tzitzit-tallit
+  'כיפות': ['בר מצווה', 'שבת', 'חג'],                             // kippot
+  'מטפחות מעוצבות': ['שבת', 'חג'],                                // headscarves
+  'כוסות קידוש': ['חתונה', 'בר מצווה', 'שבת', 'חג', 'בית חדש'],   // kiddush-cups
+  'פמוטים': ['חתונה', 'שבת', 'חג', 'בית חדש'],                    // candlesticks
+  'תשמישי קדושה לבית': ['בית חדש', 'שבת', 'חג'],                  // home-judaica
+  'מזוזות': ['בית חדש'],                                          // mezuzot
+  'כיסויי חלה': ['שבת', 'חג'],                                    // challah-covers
+  'הבדלה': ['שבת', 'חג'],                                         // havdalah
+  'נטלות ומים אחרונים': ['שבת', 'חג'],                            // washing-cups
+  'ברכות': ['בית חדש', 'יולדת'],                                  // blessings
+  'ספרים וסידורים': ['בר מצווה', 'שבת', 'חג'],                    // books-siddurim
+  'מתנות ואירועים': ['חתונה', 'בר מצווה', 'יולדת', 'בית חדש', 'חג'], // gifts-events
+  'תכשיטי יודאיקה': ['חתונה', 'בר מצווה', 'יולדת'],               // judaica-jewelry
+  'אמנות ועיצוב יהודי': ['בית חדש', 'חתונה'],                     // jewish-art
+  'חגים ומועדים': ['חג', 'שבת'],                                  // holidays-moadim
+  'מוצרים לילדים': ['בר מצווה', 'יולדת', 'חג'],                   // kids
+  'ברית ולידה': ['יולדת'],                                        // brit-newborn
+  'מזכרות מירושלים': ['חתונה', 'בר מצווה', 'יולדת', 'בית חדש', 'חג'], // jerusalem-gifts
 };
 
 export const getAudienceForCategory = (category: string): Audience[] => {
@@ -972,15 +974,21 @@ void EXTENDED_PRODUCTS_3;
 void BOOK_PRODUCTS;
 void LEGACY_SUBCATS;
 
-// Enrich products with audience and occasions based on category
+// Enrich products with audience/occasions for מאתר המתנה.
+// The category map is authoritative: supplier products ship with a blanket
+// audience:['family'], so without this override the gift finder can't tell
+// a men's tallit from a women's headscarf. Where the map has no entry we
+// keep whatever the product already carried (fallback), so nothing is lost.
 const enrichProductMetadata = (products: CatalogProduct[]): CatalogProduct[] => {
-  return products.map((p) => ({
-    ...p,
-    // Add or overwrite audience from category mapping if not already set
-    audience: p.audience?.length ? p.audience : getAudienceForCategory(p.category),
-    // Add or overwrite occasions from category mapping if not already set
-    occasions: p.occasions?.length ? p.occasions : getOccasionsForCategory(p.category),
-  }));
+  return products.map((p) => {
+    const mappedAudience = getAudienceForCategory(p.category);
+    const mappedOccasions = getOccasionsForCategory(p.category);
+    return {
+      ...p,
+      audience: mappedAudience.length ? mappedAudience : (p.audience ?? []),
+      occasions: mappedOccasions.length ? mappedOccasions : (p.occasions ?? []),
+    };
+  });
 };
 
 export const PRODUCTS: CatalogProduct[] = enrichProductMetadata([...SUPPLIER_PRODUCTS]);

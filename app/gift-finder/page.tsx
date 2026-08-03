@@ -18,10 +18,10 @@ import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
 
 const BUDGETS = [
-  { id: 'b100', label: 'עד ₪100', max: 100 },
-  { id: 'b250', label: '₪100–250', max: 250 },
-  { id: 'b600', label: '₪250–600', max: 600 },
-  { id: 'lux', label: 'מעל ₪600', max: Infinity },
+  { id: 'b100', label: 'עד ₪100', min: 0, max: 100 },
+  { id: 'b250', label: '₪100–250', min: 100, max: 250 },
+  { id: 'b600', label: '₪250–600', min: 250, max: 600 },
+  { id: 'lux', label: 'מעל ₪600', min: 600, max: Infinity },
 ];
 
 const priceOf = (p: CatalogProduct) => p.discountPrice ?? p.basePrice;
@@ -36,52 +36,76 @@ export default function GiftFinderPage() {
 
   const results = useMemo(() => {
     if (!showResults) return [];
-    return PRODUCTS.filter((p) => p.priceType !== 'quote' && p.stockStatus !== 'coming-soon')
+
+    // Midpoint of the chosen budget band (for price-proximity tie-breaking)
+    const bandMid = budget
+      ? budget.max === Infinity
+        ? budget.min * 1.5
+        : (budget.min + budget.max) / 2
+      : 0;
+
+    const scored = PRODUCTS.filter(
+      (p) => p.priceType !== 'quote' && p.stockStatus !== 'coming-soon',
+    )
       .map((p) => {
         let score = 0;
+        const price = priceOf(p);
 
-        // Audience matching (hard signal: products are enriched with category-based audience)
-        if (audience && p.audience?.includes(audience)) score += 40;
+        // Track whether the product matched a preference the user actually chose
+        const matchedAudience = Boolean(audience && p.audience?.includes(audience));
+        const matchedOccasion = Boolean(occasion && p.occasions?.includes(occasion));
+        const matchedCustom = Boolean(wantCustom && p.customization);
 
-        // Occasion matching (hard signal: products are enriched with category-based occasions)
-        if (occasion && p.occasions?.includes(occasion)) score += 35;
+        // Audience match — primary signal (who the gift is for)
+        if (matchedAudience) score += 40;
 
-        // Customization bonus (soft signal: nice-to-have)
-        if (wantCustom && p.customization) score += 15;
+        // Occasion match — primary signal (what the event is)
+        if (matchedOccasion) score += 35;
 
-        // Popularity signal (soft signal: tie-breaker)
+        // Priced within the chosen band — rewards budget-appropriate gifts
+        if (budget && price >= budget.min && price <= budget.max) score += 20;
+
+        // Customization — soft signal (only when the user wants it)
+        if (matchedCustom) score += 15;
+
+        // Popularity — weak tie-breakers
         if (p.badges.includes('recommended')) score += 5;
         if (p.badges.includes('bestseller')) score += 3;
 
-        return { p, score };
+        const matchedAnyPref = matchedAudience || matchedOccasion || matchedCustom;
+        return { p, score, price, matchedAnyPref };
       })
-      .filter(({ p, score }) => {
-        // Hard constraint: budget
-        if (budget && priceOf(p) > budget.max) return false;
-
-        // Hard constraint: if user selected preferences, require minimum score
-        // (products should have at least one matching dimension)
+      .filter(({ price, matchedAnyPref }) => {
+        // Hard constraint: never exceed the chosen budget ceiling
+        if (budget && price > budget.max) return false;
+        // If the user expressed any preference, require a genuine match to it
         const hasPrefs = audience || occasion || wantCustom;
-        if (hasPrefs && score < 5) return false;
-
+        if (hasPrefs && !matchedAnyPref) return false;
         return true;
       })
       .sort((a, b) => {
-        // Primary sort: score (descending)
         if (b.score !== a.score) return b.score - a.score;
-        // Secondary sort: price (prefer mid-range over extremes)
-        const priceA = priceOf(a.p);
-        const priceB = priceOf(b.p);
-        if (budget) {
-          const midPrice = budget.max * 0.6;
-          const distA = Math.abs(priceA - midPrice);
-          const distB = Math.abs(priceB - midPrice);
-          return distA - distB;
-        }
-        return priceB - priceA;
-      })
-      .slice(0, 8)
-      .map(({ p }) => p);
+        // Tie-break: closest to the middle of the chosen budget band
+        if (budget) return Math.abs(a.price - bandMid) - Math.abs(b.price - bandMid);
+        return b.price - a.price;
+      });
+
+    // Diversify: at most 2 products per category so one large category
+    // (e.g. כיפות) can't monopolise the whole result set.
+    const perCategory: Record<string, number> = {};
+    const primary: typeof scored = [];
+    const overflow: typeof scored = [];
+    for (const item of scored) {
+      const cat = item.p.category;
+      if ((perCategory[cat] ?? 0) < 2) {
+        perCategory[cat] = (perCategory[cat] ?? 0) + 1;
+        primary.push(item);
+      } else {
+        overflow.push(item);
+      }
+    }
+
+    return [...primary, ...overflow].slice(0, 6).map(({ p }) => p);
   }, [showResults, audience, occasion, budget, wantCustom]);
 
   const finish = () => {
@@ -191,25 +215,35 @@ export default function GiftFinderPage() {
         </div>
       ) : (
         <div className="mt-10">
-          <div className="mb-6 flex items-center justify-between">
-            <p className="text-sm text-navy/60">
-              {results.length > 0 ? `${results.length} מתנות שיכולות להתאים לבחירות שלכם:` : ''}
-            </p>
-            <button onClick={reset} className="flex items-center gap-1.5 text-sm text-gold-soft hover:text-navy">
-              <RotateCcw className="h-4 w-4" /> חיפוש חדש
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              {results.length > 0 && (
+                <>
+                  <h2 className="font-display text-xl font-bold text-navy">מצאנו מתנות שיכולות להתאים לכם</h2>
+                  <p className="mt-1 text-sm text-navy/60">ההמלצות מבוססות על מקבל המתנה, האירוע והתקציב שבחרתם.</p>
+                </>
+              )}
+            </div>
+            <button onClick={reset} className="flex shrink-0 items-center gap-1.5 text-sm text-gold-soft hover:text-navy">
+              <RotateCcw className="h-4 w-4" /> התחלה מחדש
             </button>
           </div>
 
           {results.length === 0 ? (
             <div className="rounded-2xl border border-gold/20 bg-white p-10 text-center shadow-card">
-              <p className="font-display text-xl font-bold text-navy">לא מצאנו התאמה מדויקת לשילוב הזה</p>
-              <p className="mt-2 text-sm text-navy/60">נסו להרחיב את התקציב, או דברו איתנו בוואטסאפ — נמצא יחד את המתנה.</p>
-              <Link href="/search" className="mt-5 inline-block rounded-full bg-navy px-6 py-2.5 text-sm font-bold text-cream hover:bg-gold hover:text-navy">
-                לכל הקטלוג
-              </Link>
+              <p className="font-display text-xl font-bold text-navy">לא מצאנו כרגע מספיק מוצרים שעומדים בכל הבחירות שלכם</p>
+              <p className="mt-2 text-sm text-navy/60">אפשר לשנות את התקציב או את האירוע כדי לקבל אפשרויות נוספות, או לדבר איתנו ונשמח לעזור.</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <button onClick={reset} className="rounded-full bg-navy px-6 py-2.5 text-sm font-bold text-cream hover:bg-gold hover:text-navy">
+                  שינוי הבחירות
+                </button>
+                <Link href="/search" className="rounded-full border border-navy/15 px-6 py-2.5 text-sm font-bold text-navy hover:border-gold">
+                  לכל הקטלוג
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
               {results.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           )}
