@@ -162,6 +162,69 @@ export async function verifyCardcomTransaction(lowProfileId: string): Promise<Ve
   }
 }
 
+// הפקת קבלה (Receipt) רטרואקטיבית להזמנה ששולמה, מקושרת לעסקת האשראי הקיימת.
+// עוסק פטור → IsVatFree=true. הקישור דרך DealNumbers מונע כפילות הכנסה בספרים.
+export interface ReceiptResult {
+  ok: boolean;
+  documentNumber?: number | string;
+  documentType?: string;
+  description?: string;
+  raw?: unknown;
+}
+export async function createReceiptForTransaction(params: {
+  transactionId: string;
+  customer: { name?: string; email?: string; phone?: string; city?: string };
+  lines: DocumentLine[];
+  sendByEmail?: boolean;
+}): Promise<ReceiptResult> {
+  const apiName = process.env.CARDCOM_API_NAME;
+  const apiPassword = process.env.CARDCOM_API_PASSWORD;
+  if (!apiName || !apiPassword) return { ok: false, description: 'חסר CARDCOM_API_NAME / CARDCOM_API_PASSWORD' };
+  const dealNumber = Number(params.transactionId);
+  if (!Number.isFinite(dealNumber) || dealNumber <= 0) return { ok: false, description: 'מספר עסקה לא תקין' };
+
+  const body = {
+    ApiName: apiName,
+    ApiPassword: apiPassword,
+    DealNumbers: [{ DealNumber: dealNumber }], // קישור לעסקת האשראי הקיימת
+    Document: {
+      DocumentTypeToCreate: 'Receipt', // קבלה — מתאים לעוסק פטור
+      Name: params.customer.name || 'לקוח',
+      Email: params.customer.email || undefined,
+      Mobile: params.customer.phone || undefined,
+      City: params.customer.city || undefined,
+      IsSendByEmail: params.sendByEmail !== false && !!params.customer.email,
+      IsVatFree: true, // עוסק פטור — ללא מע"מ
+      Languge: 'he',
+      ISOCoinID: 1,
+      Products: params.lines.map((l) => ({
+        Description: l.description.slice(0, 250),
+        UnitCost: Number(l.unitCost.toFixed(2)),
+        Quantity: l.quantity,
+      })),
+    },
+  };
+
+  try {
+    const res = await fetch('https://secure.cardcom.solutions/api/v11/Documents/CreateDocument', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+    const d = (await res.json()) as { ResponseCode?: number; Description?: string; DocumentInfo?: { DocumentNumber?: number; DocumentType?: string } };
+    return {
+      ok: d.ResponseCode === 0,
+      documentNumber: d.DocumentInfo?.DocumentNumber,
+      documentType: d.DocumentInfo?.DocumentType,
+      description: d.Description,
+      raw: d,
+    };
+  } catch (e) {
+    return { ok: false, description: e instanceof Error ? e.message : 'שגיאת תקשורת מול קארדקום' };
+  }
+}
+
 export const FREE_SHIPPING_THRESHOLD = 399;
 export const STANDARD_SHIPPING_COST = 29;
 
