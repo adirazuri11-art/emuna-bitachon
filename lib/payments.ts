@@ -32,7 +32,6 @@ export interface CheckoutPayload {
   failureUrl: string;
   webhookUrl: string;
   productName?: string;
-  documentLines?: DocumentLine[]; // שורות לקבלה — סכומן חייב להיות שווה ל-amount
 }
 
 // האם להפיק קבלה אוטומטית דרך Cardcom (מודול "הפקת מסמכים").
@@ -84,23 +83,9 @@ export const cardcom: PaymentProvider = {
       WebHookUrl: payload.webhookUrl,
     };
 
-    // הפקת קבלה אוטומטית — רק אם המודול הופעל במפורש (CARDCOM_INVOICE=true).
-    // Cardcom מפיק את המסמך לפי הגדרת החשבון (עוסק פטור → קבלה) ושולח במייל ללקוח.
-    if (isInvoiceEnabled() && payload.documentLines && payload.documentLines.length > 0) {
-      body.Operation = 'ChargeAndCreateDocument';
-      body.Document = {
-        Name: payload.customer.name || 'לקוח',
-        Email: payload.customer.email || undefined,
-        Phone: payload.customer.phone || undefined,
-        IsSendByEmail: false, // אנחנו שולחים את הקבלה במייל מותג (בלי מספר בטקסט), לא Cardcom
-        IsVatFree: true, // עוסק פטור — ללא מע"מ
-        Products: payload.documentLines.map((l) => ({
-          Description: l.description.slice(0, 250),
-          UnitCost: Number(l.unitCost.toFixed(2)),
-          Quantity: l.quantity,
-        })),
-      };
-    }
+    // הערה: הקבלה לא נוצרת כאן בכוונה. החיוב הוא ChargeOnly בלבד — כדי שכשל בהפקת
+    // מסמך לעולם לא ישבור תשלום. הקבלה מופקת אחרי אישור התשלום ב-webhook (createReceiptForTransaction),
+    // דרך אותו API מוכח שמפיק קבלה מקושרת לעסקה.
 
     let res: Response;
     try {
@@ -170,6 +155,22 @@ export async function verifyCardcomTransaction(lowProfileId: string): Promise<Ve
 
 // הפקת קבלה (Receipt) רטרואקטיבית להזמנה ששולמה, מקושרת לעסקת האשראי הקיימת.
 // עוסק פטור → IsVatFree=true. הקישור דרך DealNumbers מונע כפילות הכנסה בספרים.
+// בניית שורות הקבלה מהזמנה — סכומן שווה בדיוק ל-amount (מוצרים + משלוח + אריזה − הנחה).
+export function buildReceiptLines(order: {
+  items: Array<{ id: string; title?: string; quantity: number; unitPrice: number }>;
+  shipping: number;
+  giftWrap: number;
+  discount: number;
+  couponCode?: string | null;
+}): DocumentLine[] {
+  return [
+    ...order.items.map((i) => ({ description: i.title || i.id, unitCost: i.unitPrice, quantity: i.quantity })),
+    ...(order.shipping > 0 ? [{ description: 'משלוח', unitCost: order.shipping, quantity: 1 }] : []),
+    ...(order.giftWrap > 0 ? [{ description: 'אריזת מתנה + כרטיס ברכה', unitCost: order.giftWrap, quantity: 1 }] : []),
+    ...(order.discount > 0 ? [{ description: `הנחה${order.couponCode ? ` (${order.couponCode})` : ''}`, unitCost: -order.discount, quantity: 1 }] : []),
+  ];
+}
+
 export interface ReceiptResult {
   ok: boolean;
   documentNumber?: number | string;

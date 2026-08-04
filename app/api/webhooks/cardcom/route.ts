@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyCardcomTransaction } from '@/lib/payments';
+import { verifyCardcomTransaction, createReceiptForTransaction, buildReceiptLines, isInvoiceEnabled } from '@/lib/payments';
 import { markOrderPaid, markOrderFailed, getOrderForFulfillment, redeemCouponForOrder, saveReceipt } from '@/lib/orders';
 import { sendOrderEmails } from '@/lib/order-email';
 
@@ -56,9 +56,30 @@ async function handle(req: NextRequest, lowProfileFromQuery?: string) {
       const order = await getOrderForFulfillment(verified.orderNumber);
       if (order) {
         if (order.couponCode) await redeemCouponForOrder(order.couponCode);
-        // קבלה שנוצרה אוטומטית בחיוב — נשמרת ל-CRM ומצורפת למייל ללקוח (בלי מספר בטקסט)
-        if (verified.receiptNumber) await saveReceipt(verified.orderNumber, verified.receiptNumber, verified.receiptUrl || '');
-        await sendOrderEmails(order, verified.receiptUrl);
+
+        // הפקת קבלה — אחרי אישור התשלום, דרך אותו API מוכח (מקושר לעסקה). best-effort:
+        // כשל כאן לא מבטל תשלום שכבר אושר; אפשר להפיק ידנית דרך /api/admin/issue-receipt.
+        let receiptUrl: string | undefined;
+        if (isInvoiceEnabled() && verified.transactionId) {
+          try {
+            const receipt = await createReceiptForTransaction({
+              transactionId: verified.transactionId,
+              customer: { name: order.customer.name, email: order.customer.email, phone: order.customer.phone, city: order.customer.city },
+              lines: buildReceiptLines(order),
+              sendByEmail: false, // אנחנו שולחים את הקבלה במייל (בלי מספר בטקסט)
+            });
+            if (receipt.ok && receipt.documentNumber != null) {
+              receiptUrl = (receipt.raw as { DocumentUrl?: string } | undefined)?.DocumentUrl || undefined;
+              await saveReceipt(verified.orderNumber, String(receipt.documentNumber), receiptUrl || '');
+            } else {
+              console.error(`[cardcom-webhook] receipt failed order=${verified.orderNumber} desc=${receipt.description}`);
+            }
+          } catch (e) {
+            console.error(`[cardcom-webhook] receipt error order=${verified.orderNumber}`, e instanceof Error ? e.message : e);
+          }
+        }
+
+        await sendOrderEmails(order, receiptUrl);
       }
     } catch (e) {
       console.error(`[cardcom-webhook] fulfillment error order=${verified.orderNumber}`, e instanceof Error ? e.message : e);

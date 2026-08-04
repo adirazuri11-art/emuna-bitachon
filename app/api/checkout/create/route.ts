@@ -124,14 +124,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'שמירת ההזמנה נכשלה — נסו שוב' }, { status: 500 });
   }
 
-  // שורות לקבלה — סכומן חייב להיות בדיוק amount (מוצרים + משלוח + אריזה − הנחה)
-  const documentLines = [
-    ...lineItems.map((l) => ({ description: l.title, unitCost: l.unitPrice, quantity: l.quantity })),
-    ...(shipping > 0 ? [{ description: 'משלוח', unitCost: shipping, quantity: 1 }] : []),
-    ...(giftCharge > 0 ? [{ description: 'אריזת מתנה + כרטיס ברכה', unitCost: giftCharge, quantity: 1 }] : []),
-    ...(discount > 0 ? [{ description: `הנחה${appliedCoupon ? ` (${appliedCoupon})` : ''}`, unitCost: -discount, quantity: 1 }] : []),
-  ];
-
   try {
     const session = await cardcom.createPaymentPage({
       orderNumber, amount, customer,
@@ -139,7 +131,6 @@ export async function POST(req: NextRequest) {
       successUrl: `${BASE_URL}/checkout/success?order=${encodeURIComponent(orderNumber)}`,
       failureUrl: `${BASE_URL}/checkout/failed?order=${encodeURIComponent(orderNumber)}`,
       webhookUrl: `${BASE_URL}/api/webhooks/cardcom`,
-      documentLines,
     });
     return NextResponse.json({ ok: true, orderNumber, amount, redirectUrl: session.redirectUrl });
   } catch (e) {

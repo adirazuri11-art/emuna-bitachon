@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderForFulfillment, getOrder, saveReceipt } from '@/lib/orders';
-import { createReceiptForTransaction, type DocumentLine } from '@/lib/payments';
+import { createReceiptForTransaction, buildReceiptLines } from '@/lib/payments';
 import { sendReceiptEmail } from '@/lib/order-email';
 
 export const dynamic = 'force-dynamic';
@@ -38,14 +38,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'missing tx — ספק את מספר העסקה בפרמטר tx' }, { status: 400 });
   }
 
-  // שורות הקבלה — זהות לחיוב: מוצרים + משלוח + אריזה − הנחה. סכומן = amount.
+  // שורות הקבלה — זהות לזרימת ה-webhook (מוצרים + משלוח + אריזה − הנחה). סכומן = amount.
   const c = order.customer;
-  const lines: DocumentLine[] = [
-    ...order.items.map((i) => ({ description: i.title || i.id, unitCost: i.unitPrice, quantity: i.quantity })),
-    ...(order.shipping > 0 ? [{ description: 'משלוח', unitCost: order.shipping, quantity: 1 }] : []),
-    ...(order.giftWrap > 0 ? [{ description: 'אריזת מתנה + כרטיס ברכה', unitCost: order.giftWrap, quantity: 1 }] : []),
-    ...(order.discount > 0 ? [{ description: `הנחה${order.couponCode ? ` (${order.couponCode})` : ''}`, unitCost: -order.discount, quantity: 1 }] : []),
-  ];
+  const lines = buildReceiptLines(order);
   const linesSum = lines.reduce((s, l) => s + l.unitCost * l.quantity, 0);
 
   // sendCustomer=1 → אנחנו שולחים מייל מותג עם ה-PDF מצורף (בלי מספר בטקסט). Cardcom לא שולח.
