@@ -94,7 +94,9 @@ function itemsBlock(o: FulfillmentOrder): string {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-top:1px solid ${LINE};padding-top:8px">${summaryRows(o)}</table>`;
 }
 
-async function resendSend(to: string, subject: string, html: string, replyTo?: string): Promise<{ ok: boolean; status?: number; detail?: string }> {
+interface Attachment { filename: string; content: string } // content = base64
+
+async function resendSend(to: string, subject: string, html: string, replyTo?: string, attachments?: Attachment[]): Promise<{ ok: boolean; status?: number; detail?: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key || !to) return { ok: false, detail: 'missing key/to' };
   const from = process.env.RESEND_FROM || 'אמונה וביטחון <onboarding@resend.dev>';
@@ -102,13 +104,27 @@ async function resendSend(to: string, subject: string, html: string, replyTo?: s
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
+      body: JSON.stringify({ from, to, subject, html, ...(replyTo ? { reply_to: replyTo } : {}), ...(attachments && attachments.length ? { attachments } : {}) }),
       cache: 'no-store',
     });
     const text = await res.text().catch(() => '');
     return { ok: res.ok, status: res.status, detail: text.slice(0, 200) };
   } catch (e) {
     return { ok: false, detail: e instanceof Error ? e.message : 'fetch error' };
+  }
+}
+
+// הורדת קובץ הקבלה (PDF) מ-Cardcom והמרתו ל-base64 לצירוף למייל. best-effort.
+async function fetchReceiptAttachment(url?: string): Promise<Attachment | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length === 0 || buf.length > 8_000_000) return null; // הגנה
+    return { filename: 'קבלה.pdf', content: buf.toString('base64') };
+  } catch {
+    return null;
   }
 }
 
@@ -151,7 +167,7 @@ export async function sendClubWelcome(
   return { member: rm.ok, business };
 }
 
-export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: boolean; customer: boolean; detail?: string }> {
+export async function sendOrderEmails(o: FulfillmentOrder, receiptUrl?: string): Promise<{ business: boolean; customer: boolean; detail?: string }> {
   const biz = process.env.BUSINESS_ORDER_EMAIL;
   const c = o.customer;
   const addr = [c.street, c.city, c.zip].filter(Boolean).join(', ');
@@ -190,13 +206,31 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
       <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">קיבלנו את התשלום וההזמנה נכנסה לטיפול 🙏<br>נעדכן אותך בכל שלב בהכנת ההזמנה.</p>
       <div style="margin-top:14px;font-size:13px;color:${MUTED}">מספר הזמנה <b style="color:${INK}">${esc(o.orderNumber)}</b></div>
       ${itemsBlock(o)}
-      ${addr ? `<div style="margin-top:16px;font-size:13px;color:${MUTED}">📦 משלוח אל: <span style="color:${INK}">${esc(addr)}</span></div>` : ''}`;
+      ${addr ? `<div style="margin-top:16px;font-size:13px;color:${MUTED}">📦 משלוח אל: <span style="color:${INK}">${esc(addr)}</span></div>` : ''}
+      ${receiptUrl ? `<div style="margin-top:16px;font-size:13px;color:${MUTED}">🧾 קבלה על התשלום מצורפת למייל זה.</div>` : ''}`;
     const html = shell('תודה על הזמנתך! 🎁', inner, 'לכל שאלה אפשר להשיב למייל הזה. תודה שבחרתם באמונה וביטחון.');
+    // צירוף קובץ הקבלה (PDF) — הקובץ מצורף, בלי מספר קבלה בטקסט ההודעה
+    const receipt = await fetchReceiptAttachment(receiptUrl);
     // Reply-To = מייל העסק, כדי שתשובת הלקוח תגיע ל-lalevmedia
-    const r = await resendSend(c.email, `אישור הזמנה ${o.orderNumber} — אמונה וביטחון`, html, biz || undefined);
+    const r = await resendSend(c.email, `אישור הזמנה ${o.orderNumber} — אמונה וביטחון`, html, biz || undefined, receipt ? [receipt] : undefined);
     customer = r.ok;
     if (!detail) detail = r.detail;
   }
 
   return { business, customer, detail };
+}
+
+// שליחת קבלה בלבד ללקוח (backfill/רטרו) — הקובץ מצורף, בלי מספר בטקסט.
+export async function sendReceiptEmail(o: FulfillmentOrder, receiptUrl: string): Promise<{ ok: boolean; detail?: string }> {
+  const c = o.customer;
+  if (!c.email) return { ok: false, detail: 'no customer email' };
+  const biz = process.env.BUSINESS_ORDER_EMAIL;
+  const receipt = await fetchReceiptAttachment(receiptUrl);
+  if (!receipt) return { ok: false, detail: 'could not fetch receipt pdf' };
+  const inner = `
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">שלום ${esc(c.name || '')},<br>מצורפת הקבלה על התשלום עבור הזמנה <b style="color:${INK}">${esc(o.orderNumber)}</b>.</p>
+    <div style="margin-top:14px;font-size:13px;color:${MUTED}">🧾 הקבלה מצורפת כקובץ PDF למייל זה.</div>`;
+  const html = shell('הקבלה שלך 🧾', inner, 'תודה שבחרתם באמונה וביטחון. לכל שאלה אפשר להשיב למייל הזה.');
+  const r = await resendSend(c.email, `קבלה על הזמנה ${o.orderNumber} — אמונה וביטחון`, html, biz || undefined, [receipt]);
+  return { ok: r.ok, detail: r.detail };
 }

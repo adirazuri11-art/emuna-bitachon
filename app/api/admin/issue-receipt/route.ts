@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderForFulfillment, getOrder, saveReceipt } from '@/lib/orders';
 import { createReceiptForTransaction, type DocumentLine } from '@/lib/payments';
+import { sendReceiptEmail } from '@/lib/order-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,16 +48,21 @@ export async function GET(req: NextRequest) {
   ];
   const linesSum = lines.reduce((s, l) => s + l.unitCost * l.quantity, 0);
 
+  // sendCustomer=1 → אנחנו שולחים מייל מותג עם ה-PDF מצורף (בלי מספר בטקסט). Cardcom לא שולח.
+  const sendCustomer = req.nextUrl.searchParams.get('email') === '1';
   const result = await createReceiptForTransaction({
     transactionId,
     customer: { name: c.name, email: c.email, phone: c.phone, city: c.city },
     lines,
+    sendByEmail: false, // תמיד — אנחנו שולחים, לא Cardcom
   });
 
   // שמירת הקבלה על ההזמנה — נראית ב-CRM
+  let emailSent: { ok: boolean; detail?: string } | undefined;
   if (result.ok && result.documentNumber != null) {
     const url = (result.raw as { DocumentUrl?: string } | undefined)?.DocumentUrl || '';
     await saveReceipt(orderNumber, String(result.documentNumber), url);
+    if (sendCustomer && url) emailSent = await sendReceiptEmail(order, url);
   }
 
   return NextResponse.json({
@@ -66,5 +72,6 @@ export async function GET(req: NextRequest) {
     linesSum,
     reconciles: Math.abs(linesSum - order.amount) < 0.01,
     receipt: result,
+    emailSent,
   });
 }

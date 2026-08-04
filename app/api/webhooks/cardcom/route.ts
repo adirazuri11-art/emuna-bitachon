@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCardcomTransaction } from '@/lib/payments';
-import { markOrderPaid, markOrderFailed, getOrderForFulfillment, redeemCouponForOrder } from '@/lib/orders';
+import { markOrderPaid, markOrderFailed, getOrderForFulfillment, redeemCouponForOrder, saveReceipt } from '@/lib/orders';
 import { sendOrderEmails } from '@/lib/order-email';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +56,9 @@ async function handle(req: NextRequest, lowProfileFromQuery?: string) {
       const order = await getOrderForFulfillment(verified.orderNumber);
       if (order) {
         if (order.couponCode) await redeemCouponForOrder(order.couponCode);
-        await sendOrderEmails(order);
+        // קבלה שנוצרה אוטומטית בחיוב — נשמרת ל-CRM ומצורפת למייל ללקוח (בלי מספר בטקסט)
+        if (verified.receiptNumber) await saveReceipt(verified.orderNumber, verified.receiptNumber, verified.receiptUrl || '');
+        await sendOrderEmails(order, verified.receiptUrl);
       }
     } catch (e) {
       console.error(`[cardcom-webhook] fulfillment error order=${verified.orderNumber}`, e instanceof Error ? e.message : e);

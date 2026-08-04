@@ -92,7 +92,8 @@ export const cardcom: PaymentProvider = {
         Name: payload.customer.name || 'לקוח',
         Email: payload.customer.email || undefined,
         Phone: payload.customer.phone || undefined,
-        IsSendByEmail: !!payload.customer.email, // שליחת הקבלה במייל ללקוח
+        IsSendByEmail: false, // אנחנו שולחים את הקבלה במייל מותג (בלי מספר בטקסט), לא Cardcom
+        IsVatFree: true, // עוסק פטור — ללא מע"מ
         Products: payload.documentLines.map((l) => ({
           Description: l.description.slice(0, 250),
           UnitCost: Number(l.unitCost.toFixed(2)),
@@ -130,6 +131,8 @@ export interface VerifiedTransaction {
   orderNumber: string;
   amount: number;
   transactionId: string;
+  receiptNumber?: string; // מספר הקבלה שנוצרה אוטומטית בחיוב (אם הופקה)
+  receiptUrl?: string; // קישור להורדת הקבלה
 }
 
 // אימות רשמי מול קארדקום — GetLpResult. מקור האמת היחיד לתשלום מוצלח.
@@ -149,6 +152,7 @@ export async function verifyCardcomTransaction(lowProfileId: string): Promise<Ve
       ResponseCode?: number;
       ReturnValue?: string;
       TranzactionInfo?: { Amount?: number; TranzactionId?: number; ResponseCode?: number };
+      DocumentInfo?: { DocumentNumber?: number; DocumentUrl?: string };
     };
     const txOk = d.ResponseCode === 0 && (d.TranzactionInfo?.ResponseCode ?? 1) === 0;
     return {
@@ -156,6 +160,8 @@ export async function verifyCardcomTransaction(lowProfileId: string): Promise<Ve
       orderNumber: String(d.ReturnValue ?? ''),
       amount: Number(d.TranzactionInfo?.Amount ?? 0),
       transactionId: String(d.TranzactionInfo?.TranzactionId ?? ''),
+      receiptNumber: d.DocumentInfo?.DocumentNumber != null ? String(d.DocumentInfo.DocumentNumber) : undefined,
+      receiptUrl: d.DocumentInfo?.DocumentUrl || undefined,
     };
   } catch {
     return null;
