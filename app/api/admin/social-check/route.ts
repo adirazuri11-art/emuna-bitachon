@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSocialData, getTokenHealth } from '@/lib/crm/meta';
+import { getSocialData, getTokenHealth, loadMetaConfig } from '@/lib/crm/meta';
 
 export const dynamic = 'force-dynamic';
 
-// בדיקת חיבור Meta — מוגן ב-MIGRATE_SECRET. מחזיר סיכום לא-סודי.
+const GRAPH = 'https://graph.facebook.com/v21.0';
+
+// בדיקת חיבור Meta — מוגן ב-MIGRATE_SECRET. מחזיר סיכום לא-סודי + אבחון גולמי.
 export async function GET(req: NextRequest) {
   const secret = process.env.MIGRATE_SECRET;
   const key = req.nextUrl.searchParams.get('key');
   if (!secret || key !== secret) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+
+  // ---- אבחון גולמי ----
+  const cfg = await loadMetaConfig();
+  const diag: Record<string, unknown> = {};
+  if (cfg.token && cfg.pageId) {
+    const call = async (path: string, params: Record<string, string>) => {
+      try {
+        const url = `${GRAPH}/${path}?${new URLSearchParams({ ...params, access_token: cfg.token! })}`;
+        const r = await fetch(url, { cache: 'no-store' });
+        return await r.json();
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : 'fetch error' };
+      }
+    };
+    diag.igLink = await call(cfg.pageId, { fields: 'name,instagram_business_account{id,username}' });
+    diag.pagePermsTest = await call(`${cfg.pageId}/insights`, { metric: 'page_impressions_unique', period: 'day' });
+  }
 
   const d = await getSocialData();
   const health = await getTokenHealth();
@@ -25,5 +44,6 @@ export async function GET(req: NextRequest) {
     },
     tokenDaysLeft: health.daysLeft,
     tokenScopes: health.scopes,
+    diag,
   });
 }
