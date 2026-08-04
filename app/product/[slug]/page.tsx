@@ -58,6 +58,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         url: `${SITE_URL}/product/${product.slug}`,
         material: product.materials.join(', '),
         category: product.category,
+        brand: { '@type': 'Brand', name: 'אמונה וביטחון' },
         ...(product.certification && {
           certificateNumber: product.certification,
           certificationDetails: { '@type': 'Text', value: product.certification },
@@ -67,10 +68,31 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           url: `${SITE_URL}/product/${product.slug}`,
           price,
           priceCurrency: 'ILS',
+          priceValidUntil: new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10),
+          itemCondition: 'https://schema.org/NewCondition',
           availability:
             product.stockStatus === 'coming-soon'
               ? 'https://schema.org/PreOrder'
               : 'https://schema.org/InStock',
+          seller: { '@id': `${SITE_URL}#organization` },
+          shippingDetails: {
+            '@type': 'OfferShippingDetails',
+            shippingRate: { '@type': 'MonetaryAmount', value: 29, currency: 'ILS' },
+            shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IL' },
+            deliveryTime: {
+              '@type': 'ShippingDeliveryTime',
+              handlingTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 3, unitCode: 'DAY' },
+              transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 3, unitCode: 'DAY' },
+            },
+          },
+          hasMerchantReturnPolicy: {
+            '@type': 'MerchantReturnPolicy',
+            applicableCountry: 'IL',
+            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+            merchantReturnDays: 14,
+            returnMethod: 'https://schema.org/ReturnByMail',
+            returnFees: 'https://schema.org/ReturnShippingFees',
+          },
         },
       },
       {

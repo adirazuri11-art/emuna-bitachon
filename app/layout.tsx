@@ -60,10 +60,49 @@ export const metadata: Metadata = {
   other: { google: 'notranslate' },
 };
 
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': ['Organization', 'Store'],
+  '@id': `${SITE_URL}#organization`,
+  name: 'אמונה וביטחון',
+  alternateName: 'אמונה וביטחון יודאיקה',
+  url: SITE_URL,
+  description:
+    'חנות יודאיקה יוקרתית — כלי קודש, כיפות בהתאמה אישית, גביעי קידוש, מזוזות, טליתות ומתנות יהודיות בעבודת יד, עם כשרות מאומתת.',
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+972503096969',
+    contactType: 'customer service',
+    areaServed: 'IL',
+    availableLanguage: ['he'],
+  },
+  sameAs: [
+    'https://www.instagram.com/emunavebitachon',
+    'https://www.facebook.com/profile.php?id=61593009291594',
+  ],
+};
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${SITE_URL}#website`,
+  url: SITE_URL,
+  name: 'אמונה וביטחון',
+  inLanguage: 'he-IL',
+  publisher: { '@id': `${SITE_URL}#organization` },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl" translate="no" className={`notranslate ${assistant.variable} ${frankRuhl.variable}`}>
       <body className="font-sans">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <Providers>
           <HideOnCrm>
             <ConsentBanner />
