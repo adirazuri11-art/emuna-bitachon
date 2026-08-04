@@ -69,11 +69,6 @@ export const cardcom: PaymentProvider = {
       SuccessRedirectUrl: payload.successUrl,
       FailedRedirectUrl: payload.failureUrl,
       WebHookUrl: payload.webhookUrl,
-      Document: {
-        Name: payload.customer.name,
-        Email: payload.customer.email,
-        Products: [{ Description: payload.productName ?? `הזמנה ${payload.orderNumber}`, UnitCost: Number(payload.amount.toFixed(2)) }],
-      },
     };
 
     let res: Response;
@@ -89,7 +84,7 @@ export const cardcom: PaymentProvider = {
     }
     const data = (await res.json()) as { ResponseCode?: number; Description?: string; Url?: string; LowProfileId?: string };
     if (data.ResponseCode !== 0 || !data.Url) {
-      throw new Error(`קארדקום דחתה את הבקשה: ${data.Description ?? 'שגיאה לא ידועה'}`);
+      throw new Error(`קארדקום דחתה את הבקשה: ${data.Description ?? 'שגיאה לא ידועה'} (code ${data.ResponseCode})`);
     }
     return { redirectUrl: data.Url, providerRef: String(data.LowProfileId ?? '') };
   },
