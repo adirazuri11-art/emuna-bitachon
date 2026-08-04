@@ -15,6 +15,7 @@ export default async function OrderDetailPage({ params }: { params: { order: str
 
   const c = order.customer;
   const addr = [c.street, c.city, c.zip].filter(Boolean).join(', ');
+  const addrExtra = [c.floor ? `קומה ${c.floor}` : '', c.apt ? `דירה ${c.apt}` : '', c.entryCode ? `קוד כניסה: ${c.entryCode}` : ''].filter(Boolean).join(' · ');
   const paid = order.status === 'paid';
 
   return (
@@ -67,6 +68,7 @@ export default async function OrderDetailPage({ params }: { params: { order: str
           <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-gold" /> <a href={`tel:${c.phone}`} className="hover:text-gold" dir="ltr">{c.phone || '—'}</a></div>
           <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-gold" /> <span dir="ltr">{c.email || '—'}</span></div>
           <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5 text-gold" /> {addr || '—'}</div>
+          {addrExtra && <div className="flex items-center gap-2 sm:col-span-2 text-cream/70"><span className="h-3.5 w-3.5" /> {addrExtra}</div>}
         </div>
       </div>
 

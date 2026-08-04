@@ -11,7 +11,7 @@ export interface OrderInput {
   orderNumber: string;
   amount: number;
   items: Array<{ id: string; title?: string; quantity: number; unitPrice: number }>;
-  customer: { name: string; email: string; phone: string; street?: string; city?: string; zip?: string };
+  customer: { name: string; email: string; phone: string; street?: string; city?: string; zip?: string; floor?: string; apt?: string; entryCode?: string };
   giftWrap: number;
   giftMessage: string;
   couponCode?: string;

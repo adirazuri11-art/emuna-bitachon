@@ -126,7 +126,7 @@ export interface OrderDetail {
   amount: number;
   currency: string;
   items: Array<{ id: string; title?: string; quantity: number; unitPrice: number }>;
-  customer: { name?: string; email?: string; phone?: string; street?: string; city?: string; zip?: string };
+  customer: { name?: string; email?: string; phone?: string; street?: string; city?: string; zip?: string; floor?: string; apt?: string; entryCode?: string };
   giftWrap: number;
   giftMessage: string | null;
   couponCode: string | null;

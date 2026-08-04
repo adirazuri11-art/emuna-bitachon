@@ -155,6 +155,7 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
   const biz = process.env.BUSINESS_ORDER_EMAIL;
   const c = o.customer;
   const addr = [c.street, c.city, c.zip].filter(Boolean).join(', ');
+  const floorApt = [c.floor ? `קומה ${c.floor}` : '', c.apt ? `דירה ${c.apt}` : ''].filter(Boolean).join(' · ');
   let detail: string | undefined;
 
   // ---- מייל לעסק ----
@@ -170,6 +171,8 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
           <tr><td style="color:${MUTED}">טלפון</td><td><a href="tel:${esc(c.phone || '')}" style="color:${INK};text-decoration:none">${esc(c.phone || '—')}</a></td></tr>
           <tr><td style="color:${MUTED}">אימייל</td><td>${esc(c.email || '—')}</td></tr>
           <tr><td style="color:${MUTED}">כתובת</td><td>${esc(addr || '—')}</td></tr>
+          ${floorApt ? `<tr><td style="color:${MUTED}">קומה/דירה</td><td>${esc(floorApt)}</td></tr>` : ''}
+          ${c.entryCode ? `<tr><td style="color:${MUTED}">קוד כניסה</td><td>${esc(c.entryCode)}</td></tr>` : ''}
         </table>
       </div>
       ${o.giftWrap && o.giftMessage ? `<div style="margin-top:14px;background:#fdf6e3;border:1px solid ${LINE};border-radius:12px;padding:14px"><div style="font-size:13px;font-weight:700;color:${GOLD};margin-bottom:6px">🎁 כיתוב לכרטיס הברכה</div><div style="white-space:pre-wrap;font-size:14px;color:${INK}">${esc(o.giftMessage)}</div></div>` : ''}`;

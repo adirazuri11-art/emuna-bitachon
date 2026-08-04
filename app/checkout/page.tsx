@@ -29,12 +29,15 @@ interface OrderSnapshot {
 }
 
 const FIELDS = [
-  { key: 'name', label: 'שם מלא', type: 'text', autoComplete: 'name' },
-  { key: 'phone', label: 'טלפון נייד', type: 'tel', autoComplete: 'tel' },
-  { key: 'email', label: 'אימייל', type: 'email', autoComplete: 'email' },
-  { key: 'street', label: 'רחוב ומספר בית', type: 'text', autoComplete: 'street-address' },
-  { key: 'city', label: 'עיר', type: 'text', autoComplete: 'address-level2' },
-  { key: 'zip', label: 'מיקוד', type: 'text', autoComplete: 'postal-code' },
+  { key: 'name', label: 'שם מלא', type: 'text', autoComplete: 'name', optional: false },
+  { key: 'phone', label: 'טלפון נייד', type: 'tel', autoComplete: 'tel', optional: false },
+  { key: 'email', label: 'אימייל', type: 'email', autoComplete: 'email', optional: false },
+  { key: 'street', label: 'רחוב ומספר בית', type: 'text', autoComplete: 'street-address', optional: false },
+  { key: 'city', label: 'עיר', type: 'text', autoComplete: 'address-level2', optional: false },
+  { key: 'zip', label: 'מיקוד', type: 'text', autoComplete: 'postal-code', optional: false },
+  { key: 'floor', label: 'קומה (רשות)', type: 'text', autoComplete: '', optional: true },
+  { key: 'apt', label: 'דירה (רשות)', type: 'text', autoComplete: '', optional: true },
+  { key: 'entryCode', label: 'קוד כניסה לבניין (רשות)', type: 'text', autoComplete: '', optional: true },
 ] as const;
 
 export default function CheckoutPage() {
@@ -148,6 +151,9 @@ export default function CheckoutPage() {
             street: String(fd.get('street') ?? ''),
             city: String(fd.get('city') ?? ''),
             zip: String(fd.get('zip') ?? ''),
+            floor: String(fd.get('floor') ?? ''),
+            apt: String(fd.get('apt') ?? ''),
+            entryCode: String(fd.get('entryCode') ?? ''),
           },
         }),
       });
@@ -314,10 +320,10 @@ export default function CheckoutPage() {
               <label key={f.key} className="block">
                 <span className="mb-1 block text-sm font-medium text-navy">{f.label}</span>
                 <input
-                  required
+                  required={!f.optional}
                   name={f.key}
                   type={f.type}
-                  autoComplete={f.autoComplete}
+                  autoComplete={f.autoComplete || undefined}
                   className="gold-ring w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none"
                 />
               </label>
