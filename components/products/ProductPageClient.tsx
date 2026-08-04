@@ -382,7 +382,7 @@ export function ProductPageClient({
             </Accordion>
             <Accordion title="ביקורות לקוחות">
               <p className="text-navy/60">
-                עדיין אין ביקורות למוצר זה — האתר בשלב השקה. רכשתם? נשמח שתהיו הראשונים לשתף בוואטסאפ.
+                עדיין אין ביקורות למוצר זה. רכשתם? נשמח שתהיו הראשונים לשתף בוואטסאפ.
               </p>
             </Accordion>
           </div>

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     items?: InItem[];
     giftWrap?: { selected?: boolean; message?: string };
     couponCode?: string;
-    customer?: { name?: string; email?: string; phone?: string };
+    customer?: { name?: string; email?: string; phone?: string; street?: string; city?: string; zip?: string };
   };
   try {
     body = await req.json();
@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
     name: String(body.customer?.name ?? '').slice(0, 80) || 'לקוח',
     email: String(body.customer?.email ?? '').slice(0, 120),
     phone: String(body.customer?.phone ?? '').slice(0, 40),
+    street: String(body.customer?.street ?? '').slice(0, 120),
+    city: String(body.customer?.city ?? '').slice(0, 60),
+    zip: String(body.customer?.zip ?? '').slice(0, 20),
   };
 
   // שמירת הזמנה pending לפני מעבר לסליקה (מקור אמת לאימות ה-webhook)

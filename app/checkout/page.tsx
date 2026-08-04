@@ -145,6 +145,9 @@ export default function CheckoutPage() {
             name: String(fd.get('name') ?? ''),
             phone: String(fd.get('phone') ?? ''),
             email: String(fd.get('email') ?? ''),
+            street: String(fd.get('street') ?? ''),
+            city: String(fd.get('city') ?? ''),
+            zip: String(fd.get('zip') ?? ''),
           },
         }),
       });
@@ -301,10 +304,7 @@ export default function CheckoutPage() {
       <p className="mb-3 flex items-center gap-2 text-sm text-navy/60">
         <Lock className="h-4 w-4 text-gold-soft" /> תשלום מאובטח ומוצפן · פרטיך לא נשמרים באתר
       </p>
-      {/* שקיפות בשלב ההרצה — אין חיוב עד אישור אנושי */}
-      <p className="mb-8 rounded-xl border border-gold/25 bg-gold/10 px-4 py-2.5 text-xs text-navy/70">
-        האתר בשלב השקה: ההזמנה נקלטת כבקשה, ניצור איתך קשר לאישור סופי — <b>לא מתבצע חיוב אוטומטי</b>.
-      </p>
+      <div className="mb-8" />
 
       <div className="grid gap-10 lg:grid-cols-5">
         {/* טופס פרטים */}
