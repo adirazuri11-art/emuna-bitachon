@@ -84,7 +84,8 @@ export const cardcom: PaymentProvider = {
     }
     const data = (await res.json()) as { ResponseCode?: number; Description?: string; Url?: string; LowProfileId?: string };
     if (data.ResponseCode !== 0 || !data.Url) {
-      throw new Error(`קארדקום דחתה את הבקשה: ${data.Description ?? 'שגיאה לא ידועה'} (code ${data.ResponseCode})`);
+      const debug = process.env.CARDCOM_DEBUG === 'true' ? ` :: ${JSON.stringify(data)} :: terminal=${terminal} apiName.len=${apiName.length}` : '';
+      throw new Error(`קארדקום דחתה את הבקשה: ${data.Description ?? 'שגיאה לא ידועה'} (code ${data.ResponseCode})${debug}`);
     }
     return { redirectUrl: data.Url, providerRef: String(data.LowProfileId ?? '') };
   },
