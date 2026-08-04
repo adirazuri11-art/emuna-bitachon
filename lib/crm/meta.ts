@@ -156,26 +156,38 @@ export async function getSocialData(): Promise<SocialData> {
   const until = new Date();
   const since = new Date(Date.now() - 30 * 864e5);
 
+  // Auto-resolve the Instagram Business account id from the page (so the user
+  // never has to supply META_IG_USER_ID — only the page token is needed).
+  let igId = cfg.igId;
+  if (!igId && cfg.pageId) {
+    const linked = await gql<{ instagram_business_account?: { id?: string } }>(
+      cfg.pageId,
+      { fields: 'instagram_business_account' },
+      token,
+    );
+    igId = linked?.instagram_business_account?.id;
+  }
+
   // ---- Instagram ----
-  if (cfg.igId) {
+  if (igId) {
     const [profile, media, reach, follows] = await Promise.all([
       gql<{ username?: string; followers_count?: number; follows_count?: number; media_count?: number }>(
-        cfg.igId,
+        igId,
         { fields: 'username,followers_count,follows_count,media_count' },
         token,
       ),
       gql<{ data?: Array<Record<string, unknown>> }>(
-        `${cfg.igId}/media`,
+        `${igId}/media`,
         { fields: 'caption,like_count,comments_count,media_url,thumbnail_url,permalink,timestamp', limit: '9' },
         token,
       ),
       gql<Parameters<typeof metricSeries>[0]>(
-        `${cfg.igId}/insights`,
+        `${igId}/insights`,
         { metric: 'reach', period: 'day', since: unix(since), until: unix(until) },
         token,
       ),
       gql<Parameters<typeof metricSeries>[0]>(
-        `${cfg.igId}/insights`,
+        `${igId}/insights`,
         { metric: 'follower_count', period: 'day', since: unix(since), until: unix(until) },
         token,
       ),
