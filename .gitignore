@@ -12,3 +12,6 @@ next-env.d.ts
 .supplier-orig
 .env*
 .env
+
+# gift-wrap test build artifact
+.test-build/

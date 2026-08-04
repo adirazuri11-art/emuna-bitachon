@@ -9,6 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "pretest": "tsc lib/gift-wrap.ts --outDir .test-build --target es2020 --module es2022 --skipLibCheck && node -e \"require('fs').writeFileSync('.test-build/package.json',JSON.stringify({type:'module'}))\"",
+    "test": "node --test __tests__/",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio"

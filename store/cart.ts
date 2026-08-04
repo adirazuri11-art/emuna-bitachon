@@ -11,13 +11,23 @@ export interface CartItem {
   customization?: Record<string, string>; // { text: "לחתן היקר", font: "..." }
 }
 
+export interface GiftWrapState {
+  selected: boolean;
+  message: string;
+}
+
+const EMPTY_GIFT_WRAP: GiftWrapState = { selected: false, message: '' };
+
 interface CartState {
   items: CartItem[];
   coupon: AppliedCoupon | null;
+  giftWrap: GiftWrapState;
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
   setCoupon: (coupon: AppliedCoupon | null) => void;
+  setGiftWrap: (patch: Partial<GiftWrapState>) => void;
+  clearGiftWrap: () => void;
   clear: () => void;
 }
 
@@ -26,7 +36,10 @@ export const useCartStore = create<CartState>()(
     (set) => ({
       items: [],
       coupon: null,
+      giftWrap: EMPTY_GIFT_WRAP,
       setCoupon: (coupon) => set({ coupon }),
+      setGiftWrap: (patch) => set((s) => ({ giftWrap: { ...s.giftWrap, ...patch } })),
+      clearGiftWrap: () => set({ giftWrap: EMPTY_GIFT_WRAP }),
       addItem: (item) =>
         set((state) => {
           const existing = state.items.find((i) => i.id === item.id);
@@ -39,7 +52,12 @@ export const useCartStore = create<CartState>()(
           }
           return { items: [...state.items, { ...item, quantity: item.minQty ?? 1 }] };
         }),
-      removeItem: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
+      removeItem: (id) =>
+        set((s) => {
+          const items = s.items.filter((i) => i.id !== id);
+          // סל ריק לגמרי → הסרת אריזת המתנה והברכה
+          return items.length ? { items } : { items, giftWrap: EMPTY_GIFT_WRAP };
+        }),
       setQuantity: (id, quantity) =>
         set((s) => {
           const it = s.items.find((i) => i.id === id);
@@ -47,11 +65,12 @@ export const useCartStore = create<CartState>()(
           if (quantity < min) {
             // מתחת למינימום: אם יש מינימום כמותי — נצמד אליו; אחרת מסירים
             if (min > 1) return { items: s.items.map((i) => (i.id === id ? { ...i, quantity: min } : i)) };
-            return { items: s.items.filter((i) => i.id !== id) };
+            const items = s.items.filter((i) => i.id !== id);
+            return items.length ? { items } : { items, giftWrap: EMPTY_GIFT_WRAP };
           }
           return { items: s.items.map((i) => (i.id === id ? { ...i, quantity } : i)) };
         }),
-      clear: () => set({ items: [], coupon: null }),
+      clear: () => set({ items: [], coupon: null, giftWrap: EMPTY_GIFT_WRAP }),
     }),
     { name: 'emuna-bitachon-cart' }
   )

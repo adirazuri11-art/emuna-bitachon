@@ -11,6 +11,8 @@ import { redeemClubCoupon } from '@/lib/club-client';
 import { useToastStore } from '@/store/toast';
 import { trackEvent } from '@/lib/analytics';
 import { formatPrice } from '@/lib/utils';
+import { GiftWrapOption } from '@/components/checkout/GiftWrapOption';
+import { countWords, giftWrapCharge, validateGiftMessage, GIFT_WRAP_MAX_WORDS, GIFT_WRAP_PRICE } from '@/lib/gift-wrap';
 
 const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '972503096969';
 
@@ -20,6 +22,8 @@ interface OrderSnapshot {
   subtotal: number;
   shipping: number;
   couponDiscount: number;
+  giftWrap: number; // 0 או 10
+  giftMessage: string; // הברכה (Plain Text בטוח), ריק אם לא נבחרה
   total: number;
   cashback: PersonalCoupon;
 }
@@ -39,10 +43,13 @@ export default function CheckoutPage() {
   const items = useCartStore((s) => s.items);
   const coupon = useCartStore((s) => s.coupon);
   const setCoupon = useCartStore((s) => s.setCoupon);
+  const giftWrap = useCartStore((s) => s.giftWrap);
+  const setGiftWrap = useCartStore((s) => s.setGiftWrap);
   const clearCart = useCartStore((s) => s.clear);
   const showToast = useToastStore((s) => s.show);
   const subtotal = useCartStore(selectCartTotal);
   const shipping = calcShipping(subtotal);
+  const [giftSubmitError, setGiftSubmitError] = useState<string | null>(null);
 
   // בדיקה: אם לא יש קופון אבל יש קוד מועדון בlocalStorage — החל 10% אוטומטי
   const memberCode = typeof window !== 'undefined' ? localStorage.getItem('emuna-club-code') : null;
@@ -51,7 +58,19 @@ export default function CheckoutPage() {
 
   const couponDiscount = effectiveCoupon ? calcDiscount(effectiveCoupon, subtotal) : 0;
   const couponLabel = effectiveCoupon?.label ?? null;
-  const total = subtotal + shipping - couponDiscount;
+
+  // ---- אריזת מתנה — ספירת מילים ומחיר ממקור אמת יחיד ----
+  const hasItems = items.length > 0;
+  const giftWordCount = countWords(giftWrap.message);
+  const giftCharge = giftWrapCharge(giftWrap.selected, hasItems); // 10 או 0, פעם אחת
+  // שגיאה חיה: חריגה מ-100 מילים מוצגת מיד; "שדה ריק" רק לאחר ניסיון שליחה.
+  const giftLiveError =
+    giftWrap.selected && giftWordCount > GIFT_WRAP_MAX_WORDS
+      ? 'הברכה יכולה לכלול עד 100 מילים. אנא קצרו את הטקסט כדי להמשיך.'
+      : null;
+  const giftError = giftLiveError ?? giftSubmitError;
+
+  const total = subtotal + shipping - couponDiscount + giftCharge;
 
   useEffect(() => setMounted(true), []);
 
@@ -68,9 +87,47 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // ---- אריזת מתנה: Validation לקוח → אכיפה בשרת (מחיר וברכה מהשרת בלבד) ----
+    let giftFinalCharge = 0;
+    let giftFinalMessage = '';
+    if (giftWrap.selected && hasItems) {
+      const local = validateGiftMessage(giftWrap.message);
+      if (!local.ok) {
+        setGiftSubmitError(local.error ?? null);
+        trackEvent('gift_message_validation_error', { selected: true, wordCount: local.wordCount });
+        showToast(local.error ?? 'יש לתקן את הברכה כדי להמשיך', 'error');
+        return;
+      }
+      try {
+        const res = await fetch('/api/gift-wrap/validate', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ selected: true, message: giftWrap.message }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          setGiftSubmitError(data?.error ?? null);
+          trackEvent('gift_message_validation_error', { selected: true, wordCount: data?.wordCount });
+          showToast(data?.error ?? 'שגיאה באימות הברכה. נסו שוב', 'error');
+          return;
+        }
+        // המחיר והברכה מגיעים מהשרת (10 ₪, Plain Text בטוח) — לא מה-Client.
+        giftFinalCharge = data.price === GIFT_WRAP_PRICE ? GIFT_WRAP_PRICE : GIFT_WRAP_PRICE;
+        giftFinalMessage = typeof data.sanitizedMessage === 'string' ? data.sanitizedMessage : local.sanitized;
+        setGiftWrap({ message: giftFinalMessage }); // שמירת הגרסה המנוקה
+        setGiftSubmitError(null);
+      } catch {
+        showToast('בעיית תקשורת באימות הברכה. נסו שוב', 'error');
+        return;
+      }
+    }
+
     trackEvent('add_payment_info', { value: total });
     // TODO: Server Action → יצירת Order ב-Prisma → getPaymentProvider().createPaymentPage()
     // → redirect לעמוד הסליקה (Cardcom / PayPlus). ראו lib/payments.ts
+    // ⚠️ בעת חיבור הסליקה: הסכום הסופי (כולל תוספת אריזת המתנה 10 ₪) חייב להיחשב
+    // בשרת עם giftWrapCharge() מ-lib/gift-wrap, ולא להילקח מה-Client.
     // ⚠️ חשוב: בשרת, בדוק אם הלקוח הוא חבר מועדון לפני החלת 10% הנחה זמנית.
     // רק קופון שרת-side (חברות מועדון) יופעל בקופה.
     // מימוש הקופון האישי (חד-פעמי, נאכף בשרת) לפני סגירת ההזמנה
@@ -82,8 +139,16 @@ export default function CheckoutPage() {
         return;
       }
     }
+
+    // סכום סופי מחושב מחדש עם תוספת אריזת המתנה שאושרה בשרת (הנחה/משלוח על מוצרים בלבד)
+    const finalTotal = subtotal + shipping - couponDiscount + giftFinalCharge;
+
+    if (giftFinalCharge > 0) {
+      trackEvent('checkout_with_gift_wrap', { selected: true, price: GIFT_WRAP_PRICE, currency: 'ILS', wordCount: giftWordCount });
+    }
+
     // קופון קאשבק 3% להזמנה הבאה (מקומי)
-    const cashback = generateCashbackCoupon(total);
+    const cashback = generateCashbackCoupon(finalTotal);
     savePersonalCoupon(cashback);
 
     const snapshot: OrderSnapshot = {
@@ -92,7 +157,9 @@ export default function CheckoutPage() {
       subtotal,
       shipping,
       couponDiscount,
-      total,
+      giftWrap: giftFinalCharge,
+      giftMessage: giftFinalMessage,
+      total: finalTotal,
       cashback,
     };
     // ⚠️ אין לירות purchase ללא תשלום אמיתי. אירוע ה-purchase (עם value/currency/
@@ -133,8 +200,18 @@ export default function CheckoutPage() {
             {order.couponDiscount > 0 && (
               <div className="flex justify-between text-emerald-700"><dt>הנחת קופון</dt><dd>‎-{formatPrice(order.couponDiscount)}</dd></div>
             )}
+            {order.giftWrap > 0 && (
+              <div className="flex justify-between text-navy/70"><dt>🎁 אריזת מתנה + כרטיס ברכה</dt><dd>{formatPrice(order.giftWrap)}</dd></div>
+            )}
             <div className="flex justify-between border-t border-navy/10 pt-2 font-bold text-navy"><dt>סה"כ</dt><dd>{formatPrice(order.total)}</dd></div>
           </dl>
+
+          {order.giftWrap > 0 && order.giftMessage && (
+            <div className="mt-4 rounded-xl border border-gold/25 bg-gold/5 p-4">
+              <p className="mb-1 text-xs font-bold text-navy/70">כיתוב לכרטיס הברכה:</p>
+              <p className="whitespace-pre-wrap break-words text-sm text-navy/90">{order.giftMessage}</p>
+            </div>
+          )}
         </div>
 
         {/* קאשבק 3% להזמנה הבאה */}
@@ -149,7 +226,12 @@ export default function CheckoutPage() {
         </div>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`שלום! שלחתי הזמנה באתר — מספר ${order.orderNumber}`)}`}
+          <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
+              `שלום! שלחתי הזמנה באתר — מספר ${order.orderNumber}` +
+              (order.giftWrap > 0
+                ? `\n\n🎁 אריזת מתנה + כרטיס ברכה (${formatPrice(order.giftWrap)})\nברכה לכרטיס:\n${order.giftMessage}`
+                : ''),
+            )}`}
             target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-2.5 font-bold text-white">
             <MessageCircle className="h-4 w-4" /> לזרז בוואטסאפ
@@ -204,9 +286,26 @@ export default function CheckoutPage() {
             ))}
           </div>
 
+          <GiftWrapOption
+            selected={giftWrap.selected}
+            message={giftWrap.message}
+            wordCount={giftWordCount}
+            error={giftError}
+            onToggle={(sel) => {
+              setGiftWrap({ selected: sel });
+              setGiftSubmitError(null);
+              trackEvent(sel ? 'gift_wrap_selected' : 'gift_wrap_removed', { selected: sel, price: GIFT_WRAP_PRICE, currency: 'ILS' });
+            }}
+            onMessage={(msg) => {
+              setGiftWrap({ message: msg });
+              if (giftSubmitError) setGiftSubmitError(null);
+            }}
+          />
+
           <button
             type="submit"
-            className="mt-6 w-full rounded-full bg-gradient-to-l from-gold to-gold-soft py-3.5 font-bold text-navy shadow-gold transition-transform hover:scale-[1.01]"
+            disabled={!!giftError}
+            className="mt-6 w-full rounded-full bg-gradient-to-l from-gold to-gold-soft py-3.5 font-bold text-navy shadow-gold transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
           >
             שליחת ההזמנה לאישור · {formatPrice(total)}
           </button>
@@ -254,6 +353,12 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-emerald-700">
                 <dt>🎟️ {couponLabel}</dt>
                 <dd>‎-{formatPrice(couponDiscount)}</dd>
+              </div>
+            )}
+            {giftCharge > 0 && (
+              <div className="flex justify-between text-navy/80">
+                <dt>🎁 אריזת מתנה + כרטיס ברכה</dt>
+                <dd>{formatPrice(giftCharge)}</dd>
               </div>
             )}
             <div className="flex justify-between border-t border-navy/10 pt-3 text-base font-bold text-navy">

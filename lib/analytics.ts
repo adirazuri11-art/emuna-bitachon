@@ -30,7 +30,11 @@ export type EventName =
   | 'gift_finder'
   | 'quote_request'
   | 'coupon_applied'
-  | 'newsletter_signup';
+  | 'newsletter_signup'
+  | 'gift_wrap_selected'
+  | 'gift_wrap_removed'
+  | 'gift_message_validation_error'
+  | 'checkout_with_gift_wrap';
 
 // מיפוי לאירועים הסטנדרטיים של Meta (קריטי לאופטימיזציית קמפיינים)
 const META_EVENTS: Partial<Record<EventName, string>> = {
@@ -45,7 +49,16 @@ const META_EVENTS: Partial<Record<EventName, string>> = {
 
 export function trackEvent(
   name: EventName,
-  params: { value?: number; items?: EcommerceItem[]; query?: string } = {}
+  params: {
+    value?: number;
+    items?: EcommerceItem[];
+    query?: string;
+    // אריזת מתנה — מטא-דאטה כללי בלבד (ללא תוכן הברכה / מידע אישי)
+    selected?: boolean;
+    price?: number;
+    currency?: string;
+    wordCount?: number;
+  } = {}
 ) {
   if (typeof window === 'undefined') return;
 
