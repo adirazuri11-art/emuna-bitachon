@@ -8,6 +8,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import { sendClubWelcome } from '@/lib/order-email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -69,6 +70,8 @@ export async function POST(req: NextRequest) {
     // אידמפוטנטי: אם כבר נרשם — מחזירים את הקוד הקיים שלו (לא יוצרים חדש)
     const existing = await prisma.clubMember.findUnique({ where: { email } });
     if (existing) {
+      // מייל תזכורת עם הקוד הקיים (best-effort)
+      try { await sendClubWelcome(email, existing.couponCode, existing.couponExpires.getTime(), COUPON_PCT); } catch { /* לא חוסם */ }
       return NextResponse.json({
         ok: true, already: true, used: existing.couponUsed,
         code: existing.couponCode, expires: existing.couponExpires.getTime(), pct: COUPON_PCT,
@@ -81,6 +84,8 @@ export async function POST(req: NextRequest) {
         const m = await prisma.clubMember.create({
           data: { email, couponCode: genCode(), couponExpires },
         });
+        // מייל ברוכים הבאים עם קוד ההטבה + התראה לעסק (best-effort)
+        try { await sendClubWelcome(email, m.couponCode, m.couponExpires.getTime(), COUPON_PCT); } catch { /* לא חוסם */ }
         return NextResponse.json({
           ok: true, code: m.couponCode, expires: m.couponExpires.getTime(), pct: COUPON_PCT,
         });

@@ -112,6 +112,44 @@ async function resendSend(to: string, subject: string, html: string): Promise<{ 
   }
 }
 
+// מייל ברוכים-הבאים למועדון — נשלח בשרת בעת הצטרפות (קוד ההטבה) + התראה לעסק.
+export async function sendClubWelcome(
+  memberEmail: string,
+  code: string,
+  expiresMs: number,
+  pct: number,
+): Promise<{ member: boolean; business: boolean }> {
+  const validUntil = new Date(expiresMs).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const memberInner = `
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">ברוכים הבאים למשפחת אמונה וביטחון! 🙏<br>מגיעה לך הטבה מיוחדת להזמנה הראשונה:</p>
+    <div style="text-align:center;margin:20px 0;background:#faf7ef;border:1px dashed ${GOLD};border-radius:14px;padding:22px">
+      <div style="font-size:13px;color:${MUTED}">קוד ההטבה האישי שלך</div>
+      <div style="font-size:28px;font-weight:800;color:${GOLD};letter-spacing:1px;margin-top:8px" dir="ltr">${esc(code)}</div>
+      <div style="font-size:14px;color:${INK};margin-top:10px"><b>${pct}% הנחה</b> · בתוקף עד ${validUntil}</div>
+    </div>
+    <div style="text-align:center;margin-top:18px">
+      <a href="${SITE}" style="background:${NAVY};color:${GOLD};text-decoration:none;padding:13px 30px;border-radius:999px;font-weight:700;font-size:15px;display:inline-block">התחילו לקנות →</a>
+    </div>`;
+  const rm = await resendSend(memberEmail, 'קוד ההטבה שלך — מועדון אמונה וביטחון 🎁',
+    shell('ברוכים הבאים למועדון! 🎁', memberInner, 'הזינו את הקוד בעמוד התשלום. בלי ספאם — רק הטבות אמיתיות.'));
+
+  let business = false;
+  const biz = process.env.BUSINESS_ORDER_EMAIL;
+  if (biz) {
+    const bizInner = `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;font-size:14px;color:${INK};line-height:2">
+        <tr><td style="color:${MUTED};width:80px">אימייל</td><td>${esc(memberEmail)}</td></tr>
+        <tr><td style="color:${MUTED}">קוד</td><td dir="ltr">${esc(code)}</td></tr>
+        <tr><td style="color:${MUTED}">הטבה</td><td>${pct}% · בתוקף עד ${validUntil}</td></tr>
+      </table>`;
+    const rb = await resendSend(biz, `🎉 חבר מועדון חדש — ${memberEmail}`,
+      shell('חבר מועדון חדש 🎉', bizInner, 'נרשם דרך פופאפ המועדון באתר.'));
+    business = rb.ok;
+  }
+  return { member: rm.ok, business };
+}
+
 export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: boolean; customer: boolean; detail?: string }> {
   const biz = process.env.BUSINESS_ORDER_EMAIL;
   const c = o.customer;
