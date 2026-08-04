@@ -20,15 +20,17 @@ export interface CheckoutCustomer {
 
 export interface CheckoutPayload {
   orderNumber: string;
-  amount: number; // בשקלים
+  amount: number; // בשקלים — מחושב בשרת בלבד
   customer: CheckoutCustomer;
   successUrl: string;
   failureUrl: string;
+  webhookUrl: string;
+  productName?: string;
 }
 
 export interface PaymentSession {
   redirectUrl: string; // עמוד התשלום המאובטח
-  providerRef: string; // מזהה העסקה אצל הספק
+  providerRef: string; // LowProfileId אצל הספק
 }
 
 export interface PaymentProvider {
@@ -36,22 +38,60 @@ export interface PaymentProvider {
   createPaymentPage(payload: CheckoutPayload): Promise<PaymentSession>;
 }
 
-/** Cardcom — LowProfile API (עמוד תשלום מתארח) */
+// האם הסליקה מוגדרת ומופעלת (לא מחייבים אמיתי עד ש-CARDCOM_LIVE=true).
+export function isPaymentConfigured(): boolean {
+  return !!(process.env.CARDCOM_TERMINAL && process.env.CARDCOM_API_NAME);
+}
+export function isPaymentLive(): boolean {
+  return isPaymentConfigured() && process.env.CARDCOM_LIVE === 'true';
+}
+
+/** Cardcom — LowProfile v11 (עמוד תשלום מתארח, PCI בצד קארדקום) */
 export const cardcom: PaymentProvider = {
   name: 'cardcom',
   async createPaymentPage(payload) {
     const terminal = process.env.CARDCOM_TERMINAL;
     const apiName = process.env.CARDCOM_API_NAME;
     if (!terminal || !apiName) {
-      throw new Error(
-        'סליקה לא מוגדרת: יש למלא CARDCOM_TERMINAL ו-CARDCOM_API_NAME ב-.env'
-      );
+      throw new Error('סליקה לא מוגדרת: CARDCOM_TERMINAL / CARDCOM_API_NAME חסרים');
     }
 
-    // TODO: קריאה אמיתית ל-https://secure.cardcom.solutions/api/v11/LowProfile/Create
-    // עם payload.amount, payload.orderNumber, successUrl/failureUrl,
-    // ושמירת LowProfileId כ-providerRef על ההזמנה.
-    throw new Error('Cardcom integration not implemented yet');
+    // amount מגיע מחושב בשרת בלבד — אף פעם לא מה-Client.
+    const body = {
+      TerminalNumber: Number(terminal),
+      ApiName: apiName,
+      Amount: Number(payload.amount.toFixed(2)),
+      ReturnValue: payload.orderNumber, // מוחזר ב-webhook לזיהוי ההזמנה
+      Operation: 'ChargeOnly',
+      Language: 'he',
+      ISOCoinId: 1, // ILS
+      ProductName: payload.productName ?? `הזמנה ${payload.orderNumber}`,
+      SuccessRedirectUrl: payload.successUrl,
+      FailedRedirectUrl: payload.failureUrl,
+      WebHookUrl: payload.webhookUrl,
+      Document: {
+        Name: payload.customer.name,
+        Email: payload.customer.email,
+        Products: [{ Description: payload.productName ?? `הזמנה ${payload.orderNumber}`, UnitCost: Number(payload.amount.toFixed(2)) }],
+      },
+    };
+
+    let res: Response;
+    try {
+      res = await fetch('https://secure.cardcom.solutions/api/v11/LowProfile/Create', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        cache: 'no-store',
+      });
+    } catch {
+      throw new Error('שגיאת תקשורת מול קארדקום');
+    }
+    const data = (await res.json()) as { ResponseCode?: number; Description?: string; Url?: string; LowProfileId?: string };
+    if (data.ResponseCode !== 0 || !data.Url) {
+      throw new Error(`קארדקום דחתה את הבקשה: ${data.Description ?? 'שגיאה לא ידועה'}`);
+    }
+    return { redirectUrl: data.Url, providerRef: String(data.LowProfileId ?? '') };
   },
 };
 
