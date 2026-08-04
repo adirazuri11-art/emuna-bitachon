@@ -97,6 +97,55 @@ export async function markOrderPaid(
   }
 }
 
+export interface FulfillmentOrder {
+  orderNumber: string;
+  amount: number;
+  items: Array<{ id: string; title?: string; quantity: number; unitPrice: number }>;
+  customer: { name?: string; email?: string; phone?: string; street?: string; city?: string; zip?: string };
+  giftWrap: number;
+  giftMessage: string | null;
+  couponCode: string | null;
+  discount: number;
+  shipping: number;
+}
+
+export async function getOrderForFulfillment(orderNumber: string): Promise<FulfillmentOrder | null> {
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      `select order_number, amount, items, customer, gift_wrap, gift_message, coupon_code, discount, shipping
+       from public.orders where order_number=$1 limit 1`,
+      orderNumber,
+    )) as Array<Record<string, unknown>>;
+    if (!rows || rows.length === 0) return null;
+    const r = rows[0];
+    return {
+      orderNumber: String(r.order_number),
+      amount: Number(r.amount),
+      items: (r.items as FulfillmentOrder['items']) ?? [],
+      customer: (r.customer as FulfillmentOrder['customer']) ?? {},
+      giftWrap: Number(r.gift_wrap ?? 0),
+      giftMessage: (r.gift_message as string) ?? null,
+      couponCode: (r.coupon_code as string) ?? null,
+      discount: Number(r.discount ?? 0),
+      shipping: Number(r.shipping ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// סימון קופון/קוד מועדון כמומש — לאחר תשלום מאומת בלבד. Idempotent.
+export async function redeemCouponForOrder(couponCode: string): Promise<void> {
+  try {
+    await prisma.clubMember.updateMany({
+      where: { couponCode, couponUsed: false },
+      data: { couponUsed: true, couponUsedAt: new Date() },
+    });
+  } catch {
+    /* קוד לא של מועדון / עמודה שונה — לא חוסם */
+  }
+}
+
 export async function markOrderFailed(orderNumber: string): Promise<void> {
   try {
     await prisma.$executeRawUnsafe(

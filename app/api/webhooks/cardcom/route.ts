@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCardcomTransaction } from '@/lib/payments';
-import { markOrderPaid, markOrderFailed } from '@/lib/orders';
+import { markOrderPaid, markOrderFailed, getOrderForFulfillment, redeemCouponForOrder } from '@/lib/orders';
+import { sendOrderEmails } from '@/lib/order-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +48,20 @@ async function handle(req: NextRequest, lowProfileFromQuery?: string) {
 
   const result = await markOrderPaid(verified.orderNumber, verified.amount, verified.transactionId);
   console.log(`[cardcom-webhook] order=${verified.orderNumber} mark=${result} amount=${verified.amount}`);
-  // TODO(after first paid order verified): שליחת מייל אישור + purchase event — פעם אחת, על result==='ok' בלבד.
+
+  // רק במעבר האמיתי ל"שולם" (result==='ok') — פעם אחת: מימוש קופון + מיילים.
+  // Best-effort: כשל בשירות משני לא מבטל את התשלום שכבר אושר.
+  if (result === 'ok') {
+    try {
+      const order = await getOrderForFulfillment(verified.orderNumber);
+      if (order) {
+        if (order.couponCode) await redeemCouponForOrder(order.couponCode);
+        await sendOrderEmails(order);
+      }
+    } catch (e) {
+      console.error(`[cardcom-webhook] fulfillment error order=${verified.orderNumber}`, e instanceof Error ? e.message : e);
+    }
+  }
   return NextResponse.json({ received: true, result });
 }
 

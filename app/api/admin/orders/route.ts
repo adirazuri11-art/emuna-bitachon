@@ -1,15 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getOrderForFulfillment, redeemCouponForOrder } from '@/lib/orders';
+import { sendOrderEmails } from '@/lib/order-email';
 
 export const dynamic = 'force-dynamic';
 
 // בדיקת הזמנות אחרונות — מוגן ב-MIGRATE_SECRET. לאימות בלבד.
+// &fulfill=ORDER → הרצת מימוש קופון + מיילים מחדש (backfill להזמנה ששולמה).
 export async function GET(req: NextRequest) {
   const secret = process.env.MIGRATE_SECRET;
   const key = req.nextUrl.searchParams.get('key');
   if (!secret || key !== secret) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
+
+  const fulfill = req.nextUrl.searchParams.get('fulfill');
+  if (fulfill) {
+    const order = await getOrderForFulfillment(fulfill);
+    if (!order) return NextResponse.json({ ok: false, error: 'order not found' }, { status: 404 });
+    if (order.couponCode) await redeemCouponForOrder(order.couponCode);
+    const email = await sendOrderEmails(order);
+    return NextResponse.json({ ok: true, fulfilled: order.orderNumber, couponRedeemed: !!order.couponCode, email });
+  }
+
   try {
     const rows = (await prisma.$queryRawUnsafe(
       `select order_number, status, amount, currency, transaction_id, coupon_code, discount, shipping, gift_wrap,
