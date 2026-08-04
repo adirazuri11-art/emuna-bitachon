@@ -269,6 +269,28 @@ export async function googleDiagnostic(): Promise<Record<string, unknown>> {
   }
 }
 
+// שליפת נכסי GA4 שחשבון-השירות רשאי לגשת אליהם (Admin API) — לגילוי ה-Property ID.
+export async function discoverGa4Properties(): Promise<Record<string, unknown>> {
+  const token = await getAccessToken('https://www.googleapis.com/auth/analytics.readonly');
+  if (!token) return { ok: false, note: 'no token' };
+  try {
+    const res = await fetch('https://analyticsadmin.googleapis.com/v1beta/accountSummaries', {
+      headers: { authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+    const data = (await res.json()) as { accountSummaries?: Array<{ propertySummaries?: Array<{ property?: string; displayName?: string }> }>; error?: unknown };
+    const properties: Array<{ id: string; name: string }> = [];
+    for (const acc of data.accountSummaries ?? []) {
+      for (const p of acc.propertySummaries ?? []) {
+        properties.push({ id: (p.property ?? '').replace('properties/', ''), name: p.displayName ?? '' });
+      }
+    }
+    return { ok: res.ok, status: res.status, properties, rawIfEmpty: properties.length ? undefined : JSON.stringify(data).slice(0, 250) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'error' };
+  }
+}
+
 export async function getGoogleData(): Promise<GoogleData> {
   if (!creds()) return { configured: false };
   const [ga4, gsc] = await Promise.all([fetchGA4(), fetchGSC()]);
