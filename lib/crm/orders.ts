@@ -135,6 +135,9 @@ export interface OrderDetail {
   transactionId: string | null;
   paidAt: string | null;
   createdAt: string;
+  receiptNumber: string | null;
+  receiptUrl: string | null;
+  receiptAt: string | null;
 }
 
 export async function getOrderDetail(orderNumber: string): Promise<OrderDetail | null> {
@@ -161,6 +164,9 @@ export async function getOrderDetail(orderNumber: string): Promise<OrderDetail |
       transactionId: (r.transaction_id as string) ?? null,
       paidAt: r.paid_at ? new Date(r.paid_at as string).toISOString() : null,
       createdAt: r.created_at ? new Date(r.created_at as string).toISOString() : '',
+      receiptNumber: (r.receipt_number as string) ?? null,
+      receiptUrl: (r.receipt_url as string) ?? null,
+      receiptAt: r.receipt_at ? new Date(r.receipt_at as string).toISOString() : null,
     };
   } catch {
     return null;

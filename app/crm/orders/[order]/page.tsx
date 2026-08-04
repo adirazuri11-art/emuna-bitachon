@@ -89,6 +89,20 @@ export default async function OrderDetailPage({ params }: { params: { order: str
           <Row label="שולם בתאריך" value={order.paidAt ? new Date(order.paidAt).toLocaleString('he-IL') : '—'} />
           <Row label="ספק" value="Cardcom" />
         </div>
+        {/* קבלה */}
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+          <span className="text-cream/50">קבלה</span>
+          {order.receiptNumber ? (
+            <span className="flex items-center gap-2 text-cream/90">
+              קבלה מס' {order.receiptNumber}
+              {order.receiptUrl && (
+                <a href={order.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-gold hover:text-gold/80 underline">צפייה</a>
+              )}
+            </span>
+          ) : (
+            <span className="text-cream/40">{paid ? 'טרם הופקה' : '—'}</span>
+          )}
+        </div>
       </div>
     </div>
   );

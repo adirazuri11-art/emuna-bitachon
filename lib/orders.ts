@@ -146,6 +146,20 @@ export async function redeemCouponForOrder(couponCode: string): Promise<void> {
   }
 }
 
+// שמירת פרטי קבלה על ההזמנה — לשקיפות ב-CRM. Idempotent.
+export async function saveReceipt(orderNumber: string, receiptNumber: string, receiptUrl: string): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `update public.orders set receipt_number=$2, receipt_url=$3, receipt_at=now(), updated_at=now() where order_number=$1`,
+      orderNumber,
+      receiptNumber,
+      receiptUrl,
+    );
+  } catch {
+    /* noop */
+  }
+}
+
 export async function markOrderFailed(orderNumber: string): Promise<void> {
   try {
     await prisma.$executeRawUnsafe(

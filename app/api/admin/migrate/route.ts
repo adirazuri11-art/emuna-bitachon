@@ -30,6 +30,10 @@ const STATEMENTS = [
   // סטטוס טיפול: in_progress (בעבודה) → shipping (במשלוח) → completed (הושלמה)
   `alter table public.orders add column if not exists fulfillment_status text not null default 'in_progress'`,
   `create index if not exists orders_fulfillment_idx on public.orders (fulfillment_status)`,
+  // קבלה — מספר מסמך, קישור להורדה, ומועד הפקה (לשקיפות פנימית ב-CRM)
+  `alter table public.orders add column if not exists receipt_number text`,
+  `alter table public.orders add column if not exists receipt_url text`,
+  `alter table public.orders add column if not exists receipt_at timestamptz`,
 ];
 
 export async function GET(req: NextRequest) {

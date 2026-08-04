@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderForFulfillment } from '@/lib/orders';
-import { getOrder } from '@/lib/orders';
+import { getOrderForFulfillment, getOrder, saveReceipt } from '@/lib/orders';
 import { createReceiptForTransaction, type DocumentLine } from '@/lib/payments';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +17,14 @@ export async function GET(req: NextRequest) {
   const orderNumber = req.nextUrl.searchParams.get('order');
   const txOverride = req.nextUrl.searchParams.get('tx');
   if (!orderNumber) return NextResponse.json({ ok: false, error: 'missing order' }, { status: 400 });
+
+  // מצב רישום בלבד — שמירת פרטי קבלה שכבר הופקה (backfill), בלי הפקה חדשה.
+  const recordNumber = req.nextUrl.searchParams.get('record');
+  const recordUrl = req.nextUrl.searchParams.get('url');
+  if (recordNumber) {
+    await saveReceipt(orderNumber, recordNumber, recordUrl || '');
+    return NextResponse.json({ ok: true, recorded: true, order: orderNumber, receiptNumber: recordNumber });
+  }
 
   const order = await getOrderForFulfillment(orderNumber);
   if (!order) return NextResponse.json({ ok: false, error: 'order not found' }, { status: 404 });
@@ -45,6 +52,12 @@ export async function GET(req: NextRequest) {
     customer: { name: c.name, email: c.email, phone: c.phone, city: c.city },
     lines,
   });
+
+  // שמירת הקבלה על ההזמנה — נראית ב-CRM
+  if (result.ok && result.documentNumber != null) {
+    const url = (result.raw as { DocumentUrl?: string } | undefined)?.DocumentUrl || '';
+    await saveReceipt(orderNumber, String(result.documentNumber), url);
+  }
 
   return NextResponse.json({
     order: orderNumber,
