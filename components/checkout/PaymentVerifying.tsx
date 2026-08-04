@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { PurchaseTracker } from '@/components/checkout/PurchaseTracker';
 
 // Polling מבוקר (ללא לולאה אינסופית) — עד ~30 שניות. האמת מגיעה מהשרת.
-export function PaymentVerifying({ orderNumber }: { orderNumber: string }) {
+export function PaymentVerifying({ orderNumber, amount = 0 }: { orderNumber: string; amount?: number }) {
   const [state, setState] = useState<'checking' | 'paid' | 'pending'>('checking');
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export function PaymentVerifying({ orderNumber }: { orderNumber: string }) {
   if (state === 'paid') {
     return (
       <div className="text-center">
+        <PurchaseTracker orderNumber={orderNumber} amount={amount} />
         <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" strokeWidth={1.4} />
         <h1 className="mt-4 font-display text-3xl font-bold text-navy">ההזמנה התקבלה בהצלחה</h1>
         <p className="mt-2 text-navy/60">התשלום אומת. מספר הזמנה: <b dir="ltr">{orderNumber}</b></p>

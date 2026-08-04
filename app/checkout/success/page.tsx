@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CheckCircle2 } from 'lucide-react';
 import { getOrder } from '@/lib/orders';
 import { PaymentVerifying } from '@/components/checkout/PaymentVerifying';
+import { PurchaseTracker } from '@/components/checkout/PurchaseTracker';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,7 @@ export default async function CheckoutSuccessPage({
     <div className="mx-auto max-w-xl px-4 py-20">
       {order?.paid ? (
         <div className="text-center">
+          <PurchaseTracker orderNumber={orderNumber} amount={order.amount} />
           <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" strokeWidth={1.4} />
           <h1 className="mt-4 font-display text-3xl font-bold text-navy">ההזמנה התקבלה בהצלחה</h1>
           <p className="mt-2 text-navy/60">
@@ -34,7 +36,7 @@ export default async function CheckoutSuccessPage({
           </div>
         </div>
       ) : (
-        <PaymentVerifying orderNumber={orderNumber} />
+        <PaymentVerifying orderNumber={orderNumber} amount={order?.amount ?? 0} />
       )}
     </div>
   );

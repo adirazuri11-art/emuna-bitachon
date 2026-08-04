@@ -47,13 +47,21 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
   };
 
   try {
+    const site = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://emunavebitachon.co.il';
     const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(biz)}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        // FormSubmit חוסם קריאות ללא הקשר דפדפן — כותרות אלה נדרשות משרת-לשרת.
+        Origin: site,
+        Referer: `${site}/`,
+      },
       body: JSON.stringify(payload),
       cache: 'no-store',
     });
-    return { business: res.ok };
+    const data = (await res.json().catch(() => ({}))) as { success?: string };
+    return { business: res.ok && data.success !== 'false' };
   } catch {
     return { business: false };
   }
