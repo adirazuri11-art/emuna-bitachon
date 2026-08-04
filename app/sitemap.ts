@@ -4,6 +4,11 @@ import { ACTIVE_CATEGORIES as CATEGORIES, PRODUCTS } from '@/lib/catalog';
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
 const BLOG_SLUGS = [
+  'jewish-wedding-gifts',
+  'challah-cover-guide',
+  'havdalah-set-guide',
+  'netilat-yadayim-cup-guide',
+  'brit-newborn-gifts',
   'kiddush-cup-guide',
   'mezuzah-design-guide',
   'home-blessing-guide',
