@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { PRODUCTS } from '@/lib/catalog';
 import { calcShipping, cardcom, isPaymentConfigured, isPaymentLive, validateCoupon } from '@/lib/payments';
 import { giftWrapCharge, validateGiftMessage } from '@/lib/gift-wrap';
 import { createPendingOrder } from '@/lib/orders';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,12 +25,6 @@ function unitPrice(item: InItem): number {
   return Math.min(client, 10000); // פריט דינמי (שובר/התאמה) — בגבול בטוח
 }
 
-function supa() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
-}
-
 // אימות הנחה בצד השרת בלבד. מחזיר אחוז הנחה (0..100) ותווית.
 async function serverDiscountPct(code: string): Promise<{ pct: number; code: string } | null> {
   const clean = code.trim();
@@ -38,21 +32,14 @@ async function serverDiscountPct(code: string): Promise<{ pct: number; code: str
   // 1) קופון סטטי מוגדר בקוד
   const stat = validateCoupon(clean);
   if (stat) return { pct: stat.pct, code: clean };
-  // 2) קוד מועדון — קיים ב-ClubMember ולא נוצל
-  const sb = supa();
-  if (sb) {
-    try {
-      const { data } = await sb
-        .from('ClubMember')
-        .select('couponCode, couponUsed')
-        .eq('couponCode', clean)
-        .maybeSingle();
-      if (data && data.couponUsed === false) return { pct: MEMBER_PCT, code: clean };
-    } catch {
-      /* טבלה/עמודה שונה — לא מחילים הנחה לא מאומתת */
-    }
+  // 2) קוד מועדון — קיים ב-ClubMember ולא נוצל (דרך Prisma/Neon)
+  try {
+    const member = await prisma.clubMember.findFirst({ where: { couponCode: clean }, select: { couponUsed: true } });
+    if (member && member.couponUsed === false) return { pct: MEMBER_PCT, code: clean };
+  } catch {
+    /* לא ניתן לאמת → לא מחילים הנחה לא מאומתת */
   }
-  return null; // לא ניתן לאמת → לא מחילים (לעולם לא מפחיתים לפי טענת לקוח)
+  return null; // לעולם לא מפחיתים לפי טענת לקוח בלבד
 }
 
 export async function POST(req: NextRequest) {

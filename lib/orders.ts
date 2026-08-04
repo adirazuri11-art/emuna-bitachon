@@ -1,17 +1,11 @@
 // ============================================================
-// שכבת הזמנות — מקור אמת לסטטוס תשלום (Supabase, server-only).
-// כל הכתיבה דרך service-role בלבד. Idempotent: הזמנה מסומנת "שולם" פעם אחת.
+// שכבת הזמנות — מקור אמת לסטטוס תשלום (Neon/Postgres דרך Prisma raw, server-only).
+// Idempotent: הזמנה מסומנת "שולם" פעם אחת בלבד, ורק אם הסכום המאושר תואם.
+// טבלת public.orders נוצרת דרך /api/admin/migrate (DDL זהה ל-docs/crm/sql/003_orders.sql).
 // ============================================================
 
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
-
-function supa() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key, { auth: { persistSession: false } });
-}
+import { prisma } from '@/lib/prisma';
 
 export interface OrderInput {
   orderNumber: string;
@@ -25,84 +19,91 @@ export interface OrderInput {
   shipping: number;
 }
 
-export interface OrderRecord extends OrderInput {
-  status: 'pending_payment' | 'paid' | 'failed';
-  providerRef?: string;
-  transactionId?: string;
-  paidAt?: string;
-}
-
 export async function createPendingOrder(o: OrderInput, providerRef?: string): Promise<boolean> {
-  const sb = supa();
-  if (!sb) return false;
-  const { error } = await sb.from('orders').insert({
-    order_number: o.orderNumber,
-    status: 'pending_payment',
-    amount: o.amount,
-    currency: 'ILS',
-    items: o.items,
-    customer: o.customer,
-    gift_wrap: o.giftWrap,
-    gift_message: o.giftMessage || null,
-    coupon_code: o.couponCode || null,
-    discount: o.discount,
-    shipping: o.shipping,
-    provider: 'cardcom',
-    provider_ref: providerRef || null,
-  });
-  return !error;
+  try {
+    await prisma.$executeRawUnsafe(
+      `insert into public.orders
+        (order_number,status,amount,currency,items,customer,gift_wrap,gift_message,coupon_code,discount,shipping,provider,provider_ref)
+       values ($1,'pending_payment',$2,'ILS',$3::jsonb,$4::jsonb,$5,$6,$7,$8,$9,'cardcom',$10)`,
+      o.orderNumber,
+      o.amount,
+      JSON.stringify(o.items),
+      JSON.stringify(o.customer),
+      o.giftWrap,
+      o.giftMessage || null,
+      o.couponCode || null,
+      o.discount,
+      o.shipping,
+      providerRef || null,
+    );
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function attachProviderRef(orderNumber: string, providerRef: string): Promise<void> {
-  const sb = supa();
-  if (!sb) return;
-  await sb.from('orders').update({ provider_ref: providerRef, updated_at: new Date().toISOString() }).eq('order_number', orderNumber);
+  try {
+    await prisma.$executeRawUnsafe(
+      `update public.orders set provider_ref=$2, updated_at=now() where order_number=$1`,
+      orderNumber,
+      providerRef,
+    );
+  } catch {
+    /* noop */
+  }
 }
 
-export async function getOrder(orderNumber: string): Promise<{ status: string; amount: number; paid: boolean } | null> {
-  const sb = supa();
-  if (!sb) return null;
-  const { data } = await sb.from('orders').select('status, amount').eq('order_number', orderNumber).maybeSingle();
-  if (!data) return null;
-  return { status: data.status, amount: Number(data.amount), paid: data.status === 'paid' };
+export async function getOrder(
+  orderNumber: string,
+): Promise<{ status: string; amount: number; paid: boolean } | null> {
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      `select status, amount from public.orders where order_number=$1 limit 1`,
+      orderNumber,
+    )) as Array<{ status: string; amount: unknown }>;
+    if (!rows || rows.length === 0) return null;
+    return { status: rows[0].status, amount: Number(rows[0].amount), paid: rows[0].status === 'paid' };
+  } catch {
+    return null;
+  }
 }
 
-// Idempotent: מסמן "שולם" רק אם ההזמנה קיימת, במצב pending, והסכום שאושר תואם.
-// מחזיר 'ok' | 'already' | 'not_found' | 'amount_mismatch' | 'error'.
+// Idempotent — מחזיר 'ok' | 'already' | 'not_found' | 'amount_mismatch' | 'error'.
 export async function markOrderPaid(
   orderNumber: string,
   approvedAmount: number,
   transactionId: string,
 ): Promise<'ok' | 'already' | 'not_found' | 'amount_mismatch' | 'error'> {
-  const sb = supa();
-  if (!sb) return 'error';
-  const { data: existing } = await sb
-    .from('orders')
-    .select('status, amount')
-    .eq('order_number', orderNumber)
-    .maybeSingle();
-  if (!existing) return 'not_found';
-  if (existing.status === 'paid') return 'already';
-  if (Math.abs(Number(existing.amount) - approvedAmount) > 0.01) return 'amount_mismatch';
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      `select status, amount from public.orders where order_number=$1 limit 1`,
+      orderNumber,
+    )) as Array<{ status: string; amount: unknown }>;
+    if (!rows || rows.length === 0) return 'not_found';
+    if (rows[0].status === 'paid') return 'already';
+    if (Math.abs(Number(rows[0].amount) - approvedAmount) > 0.01) return 'amount_mismatch';
 
-  // עדכון מותנה בסטטוס pending_payment => מונע מירוץ/כפילות webhook.
-  const { data: updated, error } = await sb
-    .from('orders')
-    .update({ status: 'paid', transaction_id: transactionId, paid_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq('order_number', orderNumber)
-    .eq('status', 'pending_payment')
-    .select('order_number');
-  if (error) return 'error';
-  if (!updated || updated.length === 0) return 'already'; // מישהו הקדים אותנו
-  return 'ok';
+    // עדכון מותנה בסטטוס pending => מונע כפילות webhook/מירוץ.
+    const affected = await prisma.$executeRawUnsafe(
+      `update public.orders set status='paid', transaction_id=$2, paid_at=now(), updated_at=now()
+       where order_number=$1 and status='pending_payment'`,
+      orderNumber,
+      transactionId,
+    );
+    return affected === 1 ? 'ok' : 'already';
+  } catch {
+    return 'error';
+  }
 }
 
 export async function markOrderFailed(orderNumber: string): Promise<void> {
-  const sb = supa();
-  if (!sb) return;
-  await sb
-    .from('orders')
-    .update({ status: 'failed', updated_at: new Date().toISOString() })
-    .eq('order_number', orderNumber)
-    .eq('status', 'pending_payment');
+  try {
+    await prisma.$executeRawUnsafe(
+      `update public.orders set status='failed', updated_at=now() where order_number=$1 and status='pending_payment'`,
+      orderNumber,
+    );
+  } catch {
+    /* noop */
+  }
 }
