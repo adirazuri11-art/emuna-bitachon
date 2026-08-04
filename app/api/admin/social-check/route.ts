@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
       }
     };
     diag.igLink = await call(cfg.pageId, { fields: 'name,instagram_business_account{id,username}' });
-    diag.pagePermsTest = await call(`${cfg.pageId}/insights`, { metric: 'page_impressions_unique', period: 'day' });
+    // הרשאות הטוקן בפועל (self-inspect)
+    const dbg = (await call('debug_token', { input_token: cfg.token })) as { data?: { scopes?: string[]; type?: string } };
+    diag.tokenType = dbg?.data?.type;
+    diag.actualScopes = dbg?.data?.scopes;
   }
 
   const d = await getSocialData();
