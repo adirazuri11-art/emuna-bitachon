@@ -34,6 +34,20 @@ const STATEMENTS = [
   `alter table public.orders add column if not exists receipt_number text`,
   `alter table public.orders add column if not exists receipt_url text`,
   `alter table public.orders add column if not exists receipt_at timestamptz`,
+  // תור פרסום אוטומטי לרשתות (בנק התוכן) — 3 פוסטים/יום, דילוג בשבת
+  `create table if not exists public.social_queue (
+    idx           int primary key,
+    image_url     text not null,
+    caption       text not null,
+    category      text,
+    status        text not null default 'pending',
+    fb_post_id    text,
+    ig_post_id    text,
+    error         text,
+    published_at  timestamptz,
+    created_at    timestamptz not null default now()
+  )`,
+  `create index if not exists social_queue_status_idx on public.social_queue (status, idx)`,
 ];
 
 export async function GET(req: NextRequest) {
