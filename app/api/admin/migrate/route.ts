@@ -27,6 +27,9 @@ const STATEMENTS = [
   )`,
   `create index if not exists orders_status_idx on public.orders (status)`,
   `create index if not exists orders_created_idx on public.orders (created_at desc)`,
+  // סטטוס טיפול: in_progress (בעבודה) → shipping (במשלוח) → completed (הושלמה)
+  `alter table public.orders add column if not exists fulfillment_status text not null default 'in_progress'`,
+  `create index if not exists orders_fulfillment_idx on public.orders (fulfillment_status)`,
 ];
 
 export async function GET(req: NextRequest) {

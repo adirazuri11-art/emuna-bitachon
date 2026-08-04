@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight, CheckCircle2, Phone, Mail, MapPin, Gift } from 'lucide-react';
 import { getOrderDetail } from '@/lib/crm/orders';
+import { FulfillmentControl } from '@/components/crm/FulfillmentControl';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,9 @@ export default async function OrderDetailPage({ params }: { params: { order: str
           <span className="rounded-full bg-amber-400/15 px-3 py-1.5 text-sm font-medium text-amber-300">{order.status === 'pending_payment' ? 'ממתין לתשלום' : 'נכשל'}</span>
         )}
       </div>
+
+      {/* סטטוס טיפול — workflow */}
+      {paid && <FulfillmentControl orderNumber={order.orderNumber} current={order.fulfillment} />}
 
       {/* פריטים */}
       <div className="rounded-2xl border border-gold/15 bg-white/5 p-5">

@@ -1,8 +1,18 @@
 import Link from 'next/link';
-import { ShoppingBag, TrendingUp, Wallet, Clock, CheckCircle2, ChevronLeft } from 'lucide-react';
-import { getOrdersStats, getRecentOrders } from '@/lib/crm/orders';
+import { ShoppingBag, TrendingUp, Wallet, Clock, CheckCircle2, ChevronLeft, Package, Truck } from 'lucide-react';
+import { getOrdersStats, getRecentOrders, FULFILLMENT_LABELS, type Fulfillment } from '@/lib/crm/orders';
 
 export const dynamic = 'force-dynamic';
+
+const fulfillPill = (f: Fulfillment) => {
+  const map = {
+    in_progress: { c: 'bg-amber-400/15 text-amber-300', i: Package },
+    shipping: { c: 'bg-sky-400/15 text-sky-300', i: Truck },
+    completed: { c: 'bg-emerald-400/15 text-emerald-300', i: CheckCircle2 },
+  }[f];
+  const I = map.i;
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${map.c}`}><I className="h-3 w-3" /> {FULFILLMENT_LABELS[f]}</span>;
+};
 
 const nf = (n: number) => n.toLocaleString('he-IL');
 const money = (n: number) => `₪${nf(Math.round(n))}`;
@@ -25,8 +35,16 @@ const statusPill = (s: string) => {
 
 const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
 
-export default async function OrdersPage() {
-  const [stats, orders] = await Promise.all([getOrdersStats(), getRecentOrders(60)]);
+export default async function OrdersPage({ searchParams }: { searchParams: { fulfill?: string } }) {
+  const valid: Fulfillment[] = ['in_progress', 'shipping', 'completed'];
+  const active = valid.includes(searchParams.fulfill as Fulfillment) ? (searchParams.fulfill as Fulfillment) : undefined;
+  const [stats, orders] = await Promise.all([getOrdersStats(), getRecentOrders(80, active)]);
+  const tabs: { key: Fulfillment | 'all'; label: string; count: number }[] = [
+    { key: 'all', label: 'כל ההזמנות', count: stats.paidCount + stats.pendingCount },
+    { key: 'in_progress', label: 'בעבודה', count: stats.inProgress },
+    { key: 'shipping', label: 'במשלוח', count: stats.shipping },
+    { key: 'completed', label: 'הושלמו', count: stats.completed },
+  ];
 
   return (
     <div className="space-y-6">
@@ -42,8 +60,23 @@ export default async function OrdersPage() {
         <Kpi icon={Clock} label="ממתינות לתשלום" value={nf(stats.pendingCount)} sub={stats.revenueToday ? `היום: ${money(stats.revenueToday)}` : undefined} />
       </div>
 
+      {/* טאבים לפי סטטוס טיפול */}
+      <div className="flex flex-wrap gap-2">
+        {tabs.map((t) => {
+          const on = (t.key === 'all' && !active) || t.key === active;
+          const href = t.key === 'all' ? '/crm/orders' : `/crm/orders?fulfill=${t.key}`;
+          return (
+            <Link key={t.key} href={href} className={'rounded-full px-4 py-1.5 text-sm transition-colors ' + (on ? 'bg-gold/15 font-bold text-gold' : 'text-cream/60 hover:bg-white/5')}>
+              {t.label} <span className="text-xs opacity-60">({t.count})</span>
+            </Link>
+          );
+        })}
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-gold/15 bg-white/5">
-        <div className="border-b border-white/10 px-5 py-3.5 text-sm font-medium text-cream/70">הזמנות אחרונות</div>
+        <div className="border-b border-white/10 px-5 py-3.5 text-sm font-medium text-cream/70">
+          {active ? FULFILLMENT_LABELS[active] : 'הזמנות אחרונות'}
+        </div>
         {orders.length === 0 ? (
           <div className="px-5 py-12 text-center text-sm text-cream/40">אין עדיין הזמנות</div>
         ) : (
@@ -68,7 +101,12 @@ export default async function OrdersPage() {
                       {o.city && <div className="text-xs text-cream/40">{o.city}</div>}
                     </td>
                     <td className="px-3 py-3 font-medium text-cream">{money(o.amount)}</td>
-                    <td className="px-3 py-3">{statusPill(o.status)}</td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {statusPill(o.status)}
+                        {o.status === 'paid' && fulfillPill(o.fulfillment)}
+                      </div>
+                    </td>
                     <td className="px-3 py-3 text-xs text-cream/50">{fmtDate(o.createdAt)}</td>
                     <td className="px-5 py-3 text-left">
                       <Link href={`/crm/orders/${encodeURIComponent(o.orderNumber)}`} className="inline-flex items-center gap-1 text-xs text-gold hover:text-gold/80">

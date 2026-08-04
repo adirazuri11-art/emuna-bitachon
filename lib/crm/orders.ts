@@ -8,6 +8,13 @@ import { prisma } from '@/lib/prisma';
 
 const num = (v: unknown) => Number(v ?? 0);
 
+export type Fulfillment = 'in_progress' | 'shipping' | 'completed';
+export const FULFILLMENT_LABELS: Record<Fulfillment, string> = {
+  in_progress: 'בעבודה',
+  shipping: 'במשלוח',
+  completed: 'בוצעה בהצלחה',
+};
+
 export interface OrdersStats {
   ok: boolean;
   revenue: number; // סה"כ הכנסות (שולמו)
@@ -17,10 +24,13 @@ export interface OrdersStats {
   revenue7d: number;
   paid7d: number;
   revenueToday: number;
+  inProgress: number;
+  shipping: number;
+  completed: number;
 }
 
 export async function getOrdersStats(): Promise<OrdersStats> {
-  const empty: OrdersStats = { ok: false, revenue: 0, paidCount: 0, pendingCount: 0, aov: 0, revenue7d: 0, paid7d: 0, revenueToday: 0 };
+  const empty: OrdersStats = { ok: false, revenue: 0, paidCount: 0, pendingCount: 0, aov: 0, revenue7d: 0, paid7d: 0, revenueToday: 0, inProgress: 0, shipping: 0, completed: 0 };
   try {
     const rows = (await prisma.$queryRawUnsafe(`
       select
@@ -29,7 +39,10 @@ export async function getOrdersStats(): Promise<OrdersStats> {
         count(*) filter (where status='pending_payment')                                        as pending_count,
         coalesce(sum(amount) filter (where status='paid' and paid_at > now() - interval '7 days'),0) as revenue_7d,
         count(*) filter (where status='paid' and paid_at > now() - interval '7 days')            as paid_7d,
-        coalesce(sum(amount) filter (where status='paid' and paid_at::date = now()::date),0)     as revenue_today
+        coalesce(sum(amount) filter (where status='paid' and paid_at::date = now()::date),0)     as revenue_today,
+        count(*) filter (where status='paid' and fulfillment_status='in_progress')               as in_progress,
+        count(*) filter (where status='paid' and fulfillment_status='shipping')                  as shipping,
+        count(*) filter (where status='paid' and fulfillment_status='completed')                 as completed
       from public.orders
     `)) as Array<Record<string, unknown>>;
     const r = rows[0] ?? {};
@@ -44,6 +57,9 @@ export async function getOrdersStats(): Promise<OrdersStats> {
       revenue7d: num(r.revenue_7d),
       paid7d: num(r.paid_7d),
       revenueToday: num(r.revenue_today),
+      inProgress: num(r.in_progress),
+      shipping: num(r.shipping),
+      completed: num(r.completed),
     };
   } catch {
     return empty;
@@ -53,6 +69,7 @@ export async function getOrdersStats(): Promise<OrdersStats> {
 export interface OrderRow {
   orderNumber: string;
   status: string;
+  fulfillment: Fulfillment;
   amount: number;
   customerName: string;
   customerPhone: string;
@@ -62,17 +79,19 @@ export interface OrderRow {
   paidAt: string | null;
 }
 
-export async function getRecentOrders(limit = 60): Promise<OrderRow[]> {
+export async function getRecentOrders(limit = 60, fulfillment?: Fulfillment): Promise<OrderRow[]> {
   try {
+    const where = fulfillment ? `where status='paid' and fulfillment_status='${fulfillment}'` : '';
     const rows = (await prisma.$queryRawUnsafe(
-      `select order_number, status, amount,
+      `select order_number, status, fulfillment_status, amount,
               customer->>'name' as name, customer->>'phone' as phone, customer->>'city' as city,
               jsonb_array_length(items) as item_count, created_at, paid_at
-       from public.orders order by created_at desc limit ${Math.min(200, Math.max(1, limit))}`,
+       from public.orders ${where} order by created_at desc limit ${Math.min(200, Math.max(1, limit))}`,
     )) as Array<Record<string, unknown>>;
     return rows.map((r) => ({
       orderNumber: String(r.order_number),
       status: String(r.status),
+      fulfillment: (String(r.fulfillment_status ?? 'in_progress') as Fulfillment),
       amount: num(r.amount),
       customerName: String(r.name ?? '—'),
       customerPhone: String(r.phone ?? ''),
@@ -86,9 +105,24 @@ export async function getRecentOrders(limit = 60): Promise<OrderRow[]> {
   }
 }
 
+// עדכון סטטוס טיפול — CRM. מחזיר true בהצלחה.
+export async function updateOrderFulfillment(orderNumber: string, status: Fulfillment): Promise<boolean> {
+  try {
+    const n = await prisma.$executeRawUnsafe(
+      `update public.orders set fulfillment_status=$2, updated_at=now() where order_number=$1 and status='paid'`,
+      orderNumber,
+      status,
+    );
+    return n > 0;
+  } catch {
+    return false;
+  }
+}
+
 export interface OrderDetail {
   orderNumber: string;
   status: string;
+  fulfillment: Fulfillment;
   amount: number;
   currency: string;
   items: Array<{ id: string; title?: string; quantity: number; unitPrice: number }>;
@@ -114,6 +148,7 @@ export async function getOrderDetail(orderNumber: string): Promise<OrderDetail |
     return {
       orderNumber: String(r.order_number),
       status: String(r.status),
+      fulfillment: (String(r.fulfillment_status ?? 'in_progress') as Fulfillment),
       amount: num(r.amount),
       currency: String(r.currency ?? 'ILS'),
       items: (r.items as OrderDetail['items']) ?? [],
