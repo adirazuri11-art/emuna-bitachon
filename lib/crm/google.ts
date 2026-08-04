@@ -50,7 +50,11 @@ function creds() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   let key = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
   if (!email || !key) return null;
-  key = key.replace(/\\n/g, '\n'); // env-escaped newlines
+  key = key.trim().replace(/^["']|["']$/g, ''); // הסרת גרשיים עוטפים
+  key = key.replace(/\\n/g, '\n'); // \n מוברח → שורה אמיתית
+  // חילוץ בלוק ה-PEM גם אם יש רעש מסביב
+  const m = key.match(/-----BEGIN[\s\S]*?-----END[^-]*-----/);
+  if (m) key = m[0];
   return { email, key };
 }
 
@@ -231,12 +235,16 @@ async function fetchGSC(): Promise<GoogleData['gsc'] | undefined> {
 export async function googleDiagnostic(): Promise<Record<string, unknown>> {
   const c = creds();
   if (!c) return { step: 'creds', ok: false, note: 'אין email/key' };
+  const rawKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ?? '';
   const keyInfo = {
     length: c.key.length,
     startsWithBegin: c.key.startsWith('-----BEGIN'),
     endsWithEnd: c.key.trimEnd().endsWith('-----'),
     hasRealNewline: c.key.includes('\n'),
     emailEndsCorrect: c.email.endsWith('.iam.gserviceaccount.com'),
+    rawHead: rawKey.slice(0, 45),
+    rawContainsBegin: rawKey.includes('BEGIN'),
+    afterHead: c.key.slice(0, 32),
   };
   const iat = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
