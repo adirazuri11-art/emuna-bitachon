@@ -94,7 +94,7 @@ function itemsBlock(o: FulfillmentOrder): string {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;border-top:1px solid ${LINE};padding-top:8px">${summaryRows(o)}</table>`;
 }
 
-async function resendSend(to: string, subject: string, html: string): Promise<{ ok: boolean; status?: number; detail?: string }> {
+async function resendSend(to: string, subject: string, html: string, replyTo?: string): Promise<{ ok: boolean; status?: number; detail?: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key || !to) return { ok: false, detail: 'missing key/to' };
   const from = process.env.RESEND_FROM || 'אמונה וביטחון <onboarding@resend.dev>';
@@ -102,7 +102,7 @@ async function resendSend(to: string, subject: string, html: string): Promise<{ 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html }),
+      body: JSON.stringify({ from, to, subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
       cache: 'no-store',
     });
     const text = await res.text().catch(() => '');
@@ -132,7 +132,8 @@ export async function sendClubWelcome(
       <a href="${SITE}" style="background:${NAVY};color:${GOLD};text-decoration:none;padding:13px 30px;border-radius:999px;font-weight:700;font-size:15px;display:inline-block">התחילו לקנות →</a>
     </div>`;
   const rm = await resendSend(memberEmail, 'קוד ההטבה שלך — מועדון אמונה וביטחון 🎁',
-    shell('ברוכים הבאים למועדון! 🎁', memberInner, 'הזינו את הקוד בעמוד התשלום. בלי ספאם — רק הטבות אמיתיות.'));
+    shell('ברוכים הבאים למועדון! 🎁', memberInner, 'הזינו את הקוד בעמוד התשלום. בלי ספאם — רק הטבות אמיתיות.'),
+    process.env.BUSINESS_ORDER_EMAIL || undefined);
 
   let business = false;
   const biz = process.env.BUSINESS_ORDER_EMAIL;
@@ -173,7 +174,8 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
       </div>
       ${o.giftWrap && o.giftMessage ? `<div style="margin-top:14px;background:#fdf6e3;border:1px solid ${LINE};border-radius:12px;padding:14px"><div style="font-size:13px;font-weight:700;color:${GOLD};margin-bottom:6px">🎁 כיתוב לכרטיס הברכה</div><div style="white-space:pre-wrap;font-size:14px;color:${INK}">${esc(o.giftMessage)}</div></div>` : ''}`;
     const html = shell(`🛒 הזמנה חדשה — ${money(o.amount)}`, inner, 'הזמנה זו שולמה ואומתה. מומלץ ליצור קשר עם הלקוח לתיאום.');
-    const r = await resendSend(biz, `🛒 הזמנה חדשה ${o.orderNumber} — ${money(o.amount)}`, html);
+    // Reply-To = הלקוח, כדי שהעסק יוכל להשיב ישירות מהמייל
+    const r = await resendSend(biz, `🛒 הזמנה חדשה ${o.orderNumber} — ${money(o.amount)}`, html, c.email || undefined);
     business = r.ok;
     detail = r.detail;
   }
@@ -187,7 +189,8 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
       ${itemsBlock(o)}
       ${addr ? `<div style="margin-top:16px;font-size:13px;color:${MUTED}">📦 משלוח אל: <span style="color:${INK}">${esc(addr)}</span></div>` : ''}`;
     const html = shell('תודה על הזמנתך! 🎁', inner, 'לכל שאלה אפשר להשיב למייל הזה. תודה שבחרתם באמונה וביטחון.');
-    const r = await resendSend(c.email, `אישור הזמנה ${o.orderNumber} — אמונה וביטחון`, html);
+    // Reply-To = מייל העסק, כדי שתשובת הלקוח תגיע ל-lalevmedia
+    const r = await resendSend(c.email, `אישור הזמנה ${o.orderNumber} — אמונה וביטחון`, html, biz || undefined);
     customer = r.ok;
     if (!detail) detail = r.detail;
   }
