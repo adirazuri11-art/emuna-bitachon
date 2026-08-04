@@ -18,6 +18,12 @@ export interface CheckoutCustomer {
   phone: string;
 }
 
+export interface DocumentLine {
+  description: string;
+  unitCost: number; // מחיר ליחידה בש"ח
+  quantity: number;
+}
+
 export interface CheckoutPayload {
   orderNumber: string;
   amount: number; // בשקלים — מחושב בשרת בלבד
@@ -26,6 +32,13 @@ export interface CheckoutPayload {
   failureUrl: string;
   webhookUrl: string;
   productName?: string;
+  documentLines?: DocumentLine[]; // שורות לקבלה — סכומן חייב להיות שווה ל-amount
+}
+
+// האם להפיק קבלה אוטומטית דרך Cardcom (מודול "הפקת מסמכים").
+// כבוי כברירת מחדל — הפעלה רק אחרי אימות שהמודול פעיל בחשבון, אחרת התשלומים נשברים.
+export function isInvoiceEnabled(): boolean {
+  return process.env.CARDCOM_INVOICE === 'true';
 }
 
 export interface PaymentSession {
@@ -57,7 +70,7 @@ export const cardcom: PaymentProvider = {
     }
 
     // amount מגיע מחושב בשרת בלבד — אף פעם לא מה-Client.
-    const body = {
+    const body: Record<string, unknown> = {
       TerminalNumber: Number(terminal),
       ApiName: apiName,
       Amount: Number(payload.amount.toFixed(2)),
@@ -70,6 +83,23 @@ export const cardcom: PaymentProvider = {
       FailedRedirectUrl: payload.failureUrl,
       WebHookUrl: payload.webhookUrl,
     };
+
+    // הפקת קבלה אוטומטית — רק אם המודול הופעל במפורש (CARDCOM_INVOICE=true).
+    // Cardcom מפיק את המסמך לפי הגדרת החשבון (עוסק פטור → קבלה) ושולח במייל ללקוח.
+    if (isInvoiceEnabled() && payload.documentLines && payload.documentLines.length > 0) {
+      body.Operation = 'ChargeAndCreateDocument';
+      body.Document = {
+        Name: payload.customer.name || 'לקוח',
+        Email: payload.customer.email || undefined,
+        Phone: payload.customer.phone || undefined,
+        IsSendByEmail: !!payload.customer.email, // שליחת הקבלה במייל ללקוח
+        Products: payload.documentLines.map((l) => ({
+          Description: l.description.slice(0, 250),
+          UnitCost: Number(l.unitCost.toFixed(2)),
+          Quantity: l.quantity,
+        })),
+      };
+    }
 
     let res: Response;
     try {
