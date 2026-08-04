@@ -17,7 +17,7 @@ export function GiftFinderBubble() {
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: 0.4, type: 'spring', stiffness: 260, damping: 18 }}
-      className="fixed bottom-24 right-6 z-40"
+      className="fixed bottom-24 right-6 z-40 hidden md:block"
     >
       <Link
         href="/gift-finder"
