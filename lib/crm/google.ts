@@ -227,24 +227,38 @@ async function fetchGSC(): Promise<GoogleData['gsc'] | undefined> {
   };
 }
 
-// אבחון — האם ה-JWT/טוקן עובד (מפתח תקין + API מופעל) ומה Search Console מחזיר.
+// אבחון מפורט — צורת המפתח, חתימת JWT, ותשובת נקודת הטוקן של גוגל.
 export async function googleDiagnostic(): Promise<Record<string, unknown>> {
-  const token = await getAccessToken('https://www.googleapis.com/auth/webmasters.readonly');
-  if (!token) return { tokenOk: false, note: 'החלפת JWT נכשלה — מפתח פגום או ש-API לא הופעל' };
-  const site = process.env.GSC_SITE_URL;
-  let gsc: { status?: number; body?: string } = {};
-  if (site) {
-    try {
-      const res = await fetch(
-        `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`,
-        { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: '30daysAgo', endDate: 'today' }), cache: 'no-store' },
-      );
-      gsc = { status: res.status, body: (await res.text()).slice(0, 300) };
-    } catch (e) {
-      gsc = { body: e instanceof Error ? e.message : 'fetch error' };
-    }
+  const c = creds();
+  if (!c) return { step: 'creds', ok: false, note: 'אין email/key' };
+  const keyInfo = {
+    length: c.key.length,
+    startsWithBegin: c.key.startsWith('-----BEGIN'),
+    endsWithEnd: c.key.trimEnd().endsWith('-----'),
+    hasRealNewline: c.key.includes('\n'),
+    emailEndsCorrect: c.email.endsWith('.iam.gserviceaccount.com'),
+  };
+  const iat = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claim = b64url(JSON.stringify({ iss: c.email, scope: 'https://www.googleapis.com/auth/webmasters.readonly', aud: 'https://oauth2.googleapis.com/token', iat, exp: iat + 3600 }));
+  const signingInput = `${header}.${claim}`;
+  let signature: string;
+  try {
+    signature = b64url(createSign('RSA-SHA256').update(signingInput).sign(c.key));
+  } catch (e) {
+    return { step: 'sign', ok: false, keyInfo, error: e instanceof Error ? e.message : 'sign error' };
   }
-  return { tokenOk: true, gscSite: site, gsc };
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${signingInput}.${signature}` }),
+      cache: 'no-store',
+    });
+    return { step: 'token', ok: res.ok, status: res.status, keyInfo, tokenBody: (await res.text()).slice(0, 300) };
+  } catch (e) {
+    return { step: 'token', ok: false, keyInfo, error: e instanceof Error ? e.message : 'fetch error' };
+  }
 }
 
 export async function getGoogleData(): Promise<GoogleData> {
