@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Lock, MessageCircle, ShieldCheck, Truck } from 'lucide-react';
+import { CheckCircle2, Lock, MessageCircle, ShieldCheck, Truck, Loader2 } from 'lucide-react';
 import { Confetti } from '@/components/ui/Confetti';
 import { useCartStore, selectCartTotal, type CartItem } from '@/store/cart';
 import { calcShipping, FREE_SHIPPING_THRESHOLD } from '@/lib/payments';
@@ -50,6 +50,7 @@ export default function CheckoutPage() {
   const subtotal = useCartStore(selectCartTotal);
   const shipping = calcShipping(subtotal);
   const [giftSubmitError, setGiftSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // בדיקה: אם לא יש קופון אבל יש קוד מועדון בlocalStorage — החל 10% אוטומטי
   const memberCode = typeof window !== 'undefined' ? localStorage.getItem('emuna-club-code') : null;
@@ -87,6 +88,8 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting) return; // מניעת לחיצה כפולה
+    const formEl = e.currentTarget as HTMLFormElement;
 
     // ---- אריזת מתנה: Validation לקוח → אכיפה בשרת (מחיר וברכה מהשרת בלבד) ----
     let giftFinalCharge = 0;
@@ -124,12 +127,46 @@ export default function CheckoutPage() {
     }
 
     trackEvent('add_payment_info', { value: total });
-    // TODO: Server Action → יצירת Order ב-Prisma → getPaymentProvider().createPaymentPage()
-    // → redirect לעמוד הסליקה (Cardcom / PayPlus). ראו lib/payments.ts
-    // ⚠️ בעת חיבור הסליקה: הסכום הסופי (כולל תוספת אריזת המתנה 10 ₪) חייב להיחשב
-    // בשרת עם giftWrapCharge() מ-lib/gift-wrap, ולא להילקח מה-Client.
-    // ⚠️ חשוב: בשרת, בדוק אם הלקוח הוא חבר מועדון לפני החלת 10% הנחה זמנית.
-    // רק קופון שרת-side (חברות מועדון) יופעל בקופה.
+
+    // ---- מעבר לסליקה מאובטחת (הסכום מחושב ומאומת בשרת) ----
+    // כשהסליקה פעילה (CARDCOM_LIVE) — יוצרים הזמנה בשרת ומפנים לעמוד התשלום.
+    // כל עוד לא הופעלה — השרת מחזיר liveDisabled ואנו נופלים בחזרה לזרימת "בקשה ללא חיוב".
+    setSubmitting(true);
+    try {
+      const fd = new FormData(formEl);
+      const res = await fetch('/api/checkout/create', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({ id: i.id, quantity: i.quantity, price: i.price, title: i.title })),
+          giftWrap: { selected: giftWrap.selected, message: giftWrap.message },
+          couponCode: effectiveCoupon?.code,
+          customer: {
+            name: String(fd.get('name') ?? ''),
+            phone: String(fd.get('phone') ?? ''),
+            email: String(fd.get('email') ?? ''),
+          },
+        }),
+      });
+      const j = await res.json();
+      if (j.ok && j.redirectUrl) {
+        window.location.href = j.redirectUrl; // מעבר לעמוד התשלום — הכפתור נשאר נעול
+        return;
+      }
+      if (!j.liveDisabled) {
+        setSubmitting(false);
+        showToast(j.error ?? 'שגיאה במעבר לתשלום. נסו שוב', 'error');
+        return;
+      }
+      // liveDisabled → ממשיכים לזרימת הבקשה המקומית שלמטה
+    } catch {
+      setSubmitting(false);
+      showToast('בעיית תקשורת במעבר לתשלום. נסו שוב', 'error');
+      return;
+    }
+    setSubmitting(false);
+
+    // ===== זרימת "בקשה ללא חיוב" (פעילה עד הפעלת הסליקה) =====
     // מימוש הקופון האישי (חד-פעמי, נאכף בשרת) לפני סגירת ההזמנה
     if (coupon?.server) {
       const r = await redeemClubCoupon(coupon.code);
@@ -278,6 +315,7 @@ export default function CheckoutPage() {
                 <span className="mb-1 block text-sm font-medium text-navy">{f.label}</span>
                 <input
                   required
+                  name={f.key}
                   type={f.type}
                   autoComplete={f.autoComplete}
                   className="gold-ring w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none"
@@ -304,10 +342,15 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={!!giftError}
-            className="mt-6 w-full rounded-full bg-gradient-to-l from-gold to-gold-soft py-3.5 font-bold text-navy shadow-gold transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+            disabled={!!giftError || submitting}
+            aria-busy={submitting}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-l from-gold to-gold-soft py-3.5 font-bold text-navy shadow-gold transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
           >
-            שליחת ההזמנה לאישור · {formatPrice(total)}
+            {submitting ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> מעבירים אתכם לתשלום מאובטח…</>
+            ) : (
+              <>מעבר לתשלום מאובטח · {formatPrice(total)}</>
+            )}
           </button>
 
           <div className="mt-4 flex items-center justify-center gap-6 text-xs text-navy/50">

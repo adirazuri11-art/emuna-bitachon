@@ -95,6 +95,43 @@ export function getPaymentProvider(): PaymentProvider {
   return cardcom;
 }
 
+export interface VerifiedTransaction {
+  ok: boolean;
+  orderNumber: string;
+  amount: number;
+  transactionId: string;
+}
+
+// אימות רשמי מול קארדקום — GetLpResult. מקור האמת היחיד לתשלום מוצלח.
+// לא סומכים על ה-webhook/redirect params; שולפים ישירות מהספק לפי LowProfileId.
+export async function verifyCardcomTransaction(lowProfileId: string): Promise<VerifiedTransaction | null> {
+  const terminal = process.env.CARDCOM_TERMINAL;
+  const apiName = process.env.CARDCOM_API_NAME;
+  if (!terminal || !apiName || !lowProfileId) return null;
+  try {
+    const res = await fetch('https://secure.cardcom.solutions/api/v11/LowProfile/GetLpResult', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ TerminalNumber: Number(terminal), ApiName: apiName, LowProfileId: lowProfileId }),
+      cache: 'no-store',
+    });
+    const d = (await res.json()) as {
+      ResponseCode?: number;
+      ReturnValue?: string;
+      TranzactionInfo?: { Amount?: number; TranzactionId?: number; ResponseCode?: number };
+    };
+    const txOk = d.ResponseCode === 0 && (d.TranzactionInfo?.ResponseCode ?? 1) === 0;
+    return {
+      ok: txOk,
+      orderNumber: String(d.ReturnValue ?? ''),
+      amount: Number(d.TranzactionInfo?.Amount ?? 0),
+      transactionId: String(d.TranzactionInfo?.TranzactionId ?? ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const FREE_SHIPPING_THRESHOLD = 399;
 export const STANDARD_SHIPPING_COST = 29;
 
