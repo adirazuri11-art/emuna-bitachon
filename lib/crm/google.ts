@@ -227,6 +227,26 @@ async function fetchGSC(): Promise<GoogleData['gsc'] | undefined> {
   };
 }
 
+// אבחון — האם ה-JWT/טוקן עובד (מפתח תקין + API מופעל) ומה Search Console מחזיר.
+export async function googleDiagnostic(): Promise<Record<string, unknown>> {
+  const token = await getAccessToken('https://www.googleapis.com/auth/webmasters.readonly');
+  if (!token) return { tokenOk: false, note: 'החלפת JWT נכשלה — מפתח פגום או ש-API לא הופעל' };
+  const site = process.env.GSC_SITE_URL;
+  let gsc: { status?: number; body?: string } = {};
+  if (site) {
+    try {
+      const res = await fetch(
+        `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site)}/searchAnalytics/query`,
+        { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ startDate: '30daysAgo', endDate: 'today' }), cache: 'no-store' },
+      );
+      gsc = { status: res.status, body: (await res.text()).slice(0, 300) };
+    } catch (e) {
+      gsc = { body: e instanceof Error ? e.message : 'fetch error' };
+    }
+  }
+  return { tokenOk: true, gscSite: site, gsc };
+}
+
 export async function getGoogleData(): Promise<GoogleData> {
   if (!creds()) return { configured: false };
   const [ga4, gsc] = await Promise.all([fetchGA4(), fetchGSC()]);
