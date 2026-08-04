@@ -9,7 +9,7 @@ import type { FulfillmentOrder } from './orders';
 
 const money = (n: number) => `₪${Math.round(n)}`;
 
-export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: boolean }> {
+export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: boolean; status?: number; detail?: string }> {
   const biz = process.env.BUSINESS_ORDER_EMAIL;
   if (!biz) return { business: false };
 
@@ -60,9 +60,11 @@ export async function sendOrderEmails(o: FulfillmentOrder): Promise<{ business: 
       body: JSON.stringify(payload),
       cache: 'no-store',
     });
-    const data = (await res.json().catch(() => ({}))) as { success?: string };
-    return { business: res.ok && data.success !== 'false' };
-  } catch {
-    return { business: false };
+    const text = await res.text().catch(() => '');
+    let success: string | undefined;
+    try { success = (JSON.parse(text) as { success?: string }).success; } catch { /* non-JSON */ }
+    return { business: res.ok && success === 'true', status: res.status, detail: text.slice(0, 200) };
+  } catch (e) {
+    return { business: false, detail: e instanceof Error ? e.message : 'fetch error' };
   }
 }
