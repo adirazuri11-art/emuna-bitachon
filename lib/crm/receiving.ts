@@ -85,7 +85,7 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
 
         await tx.$executeRawUnsafe(
           `insert into public.supplier_invoice_lines (supplier_invoice_id, supplier_product_code, raw_product_name, product_sku, quantity, unit_cost, line_total, match_method, status)
-           values ($1,$2,$3,$4,$5::int,$6::numeric,$7::numeric,$8,$9)`,
+           values ($1::uuid,$2,$3,$4,$5::int,$6::numeric,$7::numeric,$8,$9)`,
           invoiceId, l.supplierCode.trim(), l.rawName || meta?.title || null, sku, qty, cost, cost * qty,
           sku ? 'supplier_code' : null, sku ? 'matched' : 'unmatched',
         );
@@ -115,7 +115,7 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
       }
 
       await tx.$executeRawUnsafe(
-        `update public.supplier_invoices set line_count=$2::int, matched_count=$3::int, units_total=$4::int where id=$1`,
+        `update public.supplier_invoices set line_count=$2::int, matched_count=$3::int, units_total=$4::int where id=$1::uuid`,
         invoiceId, lines.length, matched, units,
       );
       return { invoiceId, matched, unmatched, unitsTotal: units };
