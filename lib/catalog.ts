@@ -939,10 +939,6 @@ const CORE_PRODUCTS: CatalogProduct[] = [
 
 // ---------- מיזוג הקטלוג המורחב ----------
 
-import { EXTENDED_PRODUCTS } from '@/lib/catalog-extended';
-import { EXTENDED_PRODUCTS_2 } from '@/lib/catalog-extended-2';
-import { EXTENDED_PRODUCTS_3 } from '@/lib/catalog-extended-3';
-import { BOOK_PRODUCTS } from '@/lib/catalog-books';
 import { SUPPLIER_PRODUCTS } from '@/lib/catalog-supplier';
 
 // תת-קטגוריות למוצרי הליבה המקוריים
@@ -965,14 +961,9 @@ const LEGACY_SUBCATS: Record<string, string> = {
   p16: 'ראש השנה',
 };
 
-// ⚠️ לפני עלייה לאוויר: מציגים רק מוצרים אמיתיים עם צילום ספק אמיתי.
-// מוצרי הדמו (CORE/EXTENDED/BOOK) נשמרים בקוד אך אינם ממוזגים לחנות.
-// להחזרתם — להוסיף חזרה למערך. (המשתנים למטה נשארים כדי לא לשבור imports.)
+// מציגים רק מוצרים אמיתיים עם צילום ספק (SUPPLIER_PRODUCTS). מוצרי הדמו הישנים
+// (CORE_PRODUCTS/LEGACY_SUBCATS) נשמרים בקוד אך אינם ממוזגים לחנות.
 void CORE_PRODUCTS;
-void EXTENDED_PRODUCTS;
-void EXTENDED_PRODUCTS_2;
-void EXTENDED_PRODUCTS_3;
-void BOOK_PRODUCTS;
 void LEGACY_SUBCATS;
 
 // Enrich products with audience/occasions for מאתר המתנה.
