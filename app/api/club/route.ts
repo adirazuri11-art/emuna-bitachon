@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { sendClubWelcome } from '@/lib/order-email';
+import { resolvePromoDiscount } from '@/lib/promo';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -103,11 +104,18 @@ export async function POST(req: NextRequest) {
     const code = String(body.code ?? '').trim();
     const subtotal = Number(body.subtotal) || 0;
     const m = await prisma.clubMember.findUnique({ where: { couponCode: code } });
-    if (!m) return NextResponse.json({ ok: false, error: 'קוד קופון לא תקין' });
+    if (!m) {
+      // לא קוד מועדון — אולי קופון מותאם שנוצר ב-CRM (promo_coupons). redeem=false (לא חד-פעמי-לאדם).
+      const promo = await resolvePromoDiscount(code, subtotal);
+      if (promo) {
+        return NextResponse.json({ ok: true, discount: promo.discount, type: promo.type, value: promo.value, label: promo.label, redeem: false });
+      }
+      return NextResponse.json({ ok: false, error: 'קוד קופון לא תקין' });
+    }
     if (m.couponUsed) return NextResponse.json({ ok: false, error: 'הקופון כבר נוצל' });
     if (m.couponExpires.getTime() < Date.now()) return NextResponse.json({ ok: false, error: 'תוקף הקופון פג' });
     const discount = Math.round((subtotal * COUPON_PCT) / 100);
-    return NextResponse.json({ ok: true, discount, pct: COUPON_PCT, label: `הטבת מועדון — ${COUPON_PCT}% הנחה` });
+    return NextResponse.json({ ok: true, discount, pct: COUPON_PCT, type: 'pct', value: COUPON_PCT, label: `הטבת מועדון — ${COUPON_PCT}% הנחה`, redeem: true });
   }
 
   // ---- מימוש (סיום הזמנה) — אטומי, פעם אחת בלבד ----

@@ -21,7 +21,7 @@ const NAV = [
   { label: 'מאתר המתנה', href: '/crm/gift-finder', icon: LayoutDashboard },
   { label: 'רשתות חברתיות', href: '/crm/social', icon: Instagram },
   { label: 'אנליטיקס', href: '/crm/analytics', icon: BarChart3 },
-  { label: 'קופונים', href: '/crm/coupons', icon: Ticket },
+  { label: 'מבצעים וקופונים', href: '/crm/promotions', icon: Ticket },
 ];
 
 export function CommandPalette() {

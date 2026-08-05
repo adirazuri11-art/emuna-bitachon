@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PRODUCTS } from '@/lib/catalog';
 import { calcShipping, cardcom, isPaymentConfigured, isPaymentLive, validateCoupon } from '@/lib/payments';
+import { resolvePromoDiscount } from '@/lib/promo';
 import { giftWrapCharge, validateGiftMessage } from '@/lib/gift-wrap';
 import { createPendingOrder } from '@/lib/orders';
 import { prisma } from '@/lib/prisma';
@@ -25,20 +26,23 @@ function unitPrice(item: InItem): number {
   return Math.min(client, 10000); // פריט דינמי (שובר/התאמה) — בגבול בטוח
 }
 
-// אימות הנחה בצד השרת בלבד. מחזיר אחוז הנחה (0..100) ותווית.
-async function serverDiscountPct(code: string): Promise<{ pct: number; code: string } | null> {
+// אימות הנחה בצד השרת בלבד. מחזיר את סכום ההנחה (₪) לפי subtotal ותווית קוד.
+async function serverDiscount(code: string, subtotal: number): Promise<{ discount: number; code: string } | null> {
   const clean = code.trim();
-  if (!clean) return null;
+  if (!clean || !(subtotal > 0)) return null;
   // 1) קופון סטטי מוגדר בקוד
   const stat = validateCoupon(clean);
-  if (stat) return { pct: stat.pct, code: clean };
+  if (stat) return { discount: Math.round((subtotal * stat.pct) / 100), code: clean };
   // 2) קוד מועדון — קיים ב-ClubMember ולא נוצל (דרך Prisma/Neon)
   try {
     const member = await prisma.clubMember.findFirst({ where: { couponCode: clean }, select: { couponUsed: true } });
-    if (member && member.couponUsed === false) return { pct: MEMBER_PCT, code: clean };
+    if (member && member.couponUsed === false) return { discount: Math.round((subtotal * MEMBER_PCT) / 100), code: clean };
   } catch {
-    /* לא ניתן לאמת → לא מחילים הנחה לא מאומתת */
+    /* לא ניתן לאמת → ממשיכים לבדיקת קופון מותאם */
   }
+  // 3) קופון מותאם שנוצר ב-CRM (promo_coupons) — תומך אחוז/סכום קבוע, תוקף, מגבלת מימושים
+  const promo = await resolvePromoDiscount(clean, subtotal);
+  if (promo) return { discount: promo.discount, code: promo.code };
   return null; // לעולם לא מפחיתים לפי טענת לקוח בלבד
 }
 
@@ -82,9 +86,9 @@ export async function POST(req: NextRequest) {
   let discount = 0;
   let appliedCoupon: string | undefined;
   if (body.couponCode) {
-    const d = await serverDiscountPct(body.couponCode);
+    const d = await serverDiscount(body.couponCode, productsSubtotal);
     if (d) {
-      discount = Math.round((productsSubtotal * d.pct) / 100);
+      discount = Math.min(d.discount, productsSubtotal);
       appliedCoupon = d.code;
     }
   }

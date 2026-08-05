@@ -16,7 +16,7 @@ const NAV = [
   { href: '/crm/gift-finder', label: 'מאתר המתנה', icon: Sparkles },
   { href: '/crm/social', label: 'רשתות חברתיות', icon: Instagram },
   { href: '/crm/analytics', label: 'אנליטיקס', icon: BarChart3 },
-  { href: '/crm/coupons', label: 'קופונים', icon: Ticket },
+  { href: '/crm/promotions', label: 'מבצעים וקופונים', icon: Ticket },
 ];
 
 export function Sidebar() {

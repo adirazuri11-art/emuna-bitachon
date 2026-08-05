@@ -14,8 +14,11 @@ export interface JoinResult {
 export interface CouponResult {
   ok: true;
   discount: number;
-  pct: number;
+  pct?: number; // קוד מועדון/סטטי
+  type?: 'pct' | 'fixed'; // קופון מותאם מ-CRM
+  value?: number;
   label: string;
+  redeem?: boolean; // true = דורש מימוש אטומי בסיום (קוד מועדון חד-פעמי)
 }
 type Fail = { ok: false; error: string };
 

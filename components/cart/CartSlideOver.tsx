@@ -39,7 +39,8 @@ export function CartSlideOver() {
     // 1) אימות מול השרת — קודי מועדון (ייחודי + חד-פעמי, נאכף בשרת)
     const v = await validateClubCoupon(code, total);
     if (v.ok) {
-      setCoupon({ code, type: 'pct', value: v.pct, label: v.label, server: true });
+      // קוד מועדון (redeem=true, אחוז) או קופון מותאם מ-CRM (type/value, redeem=false)
+      setCoupon({ code, type: v.type ?? 'pct', value: v.value ?? v.pct ?? 0, label: v.label, server: v.redeem ?? true });
       trackEvent('coupon_applied', { query: code });
       showToast(`הקופון הופעל — ${v.label} 🎉`);
       setCouponInput(''); setApplying(false);

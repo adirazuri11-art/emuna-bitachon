@@ -37,6 +37,18 @@ const STATEMENTS = [
   // חותמות התראה — מונעות שליחה כפולה של מייל משלוח / בקשת ביקורת (idempotent).
   `alter table public.orders add column if not exists shipping_notified_at timestamptz`,
   `alter table public.orders add column if not exists review_requested_at timestamptz`,
+  // קופונים מותאמים שנוצרים ב-CRM — נאכפים בסליקה (lib/promo.ts). מימושים/הכנסה נגזרים מ-orders.coupon_code.
+  `create table if not exists public.promo_coupons (
+     code text primary key,
+     discount_type text not null default 'pct',
+     discount_value numeric not null,
+     label text,
+     expires_at timestamptz,
+     max_redemptions int,
+     active boolean not null default true,
+     created_at timestamptz not null default now()
+   )`,
+  `create index if not exists orders_coupon_idx on public.orders (coupon_code)`,
   // תור פרסום אוטומטי לרשתות (בנק התוכן) — 3 פוסטים/יום, דילוג בשבת
   `create table if not exists public.social_queue (
     idx           int primary key,
