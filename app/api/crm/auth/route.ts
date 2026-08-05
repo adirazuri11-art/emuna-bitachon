@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     secure: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 12, // 12h
+    maxAge: 60 * 60 * 24 * 30, // 30 יום — פאנל אדמין, פחות ניתוקים מיותרים
   });
   return res;
 }

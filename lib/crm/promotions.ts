@@ -56,9 +56,10 @@ export async function createPromoCoupon(input: CreatePromoInput): Promise<Create
     )) as unknown[];
     if (existing.length) return { ok: false, error: 'קוד קופון כזה כבר קיים' };
 
+    // המרות מפורשות — Prisma שולח פרמטרים כ-text; Postgres לא ממיר אוטומטית ל-timestamptz/int/numeric.
     await prisma.$executeRawUnsafe(
       `insert into public.promo_coupons (code, discount_type, discount_value, label, expires_at, max_redemptions, active)
-       values ($1,$2,$3,$4,$5,$6,true)`,
+       values ($1, $2, $3::numeric, $4, $5::timestamptz, $6::int, true)`,
       code, type, value, label, expires ? expires.toISOString() : null, max,
     );
     return { ok: true };
