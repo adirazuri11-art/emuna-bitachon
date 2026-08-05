@@ -98,7 +98,7 @@ export function NewsletterPopup() {
           transition={{ type: 'spring', damping: 24, stiffness: 260 }}
           role="dialog"
           aria-label="הצטרפות למועדון"
-          className="fixed inset-x-4 bottom-6 z-[55] overflow-hidden rounded-2xl border border-gold/30 bg-navy shadow-2xl sm:inset-x-auto sm:left-6 sm:w-full sm:max-w-sm"
+          className="fixed inset-x-4 bottom-24 z-[55] overflow-hidden rounded-2xl border border-gold/30 bg-navy shadow-2xl sm:inset-x-auto sm:bottom-6 sm:left-6 sm:w-full sm:max-w-sm"
         >
           <div className="pointer-events-none absolute -top-10 start-1/3 h-32 w-32 rounded-full bg-gold/15 blur-[50px]" />
           <button onClick={dismiss} aria-label="סגירה"
