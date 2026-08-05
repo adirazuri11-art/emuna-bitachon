@@ -69,7 +69,11 @@ export default function GiftFinderPage() {
   const [occasion, setOccasion] = useState<string | null>(null);
   const [budget, setBudget] = useState<(typeof BUDGETS)[number] | null>(null);
   const [wantCustom, setWantCustom] = useState<boolean | null>(null);
+  const [freeText, setFreeText] = useState('');
   const [showResults, setShowResults] = useState(false);
+  // המלצות AI (Claude) — מגיעות אסינכרונית. אם נכשל/ריק — נופלים חזרה ל-rule-based.
+  const [aiResult, setAiResult] = useState<{ intro?: string; recommendations: { id: string; reason: string }[] } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const results = useMemo(() => {
     if (!showResults) return [];
@@ -176,15 +180,45 @@ export default function GiftFinderPage() {
     });
   }, [showResults, results, audience, occasion, budget, wantCustom]);
 
-  const finish = () => {
+  const finish = async () => {
     trackEvent('gift_finder', {
       query: [audience, occasion, budget?.label, wantCustom ? 'התאמה' : ''].filter(Boolean).join(' | '),
     });
     setShowResults(true);
+    // שכבת ה-AI: בקשה ליועץ החכם (Claude). ה-rule-based כבר מוכן כ-fallback.
+    setAiResult(null);
+    setAiLoading(true);
+    try {
+      const res = await fetch('/api/gift-finder/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audience,
+          occasion,
+          budgetMin: budget?.min ?? 0,
+          budgetMax: budget && budget.max !== Infinity ? budget.max : undefined,
+          freeText: freeText.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data?.ok && Array.isArray(data.recommendations) && data.recommendations.length) {
+        setAiResult({ intro: data.intro, recommendations: data.recommendations });
+      }
+    } catch {
+      /* נופלים חזרה ל-rule-based */
+    } finally {
+      setAiLoading(false);
+    }
   };
+
+  // מיפוי המלצות ה-AI למוצרים מהקטלוג (עם הנימוק).
+  const aiProducts = (aiResult?.recommendations ?? [])
+    .map((r) => ({ product: PRODUCTS.find((p) => p.id === r.id), reason: r.reason }))
+    .filter((x): x is { product: CatalogProduct; reason: string } => Boolean(x.product));
 
   const reset = () => {
     setStep(0); setAudience(null); setOccasion(null); setBudget(null); setWantCustom(null); setShowResults(false);
+    setFreeText(''); setAiResult(null); setAiLoading(false);
     postedRef.current = false;
     sessionIdRef.current = '';
   };
@@ -241,6 +275,24 @@ export default function GiftFinderPage() {
         </div>
       ),
     },
+    {
+      title: 'ספרו לנו קצת על מקבל/ת המתנה',
+      content: (
+        <div>
+          <textarea
+            value={freeText}
+            onChange={(e) => setFreeText(e.target.value)}
+            maxLength={400}
+            rows={3}
+            placeholder={'למשל: "לסבתא שאוהבת לארח בשבת ומעדיפה כסף", "לחתן דתי שמתחיל ללמוד בישיבה"...'}
+            className="w-full rounded-xl border border-navy/15 bg-white px-4 py-3 text-sm leading-relaxed text-navy outline-none focus:border-gold"
+          />
+          <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-navy/50">
+            <Sparkles className="h-3.5 w-3.5 text-gold-soft" /> ככל שתפרטו יותר — היועץ החכם שלנו יתאים במדויק (לא חובה)
+          </p>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -287,19 +339,54 @@ export default function GiftFinderPage() {
         <div className="mt-10">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              {results.length > 0 && (
+              {aiLoading ? (
+                <h2 className="flex items-center gap-2 font-display text-xl font-bold text-navy">
+                  <Sparkles className="h-5 w-5 animate-pulse text-gold" /> היועץ החכם בוחר עבורכם…
+                </h2>
+              ) : aiProducts.length > 0 ? (
+                <>
+                  <h2 className="flex items-center gap-2 font-display text-xl font-bold text-navy">
+                    <Sparkles className="h-5 w-5 text-gold" /> ההמלצות האישיות שלנו
+                  </h2>
+                  {aiResult?.intro && (
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-navy/70">{aiResult.intro}</p>
+                  )}
+                </>
+              ) : results.length > 0 ? (
                 <>
                   <h2 className="font-display text-xl font-bold text-navy">מצאנו מתנות שיכולות להתאים לכם</h2>
                   <p className="mt-1 text-sm text-navy/60">ההמלצות מבוססות על מקבל המתנה, האירוע והתקציב שבחרתם.</p>
                 </>
-              )}
+              ) : null}
             </div>
             <button onClick={reset} className="flex shrink-0 items-center gap-1.5 text-sm text-gold-soft hover:text-navy">
               <RotateCcw className="h-4 w-4" /> התחלה מחדש
             </button>
           </div>
 
-          {results.length === 0 ? (
+          {aiLoading ? (
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-navy/5" />
+              ))}
+            </div>
+          ) : aiProducts.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
+              {aiProducts.map(({ product, reason }) => (
+                <div
+                  key={product.id}
+                  onClick={() => sendGiftFinderEvent({ action: 'click', sessionId: sessionIdRef.current, productId: product.id })}
+                >
+                  <ProductCard product={product} />
+                  {reason && (
+                    <p className="mt-2 flex items-start gap-1.5 px-1 text-xs leading-snug text-navy/70">
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-gold-soft" /> {reason}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : results.length === 0 ? (
             <div className="rounded-2xl border border-gold/20 bg-white p-10 text-center shadow-card">
               <p className="font-display text-xl font-bold text-navy">לא מצאנו כרגע מספיק מוצרים שעומדים בכל הבחירות שלכם</p>
               <p className="mt-2 text-sm text-navy/60">אפשר לשנות את התקציב או את האירוע כדי לקבל אפשרויות נוספות, או לדבר איתנו ונשמח לעזור.</p>
