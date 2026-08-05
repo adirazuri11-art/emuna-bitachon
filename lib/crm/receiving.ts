@@ -85,7 +85,7 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
 
         await tx.$executeRawUnsafe(
           `insert into public.supplier_invoice_lines (supplier_invoice_id, supplier_product_code, raw_product_name, product_sku, quantity, unit_cost, line_total, match_method, status)
-           values ($1,$2,$3,$4,$5,$6::numeric,$7::numeric,$8,$9)`,
+           values ($1,$2,$3,$4,$5::int,$6::numeric,$7::numeric,$8,$9)`,
           invoiceId, l.supplierCode.trim(), l.rawName || meta?.title || null, sku, qty, cost, cost * qty,
           sku ? 'supplier_code' : null, sku ? 'matched' : 'unmatched',
         );
@@ -93,13 +93,13 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
         if (!sku) { unmatched++; continue; }
         matched++;
         await tx.$executeRawUnsafe(`insert into public.inventory_items (sku, supplier_code) values ($1,$1) on conflict (sku) do nothing`, sku);
-        // עלות ממוצעת משוקללת — כל ביטויי ה-SET רואים את ערכי השורה הישנים.
+        // עלות ממוצעת משוקללת — כל ביטויי ה-SET רואים את ערכי השורה הישנים. casts מפורשים (Prisma שולח כ-text).
         const upd = (await tx.$queryRawUnsafe(
           `update public.inventory_items set
-             avg_cost = case when (total_received + $2) > 0 then ((coalesce(avg_cost,0)*total_received) + ($3*$2)) / (total_received + $2) else $3 end,
-             quantity_on_hand = quantity_on_hand + $2,
-             total_received   = total_received + $2,
-             last_purchase_price = $3,
+             avg_cost = case when (total_received + $2::int) > 0 then ((coalesce(avg_cost,0)*total_received) + ($3::numeric * $2::int)) / (total_received + $2::int) else $3::numeric end,
+             quantity_on_hand = quantity_on_hand + $2::int,
+             total_received   = total_received + $2::int,
+             last_purchase_price = $3::numeric,
              last_received_at = now(),
              updated_at = now()
            where sku=$1 returning quantity_on_hand`,
@@ -109,13 +109,13 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
         const before = after - qty;
         await tx.$executeRawUnsafe(
           `insert into public.inventory_movements (sku, movement_type, quantity_change, quantity_before, quantity_after, source_type, source_id, source_document_number, created_by)
-           values ($1,'PURCHASE_IN',$2,$3,$4,'supplier_invoice',$5,$6,$7)`,
+           values ($1,'PURCHASE_IN',$2::int,$3::int,$4::int,'supplier_invoice',$5,$6,$7)`,
           sku, qty, before, after, invoiceId, invNo, user,
         );
       }
 
       await tx.$executeRawUnsafe(
-        `update public.supplier_invoices set line_count=$2, matched_count=$3, units_total=$4 where id=$1`,
+        `update public.supplier_invoices set line_count=$2::int, matched_count=$3::int, units_total=$4::int where id=$1`,
         invoiceId, lines.length, matched, units,
       );
       return { invoiceId, matched, unmatched, unitsTotal: units };

@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     // A — קליטת חשבונית: +10
     const a = await approveIntake({ invoiceNumber: INV, lines: [{ supplierCode: SKU, quantity: 10, unitCost: 5 }] });
     chk('A: קליטת חשבונית הצליחה', true, a.ok);
+    if (!a.ok) steps.push({ step: 'A: שגיאה מדויקת', expected: '(none)', actual: a.error, pass: false });
     chk('A: מלאי אחרי קליטה = 10', 10, await stock(SKU));
 
     // B — חשבונית כפולה: נדחית, מלאי נשאר 10
