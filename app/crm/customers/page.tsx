@@ -6,7 +6,7 @@ import { SearchBox } from './SearchBox';
 export const dynamic = 'force-dynamic';
 
 const fmt = (iso: string) =>
-  new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
+  new Date(iso).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', year: 'numeric' });
 
 const initials = (email: string) => email.replace(/[^a-zA-Z֐-׿]/g, '').slice(0, 2).toUpperCase() || '#';
 

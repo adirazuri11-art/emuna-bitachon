@@ -23,12 +23,12 @@ import { AreaChart } from '@/components/crm/AreaChart';
 import { Copilot } from '@/components/crm/Copilot';
 
 const money = (n: number) => `₪${Math.round(n).toLocaleString('he-IL')}`;
-const fmtDateTime = (iso: string) => (iso ? new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
+const fmtDateTime = (iso: string) => (iso ? new Date(iso).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
 
 export const dynamic = 'force-dynamic';
 
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
+  new Date(iso).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short' });
 
 function Tile({
   icon: Icon,

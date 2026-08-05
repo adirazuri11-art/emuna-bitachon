@@ -33,7 +33,7 @@ const statusPill = (s: string) => {
   return <span className="rounded-full bg-red-400/15 px-2.5 py-0.5 text-xs font-medium text-red-300">נכשל</span>;
 };
 
-const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
+const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
 
 export default async function OrdersPage({ searchParams }: { searchParams: { fulfill?: string } }) {
   const valid: Fulfillment[] = ['in_progress', 'shipping', 'completed'];

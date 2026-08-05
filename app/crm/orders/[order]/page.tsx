@@ -28,7 +28,7 @@ export default async function OrderDetailPage({ params }: { params: { order: str
         <div>
           <h1 className="font-display text-2xl font-bold text-cream" dir="ltr">{order.orderNumber}</h1>
           <p className="mt-1 text-sm text-cream/50">
-            {order.createdAt ? new Date(order.createdAt).toLocaleString('he-IL') : ''}
+            {order.createdAt ? new Date(order.createdAt).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) : ''}
           </p>
         </div>
         {paid ? (
@@ -86,7 +86,7 @@ export default async function OrderDetailPage({ params }: { params: { order: str
         <div className="grid gap-2 sm:grid-cols-2">
           <Row label="סטטוס" value={paid ? 'שולם' : order.status} />
           <Row label="מזהה עסקה" value={order.transactionId || '—'} />
-          <Row label="שולם בתאריך" value={order.paidAt ? new Date(order.paidAt).toLocaleString('he-IL') : '—'} />
+          <Row label="שולם בתאריך" value={order.paidAt ? new Date(order.paidAt).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' }) : '—'} />
           <Row label="ספק" value="Cardcom" />
         </div>
         {/* קבלה */}

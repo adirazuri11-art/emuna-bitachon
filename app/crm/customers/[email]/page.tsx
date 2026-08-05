@@ -6,7 +6,7 @@ import { getCustomer } from '@/lib/crm/data';
 export const dynamic = 'force-dynamic';
 
 const fmt = (iso: string) =>
-  new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+  new Date(iso).toLocaleDateString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'long', year: 'numeric' });
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   active: { label: 'הטבה פעילה', cls: 'bg-gold/15 text-gold' },
