@@ -22,6 +22,18 @@ function guard(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  // אבחון זמני (ללא חשיפת סודות) — יוסר אחרי איתור התקלה.
+  if (new URL(req.url).searchParams.get('debug') === '1') {
+    const key = process.env.CRM_ACCESS_KEY;
+    const cookie = req.cookies.get('crm_session')?.value ?? null;
+    return NextResponse.json({
+      hasKey: !!key,
+      keyLen: key ? key.length : 0,
+      hasCookie: !!cookie,
+      cookieLen: cookie ? cookie.length : 0,
+      authed: isCrmAuthed(req),
+    });
+  }
   const bad = guard(req);
   if (bad) return bad;
   const coupons = await listPromoCouponsWithPerf();
