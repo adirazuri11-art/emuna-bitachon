@@ -74,7 +74,7 @@ export function ProductCard({ product, onQuickView }: Props) {
     >
       {/* אזור תמונה — צילום מוצר מלא על רקע בהיר (סימן המים צרוב בקובץ) */}
       <div className="relative aspect-[4/5] overflow-hidden bg-gradient-to-b from-white to-cream">
-        <Link href={href} aria-label={product.titleHe}>
+        <Link href={href} aria-label={product.titleHe} className="absolute inset-0">
           {product.imageUrl ? (
             <Image
               src={product.imageUrl}
