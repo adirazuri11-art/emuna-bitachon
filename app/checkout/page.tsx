@@ -29,15 +29,15 @@ interface OrderSnapshot {
 }
 
 const FIELDS = [
-  { key: 'name', label: 'שם מלא', type: 'text', autoComplete: 'name', optional: false },
-  { key: 'phone', label: 'טלפון נייד', type: 'tel', autoComplete: 'tel', optional: false },
-  { key: 'email', label: 'אימייל', type: 'email', autoComplete: 'email', optional: false },
-  { key: 'street', label: 'רחוב ומספר בית', type: 'text', autoComplete: 'street-address', optional: false },
-  { key: 'city', label: 'עיר', type: 'text', autoComplete: 'address-level2', optional: false },
-  { key: 'zip', label: 'מיקוד', type: 'text', autoComplete: 'postal-code', optional: false },
-  { key: 'floor', label: 'קומה (רשות)', type: 'text', autoComplete: '', optional: true },
-  { key: 'apt', label: 'דירה (רשות)', type: 'text', autoComplete: '', optional: true },
-  { key: 'entryCode', label: 'קוד כניסה לבניין (רשות)', type: 'text', autoComplete: '', optional: true },
+  { key: 'name', label: 'שם מלא', type: 'text', autoComplete: 'name', inputMode: 'text', optional: false },
+  { key: 'phone', label: 'טלפון נייד', type: 'tel', autoComplete: 'tel', inputMode: 'tel', optional: false },
+  { key: 'email', label: 'אימייל', type: 'email', autoComplete: 'email', inputMode: 'email', optional: false },
+  { key: 'street', label: 'רחוב ומספר בית', type: 'text', autoComplete: 'street-address', inputMode: 'text', optional: false },
+  { key: 'city', label: 'עיר', type: 'text', autoComplete: 'address-level2', inputMode: 'text', optional: false },
+  { key: 'zip', label: 'מיקוד', type: 'text', autoComplete: 'postal-code', inputMode: 'numeric', optional: false },
+  { key: 'floor', label: 'קומה (רשות)', type: 'text', autoComplete: '', inputMode: 'numeric', optional: true },
+  { key: 'apt', label: 'דירה (רשות)', type: 'text', autoComplete: '', inputMode: 'numeric', optional: true },
+  { key: 'entryCode', label: 'קוד כניסה לבניין (רשות)', type: 'text', autoComplete: '', inputMode: 'text', optional: true },
 ] as const;
 
 export default function CheckoutPage() {
@@ -323,6 +323,7 @@ export default function CheckoutPage() {
                   required={!f.optional}
                   name={f.key}
                   type={f.type}
+                  inputMode={f.inputMode}
                   autoComplete={f.autoComplete || undefined}
                   className="gold-ring w-full rounded-xl bg-white px-4 py-2.5 text-sm outline-none"
                 />
