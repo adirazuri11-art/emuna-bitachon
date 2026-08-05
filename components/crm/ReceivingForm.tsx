@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Plus, Trash2, Loader2, Check, PackagePlus, AlertTriangle, ClipboardPaste } from 'lucide-react';
+import { Plus, Trash2, Loader2, Check, PackagePlus, AlertTriangle, ClipboardPaste, ScanLine, UploadCloud } from 'lucide-react';
 
 interface Line {
   code: string;
@@ -29,6 +29,8 @@ export function ReceivingForm() {
   const [pasteText, setPasteText] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ t: 'ok' | 'err'; text: string } | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<{ t: 'ok' | 'err'; text: string } | null>(null);
 
   const setLine = (i: number, patch: Partial<Line>) => setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   const addLine = () => setLines((ls) => [...ls, emptyLine()]);
@@ -45,6 +47,39 @@ export function ReceivingForm() {
       else setLine(i, { status: 'notfound', title: undefined });
     } catch { setLine(i, { status: 'idle' }); }
   }, []);
+
+  async function onScanFile(file: File | undefined) {
+    if (!file || scanning) return;
+    setScanning(true); setScanMsg(null); setMsg(null);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).split(',')[1] ?? '');
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      const res = await fetch('/api/crm/receiving/scan', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mimeType: file.type }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        setScanMsg({ t: 'err', text: data.needsKey ? '⚙️ סריקה חכמה עדיין לא מופעלת — צריך מפתח Gemini חינמי (בקש מקלוד להדריך).' : (data.error || 'הסריקה נכשלה') });
+        return;
+      }
+      if (data.invoiceNumber) setInvoiceNumber(String(data.invoiceNumber));
+      if (data.invoiceDate) setInvoiceDate(String(data.invoiceDate));
+      const newLines: Line[] = (data.lines || []).map((l: { supplierCode: string; quantity: number; unitCost?: number }) => ({
+        ...emptyLine(), code: l.supplierCode, qty: String(l.quantity ?? ''), cost: l.unitCost != null ? String(l.unitCost) : '',
+      }));
+      if (newLines.length === 0) { setScanMsg({ t: 'err', text: 'לא זוהו שורות מוצרים — נסה תמונה ברורה יותר, או הזן ידנית.' }); return; }
+      setLines(newLines);
+      newLines.forEach((l, i) => lookupCode(i, l.code));
+      setScanMsg({ t: 'ok', text: `✅ זוהו ${newLines.length} שורות — בדוק, תקן אם צריך, ואשר למטה.` });
+    } catch {
+      setScanMsg({ t: 'err', text: 'שגיאה בקריאת הקובץ' });
+    } finally { setScanning(false); }
+  }
 
   const applyPaste = () => {
     // תמיכה בשורות "קוד,כמות,עלות" או מופרד ברווח/טאב
@@ -89,6 +124,21 @@ export function ReceivingForm() {
   return (
     <div className="rounded-2xl border border-gold/15 bg-white/5 p-5">
       <div className="mb-4 flex items-center gap-2 text-sm font-medium text-cream/70"><PackagePlus className="h-4 w-4 text-gold" /> קליטת סחורה חדשה</div>
+
+      {/* ⭐ סריקה חכמה — צלם/העלה חשבונית וה-AI ימלא את השורות */}
+      <label className={'mb-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gold/30 bg-gold/[0.04] px-4 py-6 text-center transition-colors hover:border-gold/60 hover:bg-gold/[0.08] ' + (scanning ? 'pointer-events-none opacity-70' : '')}>
+        <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={(e) => onScanFile(e.target.files?.[0])} disabled={scanning} />
+        {scanning ? (
+          <><Loader2 className="h-7 w-7 animate-spin text-gold" /><span className="text-sm font-medium text-cream/80">סורק את החשבונית…</span></>
+        ) : (
+          <>
+            <span className="flex items-center gap-2 text-gold"><ScanLine className="h-6 w-6" /><UploadCloud className="h-6 w-6" /></span>
+            <span className="text-sm font-bold text-cream">צלם או העלה חשבונית ספק — וה-AI ימלא הכל</span>
+            <span className="text-xs text-cream/40">תמונה או PDF · הזיהוי אוטומטי, ואתה רק מאשר</span>
+          </>
+        )}
+        {scanMsg && <span className={'mt-1 text-xs ' + (scanMsg.t === 'ok' ? 'text-emerald-300' : 'text-amber-300')}>{scanMsg.text}</span>}
+      </label>
 
       {/* כותרת החשבונית */}
       <div className="grid gap-3 sm:grid-cols-3">
