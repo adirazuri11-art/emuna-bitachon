@@ -78,6 +78,15 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // נעילת גלילת הגוף כשהתפריט הנייד פתוח — כדי שהגלילה תתבצע בתוך התפריט,
+  // ולא ב"עמוד מאחוריו" (הבאג שבו הדף גלל במקום התפריט).
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [mobileOpen]);
+
   const { data: topBar } = useQuery({
     queryKey: ['hebcal-topbar'],
     queryFn: fetchTopBarData,
@@ -310,9 +319,9 @@ export function Navbar() {
         {/* Mobile nav */}
         <AnimatePresence>
           {mobileOpen && (
-            <motion.nav initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden border-t border-gold/10 lg:hidden" aria-label="קטגוריות">
-              <div className="flex flex-col px-4 py-2">
+            <motion.nav initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15 }}
+              className="border-t border-gold/10 bg-cream lg:hidden" aria-label="קטגוריות">
+              <div className="flex max-h-[calc(100dvh-104px)] flex-col overflow-y-auto overscroll-contain px-4 py-2 pb-8">
                 {/* חיפוש במובייל */}
                 <form onSubmit={(e) => { e.preventDefault(); if (query.trim()) { setMobileOpen(false); goToSearch(query.trim()); } }}
                   className="relative py-3" role="search">
