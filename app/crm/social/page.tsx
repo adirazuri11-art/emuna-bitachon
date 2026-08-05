@@ -1,6 +1,7 @@
 import { Instagram, Facebook, Image as ImageIcon, Heart, MessageCircle, ExternalLink, Zap, ShieldCheck, ShieldAlert, TrendingUp, Activity } from 'lucide-react';
 import { getSocialData, getTokenHealth } from '@/lib/crm/meta';
 import { AreaChart } from '@/components/crm/AreaChart';
+import { MetaConnectBox } from '@/components/crm/MetaConnectBox';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,9 @@ export default async function SocialPage() {
         </div>
         {data.configured && <TokenBadge health={health} source={data.token.source} />}
       </div>
+
+      {/* Connect box — shown until a valid token is saved */}
+      {!data.configured && <MetaConnectBox />}
 
       {/* Live insight charts */}
       {data.configured && (
@@ -152,17 +156,8 @@ function TokenBadge({ health, source }: { health: Awaited<ReturnType<typeof getT
 
 function NotConnected() {
   return (
-    <div className="rounded-xl border border-gold/20 bg-navy/40 p-5 text-sm leading-relaxed text-cream/70">
-      <div className="mb-2 flex items-center gap-2 font-bold text-gold">
-        <Zap className="h-4 w-4" /> לחיבור נתונים חיים (עוקבים, חשיפה, מעורבות, פוסטים)
-      </div>
-      <p>נדרש חיבור Meta Graph API חד-פעמי (מומלץ טוקן System User — קבוע, ללא חידוש). הצעדים (שלך — לעולם לא בצ'אט):</p>
-      <ol className="mt-2 list-decimal space-y-1 pe-5 text-cream/60">
-        <li>ודא שהאינסטגרם עסקי/יוצר ומקושר לעמוד הפייסבוק.</li>
-        <li>ב-Business Manager צור System User עם הרשאות לעמוד + הפק טוקן קבוע.</li>
-        <li>הוסף ב-Vercel (Server-only): <code className="text-gold" dir="ltr">META_PAGE_ACCESS_TOKEN</code>, <code className="text-gold" dir="ltr">META_IG_USER_ID</code>, <code className="text-gold" dir="ltr">META_PAGE_ID</code>.</li>
-      </ol>
-      <p className="mt-2 text-cream/50">ברגע שהערכים יתווספו — המסך יתמלא אוטומטית בנתונים אמיתיים.</p>
+    <div className="rounded-xl border border-white/10 bg-navy/40 p-4 text-sm text-cream/50">
+      <span className="flex items-center gap-2"><Zap className="h-4 w-4 text-gold/70" /> ממתין לחיבור — הדבק טוקן בתיבת החיבור למעלה.</span>
     </div>
   );
 }

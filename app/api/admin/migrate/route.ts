@@ -71,6 +71,15 @@ const STATEMENTS = [
   )`,
   `create index if not exists gfs_created_at_idx on public.gift_finder_sessions (created_at desc)`,
   `create index if not exists gfs_occasion_idx on public.gift_finder_sessions (occasion)`,
+  // חיבור Meta — טוקן + מזהים, נשמר במסד (מוגדר דרך תיבת החיבור ב-CRM)
+  `create table if not exists public.meta_config (
+    id            int primary key default 1,
+    access_token  text,
+    ig_user_id    text,
+    page_id       text,
+    updated_at    timestamptz not null default now(),
+    constraint meta_config_single check (id = 1)
+  )`,
 ];
 
 export async function GET(req: NextRequest) {

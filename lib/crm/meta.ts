@@ -16,8 +16,41 @@
 
 import 'server-only';
 import { createClient } from '@supabase/supabase-js';
+import { prisma } from '@/lib/prisma';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
+
+// Read the Meta token from Neon (public.meta_config, single row). Source of truth
+// when set via the CRM connect box. Defensive: missing table/row => null.
+async function loadFromNeon(): Promise<{ token?: string; igId?: string; pageId?: string } | null> {
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      `select access_token, ig_user_id, page_id from public.meta_config where id = 1 limit 1`,
+    )) as Array<{ access_token: string | null; ig_user_id: string | null; page_id: string | null }>;
+    if (!rows?.length || !rows[0].access_token) return null;
+    return { token: rows[0].access_token, igId: rows[0].ig_user_id ?? undefined, pageId: rows[0].page_id ?? undefined };
+  } catch {
+    return null;
+  }
+}
+
+// Persist a Meta token (+ ids) to Neon — called by the CRM connect box.
+export async function saveMetaConfig(token: string, igId?: string, pageId?: string): Promise<boolean> {
+  try {
+    await prisma.$executeRawUnsafe(
+      `insert into public.meta_config (id, access_token, ig_user_id, page_id, updated_at)
+       values (1, $1, $2, $3, now())
+       on conflict (id) do update set access_token = excluded.access_token,
+         ig_user_id = coalesce(excluded.ig_user_id, public.meta_config.ig_user_id),
+         page_id = coalesce(excluded.page_id, public.meta_config.page_id),
+         updated_at = now()`,
+      token, igId ?? null, pageId ?? null,
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function supa() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -31,11 +64,22 @@ export interface MetaConfig {
   igId?: string;
   pageId?: string;
   expiresAt?: number | null; // unix seconds; 0/null => never expires
-  source: 'supabase' | 'env' | 'none';
+  source: 'neon' | 'supabase' | 'env' | 'none';
 }
 
 // Reads the freshest credentials: Supabase row wins, env is the fallback seed.
 export async function loadMetaConfig(): Promise<MetaConfig> {
+  // 1) Neon meta_config — source of truth when connected via the CRM box.
+  const neon = await loadFromNeon();
+  if (neon?.token) {
+    return {
+      token: neon.token,
+      igId: neon.igId ?? process.env.META_IG_USER_ID,
+      pageId: neon.pageId ?? process.env.META_PAGE_ID,
+      expiresAt: null,
+      source: 'neon',
+    };
+  }
   const sb = supa();
   if (sb) {
     try {
