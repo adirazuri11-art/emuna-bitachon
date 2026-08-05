@@ -49,6 +49,65 @@ const STATEMENTS = [
      created_at timestamptz not null default now()
    )`,
   `create index if not exists orders_coupon_idx on public.orders (coupon_code)`,
+  // ========================================================
+  // ניהול מלאי פנימי ב-CRM (feature/internal-crm-inventory-management).
+  // ⚠️ פנימי בלבד — אפס כתיבה לאתר החי. מלאי יורד רק בהפקת קבלה סופית.
+  // ========================================================
+  `create table if not exists public.inventory_items (
+    sku                 text primary key,
+    supplier_code       text,
+    barcode             text,
+    quantity_on_hand    int not null default 0,
+    last_purchase_price numeric(10,2),
+    avg_cost            numeric(10,2),
+    total_received      int not null default 0,
+    total_sold          int not null default 0,
+    last_received_at    timestamptz,
+    last_sold_at        timestamptz,
+    notes               text,
+    is_active           boolean not null default true,
+    created_at          timestamptz not null default now(),
+    updated_at          timestamptz not null default now()
+  )`,
+  `create index if not exists inv_items_low_idx on public.inventory_items (quantity_on_hand)`,
+  // תנועות מלאי — מקור האמת לכל שינוי. אין לשנות quantity_on_hand בלי תנועה.
+  `create table if not exists public.inventory_movements (
+    id                   uuid primary key default gen_random_uuid(),
+    sku                  text not null,
+    movement_type        text not null,
+    quantity_change      int not null,
+    quantity_before      int not null,
+    quantity_after       int not null,
+    source_type          text,
+    source_id            text,
+    source_document_number text,
+    reason               text,
+    created_by           text,
+    created_at           timestamptz not null default now()
+  )`,
+  `create index if not exists inv_moves_sku_idx on public.inventory_movements (sku, created_at desc)`,
+  `create index if not exists inv_moves_created_idx on public.inventory_movements (created_at desc)`,
+  // קבלות שעובדו — מפתח idempotency להורדת מלאי (קבלה מורידה מלאי פעם אחת בלבד).
+  `create table if not exists public.processed_receipts (
+    receipt_number         text primary key,
+    order_number           text,
+    issued_at              timestamptz,
+    inventory_processed_at timestamptz,
+    status                 text not null default 'processing',
+    created_at             timestamptz not null default now()
+  )`,
+  // Audit log לכל שינוי מלאי (מי, מה, לפני/אחרי).
+  `create table if not exists public.inventory_audit_logs (
+    id          uuid primary key default gen_random_uuid(),
+    user_id     text,
+    action      text not null,
+    entity_type text,
+    entity_id   text,
+    before_data jsonb,
+    after_data  jsonb,
+    created_at  timestamptz not null default now()
+  )`,
+  `create index if not exists inv_audit_created_idx on public.inventory_audit_logs (created_at desc)`,
   // תור פרסום אוטומטי לרשתות (בנק התוכן) — 3 פוסטים/יום, דילוג בשבת
   `create table if not exists public.social_queue (
     idx           int primary key,
