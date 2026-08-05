@@ -10,7 +10,7 @@ import { useToastStore } from '@/store/toast';
 import { trackEvent } from '@/lib/analytics';
 import { savePersonalCoupon } from '@/lib/coupons';
 import { joinClub, saveMemberCode } from '@/lib/club-client';
-import { sendCouponEmail } from '@/lib/email';
+import { CouponCodeChip } from '@/components/shared/CouponCodeChip';
 
 // Newsletter via backend API (FormSubmit handled server-side)
 const ENDPOINT = '/api/newsletter/subscribe';
@@ -56,15 +56,9 @@ export function NewsletterPopup() {
       return;
     }
     const code = join.code;
-    const validUntil = new Date(join.expires).toLocaleDateString('he-IL', {
-      day: 'numeric', month: 'long',
-    });
     try {
-      // מייל ההטבה ללקוח — דרך EmailJS (אמין, מעוצב). false אם לא הוגדר.
-      await sendCouponEmail({
-        toEmail: email.trim(), code, validUntil,
-      });
-      // התראה לבעל האתר דרך API (FormSubmit מטופל בצד-שרת)
+      // מייל ההטבה ללקוח (RTL מלא) נשלח כבר מהשרת דרך Resend ב-/api/club.
+      // כאן רק התראה לבעל האתר דרך API (FormSubmit מטופל בצד-שרת).
       await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,9 +113,12 @@ export function NewsletterPopup() {
 
             {status === 'done' ? (
               <div className="rounded-xl border border-gold/25 bg-white/5 px-4 py-3 text-center text-cream">
-                <p className="text-sm font-medium">תודה שהצטרפת! 🎁 קוד 10% נשלח למייל</p>
+                <p className="text-sm font-medium">תודה שהצטרפת! 🎁 הקוד גם נשלח למייל</p>
                 {couponCode && (
-                  <p className="mt-1 font-mono text-base font-bold text-gold" dir="ltr">{couponCode}</p>
+                  <div className="mt-2 flex flex-col items-center gap-1">
+                    <CouponCodeChip code={couponCode} />
+                    <span className="text-[11px] text-cream/50">לחצו על הקוד להעתקה מהירה</span>
+                  </div>
                 )}
               </div>
             ) : (

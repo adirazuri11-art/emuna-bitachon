@@ -7,8 +7,8 @@ import { Check, Mail } from 'lucide-react';
 import { trackEvent } from '@/lib/analytics';
 import { useToastStore } from '@/store/toast';
 import { joinClub, saveMemberCode } from '@/lib/club-client';
-import { sendCouponEmail } from '@/lib/email';
 import { savePersonalCoupon } from '@/lib/coupons';
+import { CouponCodeChip } from '@/components/shared/CouponCodeChip';
 
 export function NewsletterForm() {
   const [email, setEmail] = useState('');
@@ -30,8 +30,7 @@ export function NewsletterForm() {
       return;
     }
 
-    const validUntil = new Date(join.expires).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
-    await sendCouponEmail({ toEmail: value, code: join.code, validUntil }).catch(() => {});
+    // מייל ההטבה (RTL מלא) נשלח כבר מהשרת דרך Resend ב-/api/club.
     saveMemberCode(join.code);
     savePersonalCoupon({
       code: join.code, type: 'pct', value: join.pct,
@@ -57,7 +56,9 @@ export function NewsletterForm() {
         <p className="flex items-center gap-2 font-medium text-emerald-400">
           <Check className="h-5 w-5" /> את/ה במועדון — הקוד האישי נשלח למייל
         </p>
-        <p className="text-sm text-cream/70">קוד ההטבה שלך: <span className="font-bold text-gold">{code}</span> · 10% להזמנה הראשונה</p>
+        <p className="text-sm text-cream/70">קוד ההטבה שלך · 10% להזמנה הראשונה</p>
+        <CouponCodeChip code={code} className="mt-1" />
+        <span className="text-[11px] text-cream/50">לחצו על הקוד להעתקה מהירה</span>
       </div>
     );
   }

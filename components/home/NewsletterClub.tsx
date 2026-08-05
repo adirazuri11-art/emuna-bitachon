@@ -16,7 +16,7 @@ import { useToastStore } from '@/store/toast';
 import { trackEvent } from '@/lib/analytics';
 import { savePersonalCoupon } from '@/lib/coupons';
 import { joinClub, saveMemberCode } from '@/lib/club-client';
-import { sendCouponEmail } from '@/lib/email';
+import { CouponCodeChip } from '@/components/shared/CouponCodeChip';
 
 // NewsLetter subscription via backend API (FormSubmit handled server-side)
 const ENDPOINT = '/api/newsletter/subscribe';
@@ -47,15 +47,9 @@ export function NewsletterClub() {
       return;
     }
     const code = join.code;
-    const validUntil = new Date(join.expires).toLocaleDateString('he-IL', {
-      day: 'numeric', month: 'long',
-    });
     try {
-      // מייל ההטבה ללקוח — נשלח דרך EmailJS (אמין, מעוצב). מוחזר false אם לא הוגדר.
-      const emailSent = await sendCouponEmail({
-        toEmail: email.trim(), toName: name.trim(), code, validUntil,
-      });
-      // התראה לבעל האתר דרך API (FormSubmit מטופל בצד-שרת)
+      // מייל ההטבה ללקוח (RTL מלא) נשלח כבר מהשרת דרך Resend ב-/api/club.
+      // כאן רק התראה לבעל האתר דרך API (FormSubmit מטופל בצד-שרת).
       await fetch(ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,10 +107,10 @@ export function NewsletterClub() {
                   <Check className="h-5 w-5 text-emerald-400" /> אתם בפנים! שלחנו לכם קוד 10% למייל.
                 </p>
                 {couponCode && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-col items-center gap-1.5">
                     <span className="text-xs text-cream/60">קוד ההנחה שלכם (10% להזמנה הראשונה):</span>
-                    <p className="mt-1 font-mono text-lg font-bold text-gold" dir="ltr">{couponCode}</p>
-                    <span className="text-[11px] text-cream/40">תקף 7 ימים · חד-פעמי · שלחנו אותו גם למייל שלך</span>
+                    <CouponCodeChip code={couponCode} />
+                    <span className="text-[11px] text-cream/40">לחצו על הקוד להעתקה · תקף 7 ימים · שלחנו אותו גם למייל</span>
                   </div>
                 )}
               </motion.div>
