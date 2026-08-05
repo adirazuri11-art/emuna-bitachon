@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Search, User, LayoutDashboard, Ticket, CornerDownLeft, Instagram, BarChart3, ShoppingBag, RotateCcw, Coins, PackageSearch } from 'lucide-react';
+import { Search, User, LayoutDashboard, Ticket, CornerDownLeft, Instagram, BarChart3, ShoppingBag, RotateCcw, Coins, PackageSearch, Boxes, PackagePlus } from 'lucide-react';
 
 interface Member {
   email: string;
@@ -12,6 +12,8 @@ interface Member {
 const NAV = [
   { label: 'סקירה כללית', href: '/crm', icon: LayoutDashboard },
   { label: 'הזמנות', href: '/crm/orders', icon: ShoppingBag },
+  { label: 'ניהול מלאי', href: '/crm/inventory', icon: Boxes },
+  { label: 'קליטת סחורה מחשבונית ספק', href: '/crm/receiving', icon: PackagePlus },
   { label: 'שחזור קופות נטושות', href: '/crm/abandoned', icon: RotateCcw },
   { label: 'רווח', href: '/crm/profit', icon: Coins },
   { label: 'תובנות מוצרים ולקוחות', href: '/crm/insights', icon: PackageSearch },
