@@ -51,8 +51,8 @@ export function ProductCard({ product, onQuickView }: Props) {
     : null;
   const Icon = ICON_MAP[product.iconKey];
   const href = `/product/${product.slug}`;
-  // תמונה מרוחקת (hotlink מהספק) → לוגו כשכבה, כדי שיתאים לצילומים עם לוגו צרוב
-  const isRemote = product.imageUrl?.startsWith('http') ?? false;
+  // תמונות ספק (ללא לוגו צרוב) → סימן-מים "אמונה וביטחון" כשכבה, לאחידות מותגית.
+  const isRemote = product.logoOverlay ?? (product.imageUrl?.startsWith('http') ?? false);
 
   const handleAdd = () => {
     addItem({ id: product.id, title: product.titleHe, price, minQty: product.minOrderUnits });

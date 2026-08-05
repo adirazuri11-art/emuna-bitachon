@@ -199,13 +199,10 @@ function comingSoonIso(cs: string): string {
 }
 
 function toProduct(item: RawItem): CatalogProduct {
-  // תמונה: מקומית עם לוגו צרוב (178 הישנים) או מרוחקת (hotlink) עם לוגו-שכבה (החדשים).
+  // כל התמונות מאוחסנות אצלנו: /images/supplier-real/<SKU>.jpg (אין hotlink לספק).
+  // remote = היה מקור מרוחק (משפיע רק על זמני אספקה/טקסט, לא על התמונה עצמה).
   const remote = Boolean(item.img) || Boolean(item.imgFull);
-  const src = item.imgFull
-    ? item.imgFull
-    : item.img
-      ? `https://www.israel-judaica.com/webp/${item.img}.webp`
-      : `/images/supplier-real/${item.id}.jpg`;
+  const src = `/images/supplier-real/${item.id}.jpg`;
   // ⚠️ רק כיפות סרוגות נמכרות במארז; כל שאר הכיפות — ביחידה בלבד.
   const isSruga = item.c === 'kippot' && item.s === 'כיפות סרוגות';
   // הטבעה אישית (מינ' 100 יח') — כיפות חלקות (פריק/סאטן/אירועים), לא סרוגות.
@@ -288,6 +285,7 @@ function toProduct(item: RawItem): CatalogProduct {
       { src, label: 'תקריב', zoom: 1.5 },
     ],
     isPlaceholderImage: false,
+    logoOverlay: remote, // תמונות ספק (568) — לוגו כשכבה; הישנות (231) עם לוגו צרוב
     ...(availabilityDate ? { availabilityDate } : {}),
   };
 }

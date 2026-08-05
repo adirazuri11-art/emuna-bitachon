@@ -22,4 +22,5 @@ export interface ProductCardData {
   isNew?: boolean;
   stockLeft?: number; // כשנמוך (≤3) — מוצג חיווי דחיפות מכירתי
   minOrderUnits?: number; // מינימום יחידות להזמנה (כיפות זולות: 5) — מוצג "מארז N יח'"
+  logoOverlay?: boolean; // true = להוסיף סימן-מים "אמונה וביטחון" על התמונה
 }
