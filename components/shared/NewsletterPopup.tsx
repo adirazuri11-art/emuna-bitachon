@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Gift, Loader2, X } from 'lucide-react';
 import { useToastStore } from '@/store/toast';
+import { useUIStore } from '@/store/ui';
 import { trackEvent } from '@/lib/analytics';
 import { savePersonalCoupon } from '@/lib/coupons';
 import { joinClub, saveMemberCode } from '@/lib/club-client';
@@ -24,6 +25,7 @@ export function NewsletterPopup() {
   const [couponCode, setCouponCode] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const showToast = useToastStore((s) => s.show);
+  const isCartOpen = useUIStore((s) => s.isCartOpen); // לא מציגים פופ-אפ מעל העגלה
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -84,7 +86,7 @@ export function NewsletterPopup() {
 
   return (
     <AnimatePresence>
-      {open && (
+      {open && !isCartOpen && (
         <motion.div
           initial={{ opacity: 0, x: -40, y: 20 }}
           animate={{ opacity: 1, x: 0, y: 0 }}

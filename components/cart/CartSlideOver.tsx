@@ -71,7 +71,7 @@ export function CartSlideOver() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-4 left-4 right-4 z-[60] max-w-sm rounded-xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent p-4 shadow-lg backdrop-blur-sm md:left-auto md:right-20"
+          className="fixed bottom-4 left-4 right-4 z-[60] hidden max-w-sm rounded-xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent p-4 shadow-lg backdrop-blur-sm md:left-auto md:right-20 md:block"
         >
           <div className="flex gap-3">
             <Gift className="h-5 w-5 flex-shrink-0 text-gold" />
