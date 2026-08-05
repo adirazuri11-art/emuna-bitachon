@@ -1,5 +1,6 @@
-import { Coins, Wallet, TrendingUp, Percent, PackageOpen } from 'lucide-react';
-import { getProfitOverview } from '@/lib/crm/profit';
+import { Coins, Wallet, TrendingUp, Percent, PackageOpen, LineChart } from 'lucide-react';
+import { getProfitOverview, getProfitTrend } from '@/lib/crm/profit';
+import { AreaChart } from '@/components/crm/AreaChart';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +29,10 @@ function ProfitBar({ value, max }: { value: number; max: number }) {
 }
 
 export default async function ProfitPage() {
-  const p = await getProfitOverview(0);
+  const [p, trend] = await Promise.all([getProfitOverview(0), getProfitTrend(30)]);
   const maxCatProfit = Math.max(1, ...p.byCategory.map((c) => c.profit));
   const maxProdProfit = Math.max(1, ...p.topProducts.map((c) => c.profit));
+  const trend30 = trend.reduce((s, d) => s + d.profit, 0);
 
   return (
     <div className="space-y-6">
@@ -52,6 +54,21 @@ export default async function ProfitPage() {
             <Kpi icon={PackageOpen} label="עלות ספק" value={money(p.cost)} />
             <Kpi icon={Coins} label="רווח גולמי" value={money(p.grossProfit)} tone="emerald" />
             <Kpi icon={Percent} label="מרווח" value={`${p.margin}%`} sub="רווח מתוך ההכנסה" tone="emerald" />
+          </div>
+
+          {/* מגמת רווח 30 יום */}
+          <div className="rounded-2xl border border-gold/15 bg-white/5 p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium text-cream/70"><LineChart className="h-4 w-4 text-gold" /> מגמת רווח — 30 יום</div>
+              <div className="text-sm text-cream/50">סה״כ בתקופה: <span className="font-bold text-emerald-300" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(trend30)}</span></div>
+            </div>
+            <div className="mt-4">
+              <AreaChart data={trend.map((d) => ({ date: d.date, count: d.profit }))} height={130} />
+              <div className="mt-1 flex justify-between text-[11px] text-cream/30" dir="ltr">
+                <span>{trend[0]?.date}</span>
+                <span>{trend[trend.length - 1]?.date}</span>
+              </div>
+            </div>
           </div>
 
           {/* רווח לפי קטגוריה */}

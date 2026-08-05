@@ -34,6 +34,9 @@ const STATEMENTS = [
   `alter table public.orders add column if not exists receipt_number text`,
   `alter table public.orders add column if not exists receipt_url text`,
   `alter table public.orders add column if not exists receipt_at timestamptz`,
+  // חותמות התראה — מונעות שליחה כפולה של מייל משלוח / בקשת ביקורת (idempotent).
+  `alter table public.orders add column if not exists shipping_notified_at timestamptz`,
+  `alter table public.orders add column if not exists review_requested_at timestamptz`,
   // תור פרסום אוטומטי לרשתות (בנק התוכן) — 3 פוסטים/יום, דילוג בשבת
   `create table if not exists public.social_queue (
     idx           int primary key,

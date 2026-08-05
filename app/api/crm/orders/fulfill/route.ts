@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCrmAuthed } from '@/lib/crm/auth';
-import { updateOrderFulfillment, type Fulfillment } from '@/lib/crm/orders';
+import { updateOrderFulfillment, claimNotification, type Fulfillment } from '@/lib/crm/orders';
+import { getOrderForFulfillment } from '@/lib/orders';
+import { sendShippingNotification, sendReviewRequest } from '@/lib/order-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,5 +24,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid params' }, { status: 400 });
   }
   const ok = await updateOrderFulfillment(orderNumber, status);
+
+  // התראות אוטומטיות ללקוח — best-effort, אטומי (לא נשלח פעמיים), לא מפיל את הבקשה.
+  if (ok && status === 'shipping' && (await claimNotification(orderNumber, 'shipping_notified_at'))) {
+    const o = await getOrderForFulfillment(orderNumber);
+    if (o) await sendShippingNotification(o).catch(() => {});
+  } else if (ok && status === 'completed' && (await claimNotification(orderNumber, 'review_requested_at'))) {
+    const o = await getOrderForFulfillment(orderNumber);
+    if (o) await sendReviewRequest(o).catch(() => {});
+  }
+
   return NextResponse.json({ ok });
 }

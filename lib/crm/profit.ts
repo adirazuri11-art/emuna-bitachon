@@ -46,6 +46,39 @@ export interface ProfitOverview {
   topProducts: ProfitLine[]; // הרווחיים ביותר
 }
 
+export interface TrendDay { date: string; profit: number; revenue: number }
+
+// מגמת רווח יומית ל-N ימים אחרונים (לגרף). ממלא ימים ריקים ב-0.
+export async function getProfitTrend(days = 30): Promise<TrendDay[]> {
+  const buckets = new Map<string, { profit: number; revenue: number }>();
+  const fmt = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }); // YYYY-MM-DD
+  // אתחול כל הימים ל-0 כדי שהגרף רציף
+  for (let i = days - 1; i >= 0; i--) {
+    buckets.set(fmt(new Date(Date.now() - i * 86400000)), { profit: 0, revenue: 0 });
+  }
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      `select paid_at, items from public.orders where status='paid' and paid_at > now() - interval '${Math.max(1, Math.min(365, days))} days'`,
+    )) as Array<{ paid_at: string; items: OrderItem[] }>;
+    for (const r of rows) {
+      if (!r.paid_at) continue;
+      const key = fmt(new Date(r.paid_at));
+      const b = buckets.get(key);
+      if (!b) continue;
+      for (const it of Array.isArray(r.items) ? r.items : []) {
+        const qty = Math.max(1, Math.floor(num(it.quantity) || 1));
+        const rev = num(it.unitPrice) * qty;
+        const info = INFO.get(skuOf(String(it.id ?? '')));
+        const cost = (info ? info.cost : num(it.unitPrice) * 0.44) * qty;
+        b.revenue += rev; b.profit += rev - cost;
+      }
+    }
+  } catch {
+    /* טבלה/DB חסרים → מחזיר את הימים המאותחלים ב-0 */
+  }
+  return Array.from(buckets.entries()).map(([date, v]) => ({ date: date.slice(5), profit: Math.round(v.profit), revenue: Math.round(v.revenue) }));
+}
+
 export async function getProfitOverview(days = 0, capOrders = 3000): Promise<ProfitOverview> {
   const empty: ProfitOverview = { ok: false, ordersCount: 0, revenue: 0, cost: 0, grossProfit: 0, margin: 0, byCategory: [], topProducts: [] };
   try {

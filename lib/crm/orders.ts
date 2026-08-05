@@ -119,6 +119,23 @@ export async function updateOrderFulfillment(orderNumber: string, status: Fulfil
   }
 }
 
+// מסמן חותמת התראה באופן אטומי — מחזיר true רק בקריאה הראשונה (מונע מייל כפול).
+// העמודה מגיעה מ-union סגור בלבד (לא קלט משתמש) → בטוח מהזרקה.
+export async function claimNotification(
+  orderNumber: string,
+  column: 'shipping_notified_at' | 'review_requested_at',
+): Promise<boolean> {
+  try {
+    const n = await prisma.$executeRawUnsafe(
+      `update public.orders set ${column}=now() where order_number=$1 and ${column} is null and status='paid'`,
+      orderNumber,
+    );
+    return n > 0;
+  } catch {
+    return false;
+  }
+}
+
 export interface OrderDetail {
   orderNumber: string;
   status: string;

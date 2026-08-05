@@ -220,6 +220,88 @@ export async function sendOrderEmails(o: FulfillmentOrder, receiptUrl?: string):
   return { business, customer, detail };
 }
 
+// כפתור CTA "bulletproof" (טבלה) — נתמך גם ב-Outlook. זהב עם טקסט נייבי (ניגודיות תקינה).
+function ctaButton(href: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:22px auto 6px"><tr>
+    <td style="background:${GOLD};border-radius:999px" align="center">
+      <a href="${esc(href)}" style="display:inline-block;padding:13px 32px;font-size:15px;font-weight:700;color:${NAVY};text-decoration:none">${esc(label)}</a>
+    </td></tr></table>`;
+}
+
+// ---- עדכון משלוח ללקוח (נשלח כשההזמנה עוברת ל"במשלוח") ----
+export async function sendShippingNotification(o: FulfillmentOrder, tracking?: string): Promise<{ ok: boolean; detail?: string }> {
+  const c = o.customer;
+  if (!c.email) return { ok: false, detail: 'no customer email' };
+  const biz = process.env.BUSINESS_ORDER_EMAIL;
+  const addr = [c.street, c.city, c.zip].filter(Boolean).join(', ');
+  const inner = `
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">שלום ${esc(c.name || '')},<br>הזמנתך ארוזה ויצאה לדרך אלייך 🚚 מיד תהיה אצלך.</p>
+    <div style="margin-top:14px;font-size:13px;color:${MUTED}">מספר הזמנה <b style="color:${INK}">${esc(o.orderNumber)}</b></div>
+    ${itemsBlock(o)}
+    ${addr ? `<div style="margin-top:16px;font-size:13px;color:${MUTED}">📦 נשלח אל: <span style="color:${INK}">${esc(addr)}</span></div>` : ''}
+    ${tracking ? `<div style="margin-top:10px;font-size:13px;color:${MUTED}">🔎 מספר מעקב: <b style="color:${INK}" dir="ltr">${esc(tracking)}</b></div>` : ''}
+    <div style="margin-top:8px;font-size:13px;color:${MUTED}">זמן אספקה משוער: 1–3 ימי עסקים.</div>`;
+  const html = shell('הזמנתך יצאה לדרך! 🚚', inner, 'לכל שאלה על המשלוח אפשר להשיב למייל הזה. תודה שבחרתם באמונה וביטחון.');
+  const r = await resendSend(c.email, `הזמנתך ${o.orderNumber} יצאה למשלוח — אמונה וביטחון`, html, biz || undefined);
+  return { ok: r.ok, detail: r.detail };
+}
+
+// ---- בקשת חוות דעת (נשלח כשההזמנה מסומנת "בוצעה בהצלחה") ----
+export async function sendReviewRequest(o: FulfillmentOrder): Promise<{ ok: boolean; detail?: string }> {
+  const c = o.customer;
+  if (!c.email) return { ok: false, detail: 'no customer email' };
+  const biz = process.env.BUSINESS_ORDER_EMAIL;
+  // קישור לעמוד המוצר הראשון שנרכש, ישירות לאזור חוות הדעת.
+  const first = o.items[0];
+  const slug = first ? String(first.id).toLowerCase() : '';
+  const reviewHref = slug ? `${SITE}/product/${slug}#reviews` : `${SITE}`;
+  const stars = `<div style="text-align:center;font-size:30px;letter-spacing:6px;color:${GOLD};margin:4px 0 2px">★★★★★</div>`;
+  const inner = `
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">שלום ${esc(c.name || '')},<br>מקווים שאתם נהנים מ${first?.title ? `“${esc(first.title)}”` : 'ההזמנה'} 🙏<br>נשמח מאוד אם תשתפו חוות דעת קצרה — זה עוזר למשפחות אחרות לבחור, ולנו להמשיך להשתפר.</p>
+    ${stars}
+    ${ctaButton(reviewHref, 'לכתיבת חוות דעת ✍️')}
+    <div style="text-align:center;font-size:12px;color:${MUTED};margin-top:4px">דקה אחת, ומשמעותי מאוד עבורנו 💛</div>`;
+  const html = shell('איך הייתה החוויה? 🌟', inner, 'תודה שבחרתם באמונה וביטחון. לכל שאלה אפשר להשיב למייל הזה.');
+  const r = await resendSend(c.email, 'נשמח לשמוע — חוות דעת על ההזמנה שלך 🌟', html, biz || undefined);
+  return { ok: r.ok, detail: r.detail };
+}
+
+// ---- דייג'סט יומי לעסק (נשלח ע"י cron) ----
+export interface DailyDigest {
+  dateLabel: string;
+  revenue: number;
+  orders: number;
+  grossProfit: number;
+  aov: number;
+  abandoned: number;
+  topCategory?: string;
+}
+export async function sendDailyDigest(d: DailyDigest): Promise<{ ok: boolean; detail?: string }> {
+  const biz = process.env.BUSINESS_ORDER_EMAIL;
+  if (!biz) return { ok: false, detail: 'no business email' };
+  const cell = (label: string, value: string, accent = false) => `
+    <td style="padding:6px" width="50%" valign="top">
+      <div style="background:#faf7ef;border:1px solid ${LINE};border-radius:12px;padding:16px">
+        <div style="font-size:12px;color:${MUTED}">${label}</div>
+        <div style="font-size:26px;font-weight:800;color:${accent ? GOLD : INK};margin-top:4px;font-variant-numeric:tabular-nums">${value}</div>
+      </div>
+    </td>`;
+  const inner = `
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">סיכום הפעילות ל־${esc(d.dateLabel)}:</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px">
+      <tr>${cell('הכנסות', money(d.revenue))}${cell('רווח גולמי', money(d.grossProfit), true)}</tr>
+      <tr>${cell('הזמנות', String(d.orders))}${cell('ממוצע להזמנה', d.aov ? money(d.aov) : '—')}</tr>
+    </table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;font-size:14px;color:${INK};line-height:2">
+      ${d.topCategory ? `<tr><td style="color:${MUTED};width:130px">קטגוריה מובילה</td><td>${esc(d.topCategory)}</td></tr>` : ''}
+      ${d.abandoned ? `<tr><td style="color:${MUTED}">קופות נטושות</td><td>${d.abandoned} ממתינות לשחזור</td></tr>` : ''}
+    </table>
+    ${ctaButton(`${SITE}/crm`, 'פתיחת מרכז השליטה')}`;
+  const html = shell(`סיכום יומי · ${esc(d.dateLabel)} 📊`, inner, 'דוח אוטומטי ממרכז השליטה של אמונה וביטחון.');
+  const r = await resendSend(biz, `📊 סיכום יומי — ${money(d.revenue)} · ${d.orders} הזמנות`, html);
+  return { ok: r.ok, detail: r.detail };
+}
+
 // שליחת קבלה בלבד ללקוח (backfill/רטרו) — הקובץ מצורף, בלי מספר בטקסט.
 export async function sendReceiptEmail(o: FulfillmentOrder, receiptUrl: string): Promise<{ ok: boolean; detail?: string }> {
   const c = o.customer;
