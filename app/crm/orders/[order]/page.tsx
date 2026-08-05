@@ -3,11 +3,16 @@ import { notFound } from 'next/navigation';
 import { ArrowRight, CheckCircle2, Phone, Mail, MapPin, Gift } from 'lucide-react';
 import { getOrderDetail } from '@/lib/crm/orders';
 import { FulfillmentControl } from '@/components/crm/FulfillmentControl';
+import { PRODUCTS } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
 const nf = (n: number) => n.toLocaleString('he-IL');
 const money = (n: number) => `₪${nf(Math.round(n))}`;
+
+// פריט הזמנה שומר id (למשל "art-UK67651") — ממפים למוצר לתמונה וקישור.
+const productForItem = (id: string) =>
+  PRODUCTS.find((p) => p.id === id || p.slug === id.toLowerCase() || p.sku === id);
 
 export default async function OrderDetailPage({ params }: { params: { order: string } }) {
   const order = await getOrderDetail(decodeURIComponent(params.order));
@@ -44,13 +49,33 @@ export default async function OrderDetailPage({ params }: { params: { order: str
       {/* פריטים */}
       <div className="rounded-2xl border border-gold/15 bg-white/5 p-5">
         <h2 className="mb-3 text-sm font-medium text-cream/60">פריטים</h2>
-        <div className="space-y-2">
-          {order.items.map((i, idx) => (
-            <div key={idx} className="flex items-center justify-between border-b border-white/5 py-2 text-sm last:border-0">
-              <span className="text-cream/90">{i.title || i.id} <span className="text-cream/40">× {i.quantity}</span></span>
-              <span className="font-medium text-cream">{money(i.unitPrice * i.quantity)}</span>
-            </div>
-          ))}
+        <div className="space-y-1">
+          {order.items.map((i, idx) => {
+            const p = productForItem(i.id);
+            const inner = (
+              <>
+                <div className="flex min-w-0 items-center gap-3">
+                  {p?.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={p.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-white/10 bg-white/5 object-cover" />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-cream/20">🕎</div>
+                  )}
+                  <span className="truncate text-cream/90">{i.title || p?.titleHe || i.id} <span className="text-cream/40">× {i.quantity}</span></span>
+                </div>
+                <span className="shrink-0 font-medium text-cream">{money(i.unitPrice * i.quantity)}</span>
+              </>
+            );
+            return p ? (
+              <Link key={idx} href={`/product/${p.slug}`} target="_blank" className="flex items-center justify-between gap-3 rounded-lg border-b border-white/5 py-2 text-sm transition-colors last:border-0 hover:bg-white/5">
+                {inner}
+              </Link>
+            ) : (
+              <div key={idx} className="flex items-center justify-between gap-3 border-b border-white/5 py-2 text-sm last:border-0">
+                {inner}
+              </div>
+            );
+          })}
         </div>
         <div className="mt-3 space-y-1.5 border-t border-white/10 pt-3 text-sm">
           {order.discount > 0 && <Row label={`הנחה${order.couponCode ? ` · ${order.couponCode}` : ''}`} value={`-${money(order.discount)}`} />}
