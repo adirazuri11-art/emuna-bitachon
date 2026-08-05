@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { isCrmAuthed } from '@/lib/crm/auth';
-import { listInventory, getInventoryStats, adjustStock, type InvFilter, type MovementType } from '@/lib/crm/inventory';
+import { listInventory, getInventoryStats, adjustStock, reverseReceipt, type InvFilter, type MovementType } from '@/lib/crm/inventory';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +32,10 @@ export async function POST(req: NextRequest) {
     const type = (VALID_MOVE.includes(body.type as MovementType) ? body.type : (delta >= 0 ? 'MANUAL_ADJUSTMENT_IN' : 'MANUAL_ADJUSTMENT_OUT')) as MovementType;
     const reason = String(body.reason ?? '');
     const res = await adjustStock(sku, delta, type, reason);
+    return NextResponse.json(res, { status: res.ok ? 200 : 400 });
+  }
+  if (body.action === 'reverseReceipt') {
+    const res = await reverseReceipt(String(body.receiptNumber ?? ''), String(body.reason ?? 'זיכוי/ביטול'));
     return NextResponse.json(res, { status: res.ok ? 200 : 400 });
   }
   return NextResponse.json({ ok: false, error: 'unknown action' }, { status: 400 });

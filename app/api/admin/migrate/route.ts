@@ -108,6 +108,49 @@ const STATEMENTS = [
     created_at  timestamptz not null default now()
   )`,
   `create index if not exists inv_audit_created_idx on public.inventory_audit_logs (created_at desc)`,
+  // ---- Phase 2: קליטת חשבונית ספק ----
+  `create table if not exists public.suppliers (
+    id              uuid primary key default gen_random_uuid(),
+    name            text not null unique,
+    business_number text,
+    contact_name    text,
+    phone           text,
+    email           text,
+    notes           text,
+    created_at      timestamptz not null default now()
+  )`,
+  `create table if not exists public.supplier_invoices (
+    id             uuid primary key default gen_random_uuid(),
+    supplier_name  text not null,
+    invoice_number text not null,
+    invoice_date   date,
+    subtotal       numeric(10,2),
+    vat            numeric(10,2),
+    total          numeric(10,2),
+    file_hash      text,
+    status         text not null default 'approved',
+    line_count     int not null default 0,
+    matched_count  int not null default 0,
+    units_total    int not null default 0,
+    approved_by    text,
+    approved_at    timestamptz,
+    created_at     timestamptz not null default now(),
+    unique (supplier_name, invoice_number)
+  )`,
+  `create table if not exists public.supplier_invoice_lines (
+    id                   uuid primary key default gen_random_uuid(),
+    supplier_invoice_id  uuid not null references public.supplier_invoices(id) on delete cascade,
+    supplier_product_code text,
+    raw_product_name     text,
+    product_sku          text,
+    quantity             int not null,
+    unit_cost            numeric(10,2),
+    line_total           numeric(10,2),
+    match_method         text,
+    status               text not null default 'matched',
+    created_at           timestamptz not null default now()
+  )`,
+  `create index if not exists sinv_lines_invoice_idx on public.supplier_invoice_lines (supplier_invoice_id)`,
   // תור פרסום אוטומטי לרשתות (בנק התוכן) — 3 פוסטים/יום, דילוג בשבת
   `create table if not exists public.social_queue (
     idx           int primary key,

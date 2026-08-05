@@ -18,6 +18,13 @@ interface Meta { title: string; image?: string; category: string }
 const META = new Map<string, Meta>();
 for (const p of PRODUCTS) META.set(p.sku.toUpperCase(), { title: p.titleHe, image: p.imageUrl, category: p.category });
 
+// חיפוש מוצר בקטלוג לפי קוד ספק (=SKU). משמש את קליטת החשבוניות (Phase 2).
+export function productMeta(sku: string): { sku: string; title: string; image?: string; category: string } | undefined {
+  const S = (sku || '').trim().toUpperCase();
+  const m = META.get(S);
+  return m ? { sku: S, ...m } : undefined;
+}
+
 export type MovementType =
   | 'PURCHASE_IN' | 'SALE_OUT' | 'CUSTOMER_RETURN_IN' | 'SUPPLIER_RETURN_OUT'
   | 'MANUAL_ADJUSTMENT_IN' | 'MANUAL_ADJUSTMENT_OUT' | 'DAMAGE_OUT' | 'CANCELLED_RECEIPT_REVERSAL';
@@ -304,5 +311,51 @@ export async function applyReceiptToInventory(orderNumber: string, receiptNumber
     return result;
   } catch (e) {
     return { applied: false, reason: e instanceof Error ? e.message.slice(0, 140) : 'error' };
+  }
+}
+
+// ---------- ↩︎ החזרת מלאי בעקבות זיכוי/ביטול קבלה — idempotent ----------
+// מחזיר את המלאי שירד ב-SALE_OUT של קבלה מסוימת. רק אם הקבלה עובדה (status='done')
+// וטרם בוטלה. אותה קבלה מבוטלת פעם אחת בלבד (status → 'reversed').
+export async function reverseReceipt(receiptNumber: string, reason = 'זיכוי/ביטול', user = 'admin'): Promise<{ ok: boolean; reason?: string; lines?: number }> {
+  const rn = (receiptNumber || '').trim();
+  if (!rn) return { ok: false, reason: 'no receipt number' };
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // תופס לביטול רק אם עובד (done) וטרם בוטל — אטומי
+      const claim = (await tx.$queryRawUnsafe(
+        `update public.processed_receipts set status='reversed' where receipt_number=$1 and status='done' returning order_number`,
+        rn,
+      )) as Array<{ order_number: string }>;
+      if (claim.length === 0) return { ok: false, reason: 'לא ניתן לבטל — הקבלה לא עובדה או כבר בוטלה' as const };
+      const orderNumber = String(claim[0].order_number);
+
+      const orows = (await tx.$queryRawUnsafe(`select items from public.orders where order_number=$1 limit 1`, orderNumber)) as Array<{ items: Array<{ id?: string; quantity?: number }> }>;
+      const items = Array.isArray(orows?.[0]?.items) ? orows[0].items : [];
+      const bySku = new Map<string, number>();
+      for (const it of items) {
+        const sku = skuOf(String(it.id ?? ''));
+        if (!sku || !META.has(sku)) continue;
+        bySku.set(sku, (bySku.get(sku) ?? 0) + Math.max(1, Math.floor(num(it.quantity) || 1)));
+      }
+      for (const [sku, qty] of Array.from(bySku)) {
+        const upd = (await tx.$queryRawUnsafe(
+          `update public.inventory_items set quantity_on_hand = quantity_on_hand + $2, total_sold = greatest(total_sold - $2, 0), updated_at=now() where sku=$1 returning quantity_on_hand`,
+          sku, qty,
+        )) as Array<{ quantity_on_hand: number }>;
+        const after = num(upd[0]?.quantity_on_hand);
+        const before = after - qty;
+        await tx.$executeRawUnsafe(
+          `insert into public.inventory_movements (sku, movement_type, quantity_change, quantity_before, quantity_after, source_type, source_id, source_document_number, reason, created_by)
+           values ($1,'CANCELLED_RECEIPT_REVERSAL',$2,$3,$4,'receipt_reversal',$5,$6,$7,$8)`,
+          sku, qty, before, after, orderNumber, rn, reason, user,
+        );
+      }
+      return { ok: true as const, lines: bySku.size };
+    });
+    if (result.ok) await auditLog(user, 'RECEIPT_REVERSED', 'receipt', rn, null, { reason, lines: result.lines });
+    return result;
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message.slice(0, 140) : 'error' };
   }
 }
