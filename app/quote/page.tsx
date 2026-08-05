@@ -105,7 +105,7 @@ function QuoteForm() {
               <Package className="h-3.5 w-3.5 text-gold-soft" /> כמות משוערת
             </span>
             <input value={form.quantity} onChange={(e) => patch({ quantity: e.target.value })}
-              placeholder="למשל: 120" className={input} />
+              inputMode="numeric" placeholder="למשל: 120" className={input} />
           </label>
           <label className="block">
             <span className="mb-1 flex items-center gap-1 text-sm font-medium text-navy">
