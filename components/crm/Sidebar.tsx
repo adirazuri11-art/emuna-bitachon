@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Sparkles, Ticket, Gift, Instagram, BarChart3, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, Users, Sparkles, Ticket, Gift, Instagram, BarChart3, ShoppingBag, ShoppingCart, Star } from 'lucide-react';
 
 const NAV = [
   { href: '/crm', label: 'סקירה', icon: LayoutDashboard, exact: true },
   { href: '/crm/orders', label: 'הזמנות', icon: ShoppingBag },
   { href: '/crm/customers', label: 'לקוחות', icon: Users },
+  { href: '/crm/reviews', label: 'חוות דעת', icon: Star },
   { href: '/crm/merchant', label: 'Google Shopping', icon: ShoppingCart },
   { href: '/crm/gift-finder', label: 'מאתר המתנה', icon: Sparkles },
   { href: '/crm/social', label: 'רשתות חברתיות', icon: Instagram },

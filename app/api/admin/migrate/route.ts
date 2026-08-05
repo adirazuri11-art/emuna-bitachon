@@ -80,6 +80,22 @@ const STATEMENTS = [
     updated_at    timestamptz not null default now(),
     constraint meta_config_single check (id = 1)
   )`,
+  // ביקורות מוצר — מנוהלות במלואן בתוך ה-CRM (מודרציה לפני הצגה).
+  // רק status='approved' מוצג בעמוד המוצר ונספר ב-aggregateRating.
+  `create table if not exists public.product_reviews (
+    id           uuid primary key default gen_random_uuid(),
+    product_slug text not null,
+    product_id   text,
+    author_name  text not null,
+    rating       int not null check (rating between 1 and 5),
+    title        text,
+    body         text not null,
+    email        text,
+    status       text not null default 'pending',
+    created_at   timestamptz not null default now()
+  )`,
+  `create index if not exists reviews_slug_status_idx on public.product_reviews (product_slug, status)`,
+  `create index if not exists reviews_status_created_idx on public.product_reviews (status, created_at desc)`,
 ];
 
 export async function GET(req: NextRequest) {

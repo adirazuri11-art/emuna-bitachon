@@ -13,6 +13,7 @@ const NAV = [
   { label: 'סקירה כללית', href: '/crm', icon: LayoutDashboard },
   { label: 'הזמנות', href: '/crm/orders', icon: ShoppingBag },
   { label: 'לקוחות', href: '/crm/customers', icon: User },
+  { label: 'חוות דעת', href: '/crm/reviews', icon: ShoppingBag },
   { label: 'Google Shopping', href: '/crm/merchant', icon: ShoppingBag },
   { label: 'מאתר המתנה', href: '/crm/gift-finder', icon: LayoutDashboard },
   { label: 'רשתות חברתיות', href: '/crm/social', icon: Instagram },
