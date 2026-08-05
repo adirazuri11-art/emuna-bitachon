@@ -68,9 +68,9 @@ export default function AccessibilityPage() {
             רכז/ת הנגישות של העסק:
           </p>
           <ul className="mt-3 space-y-1 text-sm">
-            <li>שם רכז/ת הנגישות: <span className="text-gold-soft">[יש להשלים את פרטי העסק]</span></li>
-            <li>טלפון: <span className="text-gold-soft">[יש להשלים]</span></li>
-            <li>דוא"ל: <span className="text-gold-soft">[יש להשלים]</span></li>
+            <li>שם רכז/ת הנגישות: <span className="font-medium text-gold-soft">אדיר עזורי</span></li>
+            <li>טלפון: <a href="tel:0503096969" className="font-medium text-gold-soft hover:underline" dir="ltr">050-309-6969</a></li>
+            <li>דוא"ל: <a href="mailto:orders@emunavebitachon.co.il" className="font-medium text-gold-soft hover:underline" dir="ltr">orders@emunavebitachon.co.il</a></li>
           </ul>
           <p className="mt-3 text-xs text-navy/50">
             בפנייה נא לפרט את הבעיה, את הדף שבו היא התרחשה ואת סוג הדפדפן/המכשיר, כדי שנוכל לסייע במהירות.
@@ -78,8 +78,7 @@ export default function AccessibilityPage() {
         </div>
 
         <p className="text-xs text-navy/40">
-          הצהרת נגישות זו היא תבנית ראשונית. לפני עלייה מסחרית לאוויר יש להשלים את פרטי רכז הנגישות
-          ואת מועד עדכון ההצהרה, ומומלץ לבצע בדיקת נגישות מקצועית.
+          עודכן לאחרונה: 5 באוגוסט 2026. אנו פועלים לשיפור מתמיד של נגישות האתר; הצהרה זו תעודכן בהתאם.
         </p>
       </div>
     </div>
