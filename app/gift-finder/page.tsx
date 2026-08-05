@@ -26,6 +26,28 @@ const BUDGETS = [
 
 const priceOf = (p: CatalogProduct) => p.discountPrice ?? p.basePrice;
 
+// נירמול עברית להשוואת מילות מפתח (הסרת מרכאות/גרשיים)
+const norm = (s: string) => (s || '').replace(/["'׳״׳״]/g, '').toLowerCase();
+
+// מילות מפתח לכל אירוע — מזהות מוצר *באמת* רלוונטי (מותאם מול שם המוצר + תת-קטגוריה).
+// זה מה שמבדיל בין מוצרים בתוך אותה קטגוריה, במקום ניקוד זהה לכולם.
+const OCCASION_KW: Record<string, string[]> = {
+  'חתונה': ['זוג', 'סט', 'קידוש', 'גביע', 'כוס', 'פמוט', 'ברכת הבית', 'מגן דוד', 'שרשרת', 'צמיד', 'חמסה'],
+  'בר מצווה': ['תפילין', 'טלית', 'ציצית', 'כיפה', 'סידור', 'תהילים', 'שמע ישראל', 'מגן דוד'],
+  'יולדת': ['תינוק', 'לידה', 'ברית', 'כרית', 'מזל טוב', 'חמסה', 'לרך הנולד'],
+  'בית חדש': ['מזוזה', 'ברכת הבית', 'חמסה', 'ירושלים', 'כותל', 'פרנסה'],
+  'שבת': ['פמוט', 'נרות', 'חלה', 'קידוש', 'גביע', 'מפית', 'פלטה', 'הבדלה', 'נטל', 'מלחי'],
+  'חג': ['דבש', 'כוורת', 'שנה טובה', 'סדר', 'מגיל', 'חנוכי', 'סביבון', 'דריידל', 'אתרוג'],
+};
+
+// מילות מפתח לכל קהל יעד
+const AUDIENCE_KW: Record<string, string[]> = {
+  women: ['שרשרת', 'צמיד', 'עגיל', 'תכשיט', 'מטפחת', 'פמוט', 'אשת חיל', 'כרית'],
+  men: ['תפילין', 'טלית', 'ציצית', 'כיפה', 'מפתחות', 'ארנק'],
+  kids: ['ילד', 'תינוק', 'צבעוני', 'ראשית', 'סביבון'],
+  family: [],
+};
+
 // Fire-and-forget CRM instrumentation. Never blocks or breaks the wizard:
 // any failure (offline, misconfig, table missing) is silently ignored.
 function sendGiftFinderEvent(payload: Record<string, unknown>) {
@@ -65,55 +87,59 @@ export default function GiftFinderPage() {
       .map((p) => {
         let score = 0;
         const price = priceOf(p);
+        const hay = norm(`${p.titleHe} ${p.subcategory ?? ''} ${p.material ?? ''}`);
 
-        // Track whether the product matched a preference the user actually chose
+        // Category-level tags (coarse — same for every item in a category)
         const matchedAudience = Boolean(audience && p.audience?.includes(audience));
         const matchedOccasion = Boolean(occasion && p.occasions?.includes(occasion));
         const matchedCustom = Boolean(wantCustom && p.customization);
 
-        // Audience match — primary signal (who the gift is for)
-        if (matchedAudience) score += 40;
+        // Per-product keyword relevance — THE differentiator within a category.
+        // Counts how many occasion/audience keywords appear in this specific item.
+        let occKw = 0;
+        if (occasion) for (const kw of OCCASION_KW[occasion] ?? []) if (hay.includes(norm(kw))) occKw++;
+        let audKw = 0;
+        if (audience) for (const kw of AUDIENCE_KW[audience] ?? []) if (hay.includes(norm(kw))) audKw++;
 
-        // Occasion match — primary signal (what the event is)
-        if (matchedOccasion) score += 35;
+        // Weights: keyword hits dominate so the most relevant items rise to the top.
+        if (matchedAudience) score += 22;
+        if (matchedOccasion) score += 18;
+        score += Math.min(occKw, 3) * 16; // up to +48 — strongest signal
+        score += Math.min(audKw, 2) * 10; // up to +20
+        if (budget && price >= budget.min && price <= budget.max) score += 14;
+        if (matchedCustom) score += 12;
 
-        // Priced within the chosen band — rewards budget-appropriate gifts
-        if (budget && price >= budget.min && price <= budget.max) score += 20;
+        const quality = (p.badges.includes('recommended') ? 6 : 0) + (p.badges.includes('bestseller') ? 4 : 0);
+        score += quality;
 
-        // Customization — soft signal (only when the user wants it)
-        if (matchedCustom) score += 15;
-
-        // Popularity — weak tie-breakers
-        if (p.badges.includes('recommended')) score += 5;
-        if (p.badges.includes('bestseller')) score += 3;
-
-        const matchedAnyPref = matchedAudience || matchedOccasion || matchedCustom;
-        return { p, score, price, matchedAnyPref };
+        // Genuine match = category tag OR a real keyword hit on this product
+        const matchedAnyPref = matchedAudience || matchedOccasion || matchedCustom || occKw > 0 || audKw > 0;
+        return { p, score, price, quality, matchedAnyPref };
       })
       .filter(({ price, matchedAnyPref }) => {
-        // Hard constraint: never exceed the chosen budget ceiling
-        if (budget && price > budget.max) return false;
-        // If the user expressed any preference, require a genuine match to it
+        if (budget && price > budget.max) return false; // hard budget ceiling
         const hasPrefs = audience || occasion || wantCustom;
-        if (hasPrefs && !matchedAnyPref) return false;
+        if (hasPrefs && !matchedAnyPref) return false; // require a genuine match
         return true;
       })
       .sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
-        // Tie-break: closest to the middle of the chosen budget band
+        if (b.quality !== a.quality) return b.quality - a.quality; // quality before price
         if (budget) return Math.abs(a.price - bandMid) - Math.abs(b.price - bandMid);
         return b.price - a.price;
       });
 
-    // Diversify: at most 2 products per category so one large category
-    // (e.g. כיפות) can't monopolise the whole result set.
-    const perCategory: Record<string, number> = {};
+    // Diversify: prefer distinct subcategories (max variety), cap 2 per category.
+    const perCat: Record<string, number> = {};
+    const perSub: Record<string, number> = {};
     const primary: typeof scored = [];
     const overflow: typeof scored = [];
     for (const item of scored) {
       const cat = item.p.category;
-      if ((perCategory[cat] ?? 0) < 2) {
-        perCategory[cat] = (perCategory[cat] ?? 0) + 1;
+      const sub = item.p.subcategory ?? cat;
+      if ((perSub[sub] ?? 0) < 1 && (perCat[cat] ?? 0) < 2) {
+        perSub[sub] = 1;
+        perCat[cat] = (perCat[cat] ?? 0) + 1;
         primary.push(item);
       } else {
         overflow.push(item);
