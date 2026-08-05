@@ -4,12 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Check, ChevronLeft, FileText, Heart, MessageCircle, ShieldCheck, ShoppingBag, Truck } from 'lucide-react';
-import {
-  BADGE_LABELS,
-  STOCK_LABELS,
-  type CatalogProduct,
-  getProduct,
-} from '@/lib/catalog';
+import { BADGE_LABELS, STOCK_LABELS } from '@/lib/catalog-constants';
+import type { CatalogProduct } from '@/lib/catalog';
+import { getLiteProduct, type LiteProduct } from '@/lib/catalog-lite';
 import { computePrice } from '@/lib/pricing';
 import { formatPrice, cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';
@@ -100,8 +97,8 @@ export function ProductPageClient({
     () =>
       recentSlugs
         .filter((s) => s !== product.slug)
-        .map(getProduct)
-        .filter((p): p is CatalogProduct => Boolean(p))
+        .map(getLiteProduct)
+        .filter((p): p is LiteProduct => Boolean(p))
         .slice(0, 4),
     [recentSlugs, product.slug]
   );

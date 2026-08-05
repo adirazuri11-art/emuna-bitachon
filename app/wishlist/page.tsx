@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { useWishlistStore } from '@/store/wishlist';
-import { getProduct, type CatalogProduct } from '@/lib/catalog';
+import { getLiteProduct, type LiteProduct } from '@/lib/catalog-lite';
 import { ProductCard } from '@/components/products/ProductCard';
 
 export default function WishlistPage() {
@@ -13,7 +13,7 @@ export default function WishlistPage() {
   useEffect(() => setMounted(true), []);
 
   const products = mounted
-    ? slugs.map(getProduct).filter((p): p is CatalogProduct => Boolean(p))
+    ? slugs.map(getLiteProduct).filter((p): p is LiteProduct => Boolean(p))
     : [];
 
   return (

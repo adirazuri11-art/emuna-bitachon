@@ -7,7 +7,7 @@ import { Suspense, useState, type FormEvent } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Building2, CalendarDays, MessageCircle, Package } from 'lucide-react';
-import { getProduct } from '@/lib/catalog';
+import { getLiteProduct as getProduct } from '@/lib/catalog-lite';
 import { trackEvent } from '@/lib/analytics';
 
 const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '972503096969';

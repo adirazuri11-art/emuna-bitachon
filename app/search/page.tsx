@@ -4,7 +4,8 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Clock, Search, SearchX, TrendingUp } from 'lucide-react';
 import { searchCatalog } from '@/lib/search';
-import { PRODUCTS, type CatalogProduct } from '@/lib/catalog';
+import { LITE_PRODUCTS } from '@/lib/catalog-lite';
+import type { CatalogProduct } from '@/lib/catalog';
 import { ProductCard } from '@/components/products/ProductCard';
 import { QuickViewModal } from '@/components/products/QuickViewModal';
 
@@ -95,7 +96,7 @@ function SearchContent() {
             )}
           </div>
           <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-            {PRODUCTS.slice(0, 8).map((p) => (
+            {LITE_PRODUCTS.slice(0, 8).map((p) => (
               <ProductCard key={p.id} product={p} onQuickView={(prod) => setQuickView(prod as CatalogProduct)} />
             ))}
           </div>

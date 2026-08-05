@@ -6,13 +6,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Gift, RotateCcw, Sparkles } from 'lucide-react';
-import {
-  PRODUCTS,
-  OCCASIONS,
-  AUDIENCE_LABELS,
-  type Audience,
-  type CatalogProduct,
-} from '@/lib/catalog';
+import { LITE_PRODUCTS, type LiteProduct } from '@/lib/catalog-lite';
+import { OCCASIONS, AUDIENCE_LABELS, type Audience } from '@/lib/catalog-constants';
 import { ProductCard } from '@/components/products/ProductCard';
 import { trackEvent } from '@/lib/analytics';
 import { cn } from '@/lib/utils';
@@ -24,7 +19,7 @@ const BUDGETS = [
   { id: 'lux', label: 'מעל ₪600', min: 600, max: Infinity },
 ];
 
-const priceOf = (p: CatalogProduct) => p.discountPrice ?? p.basePrice;
+const priceOf = (p: LiteProduct) => p.discountPrice ?? p.basePrice;
 
 // נירמול עברית להשוואת מילות מפתח (הסרת מרכאות/גרשיים)
 const norm = (s: string) => (s || '').replace(/["'׳״׳״]/g, '').toLowerCase();
@@ -81,7 +76,7 @@ export default function GiftFinderPage() {
         : (budget.min + budget.max) / 2
       : 0;
 
-    const scored = PRODUCTS.filter(
+    const scored = LITE_PRODUCTS.filter(
       (p) => p.priceType !== 'quote' && p.stockStatus !== 'coming-soon',
     )
       .map((p) => {
@@ -92,7 +87,7 @@ export default function GiftFinderPage() {
         // Category-level tags (coarse — same for every item in a category)
         const matchedAudience = Boolean(audience && p.audience?.includes(audience));
         const matchedOccasion = Boolean(occasion && p.occasions?.includes(occasion));
-        const matchedCustom = Boolean(wantCustom && p.customization);
+        const matchedCustom = Boolean(wantCustom && p.hasCustomization);
 
         // Per-product keyword relevance — THE differentiator within a category.
         // Counts how many occasion/audience keywords appear in this specific item.

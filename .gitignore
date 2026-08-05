@@ -15,3 +15,6 @@ next-env.d.ts
 
 # gift-wrap test build artifact
 .test-build/
+
+# search-index generator temp build
+.gen-build/

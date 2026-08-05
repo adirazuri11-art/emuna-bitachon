@@ -9,7 +9,8 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import NextImage from 'next/image';
 import { AlertTriangle, Check, ImagePlus, Minus, Plus, Save, ShoppingBag, X } from 'lucide-react';
-import { METHOD_LABELS, type CatalogProduct } from '@/lib/catalog';
+import { METHOD_LABELS } from '@/lib/catalog-constants';
+import type { CatalogProduct } from '@/lib/catalog';
 import { computePrice, nextBulkTier } from '@/lib/pricing';
 import { formatPrice } from '@/lib/utils';
 import { trackEvent } from '@/lib/analytics';

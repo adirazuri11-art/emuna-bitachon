@@ -13,7 +13,7 @@ import { useCartStore, selectCartCount } from '@/store/cart';
 import { useWishlistStore } from '@/store/wishlist';
 import { useUIStore } from '@/store/ui';
 import { searchCatalog, type SearchResult } from '@/lib/search';
-import { ACTIVE_CATEGORIES as CATALOG_CATEGORIES, getSubcategories } from '@/lib/catalog';
+import { ACTIVE_CATEGORIES as CATALOG_CATEGORIES, getSubcategories } from '@/lib/catalog-lite';
 import { formatPrice, cn } from '@/lib/utils';
 
 // ניווט נגזר ישירות מהקטלוג — קטגוריה חדשה בקטלוג מופיעה כאן אוטומטית

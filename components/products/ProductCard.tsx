@@ -8,7 +8,7 @@ import {
   Check, Eye, Flame, Gem, Gift, Heart, PenLine, Scroll, ShieldCheck, ShoppingBag, Shirt, Sparkle, Wine,
 } from 'lucide-react';
 import type { ProductCardData, ProductIconKey } from '@/types';
-import { BADGE_LABELS, type CatalogProduct } from '@/lib/catalog';
+import { BADGE_LABELS, type ProductBadge } from '@/lib/catalog-constants';
 import { useCartStore } from '@/store/cart';
 import { useWishlistStore } from '@/store/wishlist';
 import { useToastStore } from '@/store/toast';
@@ -26,8 +26,15 @@ const ICON_MAP: Record<ProductIconKey, typeof Wine> = {
   gift: Gift,
 };
 
-type CardProduct = ProductCardData &
-  Partial<Pick<CatalogProduct, 'badges' | 'prepTimeDays' | 'priceType' | 'variantGroups'>>;
+// מנותק מ-CatalogProduct המלא כדי ש-ProductCard יקבל גם LiteProduct (צד לקוח)
+// וגם CatalogProduct (צד שרת) בלי לגרור את הקטלוג ל-bundle. הצורה המינימלית של
+// variantGroups (רק id/label/hex) מסופקת ע"י שני הטיפוסים.
+type CardProduct = ProductCardData & {
+  badges?: ProductBadge[];
+  prepTimeDays?: [number, number];
+  priceType?: 'fixed' | 'from' | 'quote';
+  variantGroups?: Array<{ id: string; label: string; options: Array<{ id: string; label: string; hex?: string }> }>;
+};
 
 interface Props {
   product: CardProduct;

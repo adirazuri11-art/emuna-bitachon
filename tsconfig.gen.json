@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2020",
+    "lib": ["es2021"],
+    "outDir": ".gen-build",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": { "@/*": ["./*"] },
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "strict": false,
+    "isolatedModules": false
+  },
+  "include": [
+    "lib/catalog.ts",
+    "lib/catalog-supplier.ts",
+    "lib/customization-presets.ts",
+    "lib/catalog-constants.ts",
+    "types/index.ts"
+  ]
+}

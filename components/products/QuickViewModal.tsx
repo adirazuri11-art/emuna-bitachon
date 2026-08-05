@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ShieldCheck, ShoppingBag, X } from 'lucide-react';
 import type { CatalogProduct } from '@/lib/catalog';
-import { STOCK_LABELS } from '@/lib/catalog';
+import { STOCK_LABELS } from '@/lib/catalog-constants';
 import { formatPrice } from '@/lib/utils';
 import { useCartStore } from '@/store/cart';
 import { useToastStore } from '@/store/toast';
