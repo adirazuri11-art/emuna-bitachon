@@ -64,7 +64,7 @@ const b64url = (buf: Buffer | string) =>
 // Cache access tokens per-scope in module memory (tokens live ~1h).
 const tokenCache = new Map<string, { token: string; exp: number }>();
 
-async function getAccessToken(scope: string): Promise<string | null> {
+export async function getAccessToken(scope: string): Promise<string | null> {
   const c = creds();
   if (!c) return null;
   const cached = tokenCache.get(scope);
