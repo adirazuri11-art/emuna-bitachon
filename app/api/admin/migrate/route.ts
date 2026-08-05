@@ -48,6 +48,29 @@ const STATEMENTS = [
     created_at    timestamptz not null default now()
   )`,
   `create index if not exists social_queue_status_idx on public.social_queue (status, idx)`,
+  // מאתר המתנה — סשנים לאנליטיקה + סוכן אופטימיזציה
+  `create table if not exists public.gift_finder_sessions (
+    id                      uuid primary key default gen_random_uuid(),
+    session_id              text not null unique,
+    anonymous_id            text,
+    customer_email          text,
+    audience                text,
+    occasion                text,
+    budget_id               text,
+    budget_max              numeric,
+    want_custom             boolean,
+    results_count           integer default 0,
+    recommended_product_ids text[] default '{}',
+    recommended_categories  text[] default '{}',
+    clicked_product_ids     text[] default '{}',
+    added_to_cart_ids       text[] default '{}',
+    source                  text default 'website',
+    user_agent              text,
+    created_at              timestamptz not null default now(),
+    updated_at              timestamptz not null default now()
+  )`,
+  `create index if not exists gfs_created_at_idx on public.gift_finder_sessions (created_at desc)`,
+  `create index if not exists gfs_occasion_idx on public.gift_finder_sessions (occasion)`,
 ];
 
 export async function GET(req: NextRequest) {

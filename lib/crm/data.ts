@@ -165,17 +165,22 @@ export async function getGiftFinderStats(): Promise<GiftFinderStats> {
     topOccasions: [],
     topCategories: [],
   };
-  const sb = supa();
-  if (!sb) return empty;
-
-  // Pull a bounded recent window and aggregate in-process (simple + safe).
-  const { data, error } = await sb
-    .from('gift_finder_sessions')
-    .select('occasion, recommended_categories, clicked_product_ids, created_at')
-    .order('created_at', { ascending: false })
-    .limit(2000);
-
-  if (error || !data) return empty; // table missing / not migrated yet
+  // Pull a bounded recent window from Neon (Prisma raw) and aggregate in-process.
+  let data: Array<{
+    occasion: string | null;
+    recommended_categories: string[] | null;
+    clicked_product_ids: string[] | null;
+    created_at: string;
+  }>;
+  try {
+    data = (await prisma.$queryRawUnsafe(
+      `select occasion, recommended_categories, clicked_product_ids, created_at
+       from public.gift_finder_sessions order by created_at desc limit 2000`,
+    )) as typeof data;
+  } catch {
+    return empty; // table missing / not migrated yet
+  }
+  if (!data) return empty;
 
   const cutoff = daysAgo(30).getTime();
   let last30d = 0;
