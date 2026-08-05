@@ -80,7 +80,11 @@ export function toFeedItem(p: CatalogProduct): FeedItem {
     title: cleanText(p.titleHe).slice(0, 150),
     description: desc || cleanText(p.titleHe),
     link: `${SITE_URL}/product/${p.slug}`,
-    imageLink: absoluteUrl(p.imageUrl ?? ''),
+    // תמונות ספק מרוחקות עוברות דרך proxy בדומיין שלנו (יציבות מול Googlebot);
+    // תמונות מקומיות מוגשות ישירות.
+    imageLink: /israel-judaica\.com/.test(p.imageUrl ?? '')
+      ? `${SITE_URL}/api/img/${p.sku}`
+      : absoluteUrl(p.imageUrl ?? ''),
     availability: availabilityFor(p),
     ...(availabilityFor(p) === 'preorder' && p.availabilityDate ? { availabilityDate: p.availabilityDate } : {}),
     price: money(p.basePrice),
