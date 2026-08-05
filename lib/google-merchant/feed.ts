@@ -25,6 +25,7 @@ export interface FeedItem {
   link: string;
   imageLink: string;
   availability: 'in_stock' | 'out_of_stock' | 'preorder';
+  availabilityDate?: string; // ISO — נדרש ל-preorder
   price: string; // "59.00 ILS"
   salePrice?: string;
   brand: string;
@@ -81,6 +82,7 @@ export function toFeedItem(p: CatalogProduct): FeedItem {
     link: `${SITE_URL}/product/${p.slug}`,
     imageLink: absoluteUrl(p.imageUrl ?? ''),
     availability: availabilityFor(p),
+    ...(availabilityFor(p) === 'preorder' && p.availabilityDate ? { availabilityDate: p.availabilityDate } : {}),
     price: money(p.basePrice),
     ...(hasSale ? { salePrice: money(p.discountPrice as number) } : {}),
     brand: BRAND,
@@ -121,6 +123,7 @@ function itemXml(it: FeedItem): string {
     tag('g:link', it.link),
     tag('g:image_link', it.imageLink),
     tag('g:availability', it.availability),
+    ...(it.availabilityDate ? [tag('g:availability_date', it.availabilityDate)] : []),
     tag('g:price', it.price),
     ...(it.salePrice ? [tag('g:sale_price', it.salePrice)] : []),
     tag('g:brand', it.brand),

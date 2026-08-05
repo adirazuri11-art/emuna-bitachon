@@ -188,6 +188,16 @@ const COMING_SOON: Record<string, string> = {
   UK49179: '21/08/2026',
 };
 
+// המרת תאריך ספק 'DD/MM/YYYY' → ISO 8601 (אזור זמן ישראל) ל-availability_date.
+// ריק/לא-תקין → הערכה של +21 יום מהיום (הפריט בדרך; גוגל דורשת תאריך ל-preorder).
+function comingSoonIso(cs: string): string {
+  const m = cs.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}T09:00:00+03:00`;
+  const d = new Date();
+  d.setDate(d.getDate() + 21);
+  return `${d.toISOString().slice(0, 10)}T09:00:00+03:00`;
+}
+
 function toProduct(item: RawItem): CatalogProduct {
   // תמונה: מקומית עם לוגו צרוב (178 הישנים) או מרוחקת (hotlink) עם לוגו-שכבה (החדשים).
   const remote = Boolean(item.img) || Boolean(item.imgFull);
@@ -217,6 +227,8 @@ function toProduct(item: RawItem): CatalogProduct {
   const cs = COMING_SOON[item.id];
   const isComingSoon = cs !== undefined;
   const comingNote = isComingSoon ? (cs ? `יגיע למלאי בתאריך ${cs}. ` : 'יגיע למלאי בקרוב. ') : '';
+  // תאריך הגעה משוער (ISO) לשדה availability_date בפיד Merchant — נדרש ל-preorder.
+  const availabilityDate = isComingSoon ? comingSoonIso(cs) : undefined;
   // כל מוצר מזוזה (בכל קטגוריה) — הבהרה שהמזוזה מגיעה ללא קלף.
   const isMezuzah = item.c === 'mezuzot' || /מזוז/.test(item.t);
   const mezuzahNote = isMezuzah
@@ -276,6 +288,7 @@ function toProduct(item: RawItem): CatalogProduct {
       { src, label: 'תקריב', zoom: 1.5 },
     ],
     isPlaceholderImage: false,
+    ...(availabilityDate ? { availabilityDate } : {}),
   };
 }
 

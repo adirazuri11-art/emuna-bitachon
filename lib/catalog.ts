@@ -318,6 +318,7 @@ export interface CatalogProduct extends ProductCardData {
   customization?: CustomizationConfig;
   gallery: GalleryView[];
   isPlaceholderImage: boolean; // true = איור המחשה זמני, יוחלף בצילום אמיתי
+  availabilityDate?: string; // ISO — תאריך הגעה משוער לפריטי coming-soon (לפיד Merchant)
 }
 
 // ---------- קונפיגים משותפים להתאמה אישית (lib/customization-presets.ts) ----------
