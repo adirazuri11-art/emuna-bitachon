@@ -295,7 +295,7 @@ export function Navbar() {
                 <span className="absolute -bottom-1 end-0 start-0 h-px scale-x-0 bg-gradient-to-l from-gold to-gold-soft transition-transform duration-300 group-hover:scale-x-100" />
               </Link>
               {cat.subcategories.length > 1 && openCategoryDropdown === cat.slug && (
-                <div className="absolute start-1/2 top-full z-50 -translate-x-1/2 pt-3">
+                <div className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3">
                   <div className="min-w-[180px] rounded-2xl border border-gold/20 bg-white p-2 shadow-2xl">
                     {cat.subcategories.map((sub) => (
                       <Link key={sub} href={`/category/${cat.slug}?sub=${encodeURIComponent(sub)}`}
