@@ -13,6 +13,8 @@ import { PRODUCTS } from '@/lib/catalog';
 
 const num = (v: unknown) => Number(v ?? 0);
 const skuOf = (id: string) => (id || '').replace(/^art-/i, '').toUpperCase();
+// תמונת ART אוטומטית לכל מוצר (proxy) — כשאין תמונה מקומית/מותאמת.
+const artProxy = (sku: string) => `/api/crm/inventory/art-image/${encodeURIComponent(sku)}`;
 
 interface Meta { title: string; image?: string; category: string; salePrice: number }
 const META = new Map<string, Meta>();
@@ -115,7 +117,7 @@ export async function listInventory(search = '', filter: InvFilter = 'all', limi
     const sku = p.sku.toUpperCase();
     const r = inv.get(sku);
     const title = (r?.name as string) || p.titleHe;
-    const image = (r?.image_url as string) || p.imageUrl;
+    const image = (r?.image_url as string) || p.imageUrl || artProxy(p.sku);
     if (!pass(title, p.sku, r ? num(r.quantity_on_hand) : 0, !!r)) continue;
     rows.push(rowFromInv(p.sku, title, image, p.category, p.discountPrice ?? p.basePrice, r, true));
   }
@@ -124,7 +126,7 @@ export async function listInventory(search = '', filter: InvFilter = 'all', limi
     if (META.has(sku)) continue;
     const title = String(r.name ?? sku);
     if (!pass(title, sku, num(r.quantity_on_hand), true)) continue;
-    rows.push(rowFromInv(sku, title, (r.image_url as string) || undefined, 'לא בקטלוג', null, r, false));
+    rows.push(rowFromInv(sku, title, (r.image_url as string) || artProxy(sku), 'לא בקטלוג', null, r, false));
   }
   rows.sort((a, b) => a.quantityOnHand - b.quantityOnHand);
   return rows.slice(0, limit);
@@ -219,7 +221,7 @@ export async function getInventoryItem(sku: string): Promise<InventoryItemDetail
   // מוצר לא בקטלוג ולא במלאי — לא קיים
   if (!meta && !r) return null;
   const title = (r?.name as string) || meta?.title || S;
-  const image = (r?.image_url as string) || meta?.image;
+  const image = (r?.image_url as string) || meta?.image || artProxy(S);
   return {
     ...rowFromInv(S, title, image, meta?.category ?? 'לא בקטלוג', meta ? meta.salePrice : null, r, !!meta),
     notes: (r?.notes as string) ?? null,

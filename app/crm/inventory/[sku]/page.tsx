@@ -36,7 +36,7 @@ export default async function InventoryItemPage({ params }: { params: { sku: str
       {/* כותרת המוצר */}
       <div className="flex flex-col gap-5 rounded-2xl border border-gold/15 bg-white/5 p-5 sm:flex-row">
         <span className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white">
-          {item.image ? <Image src={item.image} alt={item.title} fill className="object-contain p-1" sizes="128px" unoptimized /> : <span className="flex h-full items-center justify-center text-3xl">🎁</span>}
+          {item.image ? <Image src={item.image} alt={item.title} fill className="object-contain p-1" sizes="128px" unoptimized={item.image.startsWith('data:')} /> : <span className="flex h-full items-center justify-center text-3xl">🎁</span>}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-2">
