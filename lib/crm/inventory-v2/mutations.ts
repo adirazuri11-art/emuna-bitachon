@@ -79,6 +79,34 @@ export async function saveNotes(sku: string, notes: string, user = 'admin'): Pro
   }
 }
 
+// ---- תיקון מלאי ידני (הוספה/הורדה) — יוצר תנועה + audit. לעולם לא עריכת כמות ישירה בלי תנועה ----
+export async function adjustStock(sku: string, delta: number, reason: string, user = 'admin'): Promise<{ ok: boolean; error?: string; after?: number }> {
+  const S = (sku || '').trim().toUpperCase();
+  const d = Math.round(Number(delta) || 0);
+  if (!S) return { ok: false, error: 'חסר קוד מוצר' };
+  if (!d) return { ok: false, error: 'שינוי חייב להיות שונה מ-0' };
+  if (!reason.trim()) return { ok: false, error: 'חובה לציין סיבה' };
+  try {
+    await ensureItem(S);
+    const after = await prisma.$transaction(async (tx) => {
+      const upd = (await tx.$queryRawUnsafe(
+        `update public.inventory_items set quantity_on_hand = quantity_on_hand + $2::int, updated_at=now() where sku=$1 returning quantity_on_hand`, S, d,
+      )) as Array<{ quantity_on_hand: number }>;
+      const qAfter = Number(upd[0]?.quantity_on_hand ?? 0);
+      await tx.$executeRawUnsafe(
+        `insert into public.inventory_movements (sku, movement_type, quantity_change, quantity_before, quantity_after, source_type, reason, created_by)
+         values ($1,$2,$3::int,$4::int,$5::int,'manual',$6,$7)`,
+        S, d > 0 ? 'MANUAL_ADJUSTMENT_IN' : 'MANUAL_ADJUSTMENT_OUT', d, qAfter - d, qAfter, reason.trim(), user,
+      );
+      return qAfter;
+    });
+    await audit(user, 'MANUAL_ADJUSTMENT', S, { delta: d, reason, after });
+    return { ok: true, after };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message.slice(0, 140) : 'שגיאת DB' };
+  }
+}
+
 // ---- עריכת שדות כרטיס (שם/מותג/מיקום/מינ׳/עלות נוספת/override מחירים) ----
 const FIELD_MAP: Record<string, string> = {
   name: 'name', shortName: 'short_name', brand: 'brand', category: 'category_name',

@@ -54,6 +54,8 @@ export interface InvV2Row {
   minimumStock: number | null;
   // עלות ומחיר
   lastPurchaseCost: number | null;
+  costPreVat: number | null;
+  vatAmount: number | null;
   landedCost: number | null;
   retailPrice: number | null;
   clubPrice: number | null;
@@ -93,8 +95,10 @@ function buildRow(sku: string, r: Record<string, unknown> | undefined, meta: Cat
     : r && r.last_purchase_price != null ? num(r.last_purchase_price) : null;
   const baseCost = invoiceCost != null ? invoiceCost : (meta?.cost ?? null);
   const addCost = r ? num(r.additional_unit_cost) : 0;
-  // עלות אמיתית כוללת מע"מ 18% (מחירי הספק לפני מע"מ; זו העלות בפועל ששולמה).
-  const landedCost = baseCost != null ? round2((baseCost + addCost) * 1.18) : null;
+  // עלות לפני מע"מ / מע"מ 18% / עלות כוללת מע"מ (מחירי הספק לפני מע"מ; העלות בפועל ששולמה כוללת מע"מ).
+  const costPreVat = baseCost != null ? round2(baseCost + addCost) : null;
+  const vatAmount = costPreVat != null ? round2(costPreVat * 0.18) : null;
+  const landedCost = costPreVat != null ? round2(costPreVat * 1.18) : null;
 
   // מחיר: override פנימי → קטלוג. מחיר חבר: override → memberPriceFor.
   const retail = r && r.retail_price_override != null ? num(r.retail_price_override)
@@ -124,6 +128,8 @@ function buildRow(sku: string, r: Record<string, unknown> | undefined, meta: Cat
     quantityDamaged: damaged,
     minimumStock: r && r.minimum_stock != null ? num(r.minimum_stock) : null,
     lastPurchaseCost: r && r.last_purchase_price != null ? num(r.last_purchase_price) : (meta?.cost ?? null),
+    costPreVat,
+    vatAmount,
     landedCost,
     retailPrice: retail,
     clubPrice: club,

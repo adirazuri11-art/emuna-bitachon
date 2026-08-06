@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCrmAuthed } from '@/lib/crm/auth';
 import { getInvV2Item } from '@/lib/crm/inventory-v2/item';
-import { saveProductImage, setMainImageVersion, saveNotes, updateProductFields } from '@/lib/crm/inventory-v2/mutations';
+import { saveProductImage, setMainImageVersion, saveNotes, updateProductFields, adjustStock } from '@/lib/crm/inventory-v2/mutations';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +34,10 @@ export async function POST(req: NextRequest, { params }: { params: { sku: string
     }
     case 'updateFields': {
       const res = await updateProductFields(sku, (body.fields as Record<string, unknown>) ?? {});
+      return NextResponse.json(res, { status: res.ok ? 200 : 400 });
+    }
+    case 'adjust': {
+      const res = await adjustStock(sku, Number(body.delta ?? 0), String(body.reason ?? ''));
       return NextResponse.json(res, { status: res.ok ? 200 : 400 });
     }
     default:

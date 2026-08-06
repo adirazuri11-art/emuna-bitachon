@@ -11,7 +11,7 @@ interface Row {
   sku: string; supplierCode: string | null; barcode: string | null; name: string; internalDescription: string | null; category: string;
   supplierName: string | null; brand: string | null; image?: string; warehouseLocation: string | null;
   quantityOnHand: number; quantityGood: number; quantityDamaged: number; minimumStock: number | null;
-  lastPurchaseCost: number | null; landedCost: number | null; retailPrice: number | null; clubPrice: number | null;
+  lastPurchaseCost: number | null; costPreVat: number | null; vatAmount: number | null; landedCost: number | null; retailPrice: number | null; clubPrice: number | null;
   profitAmount: number | null; profitMarginPercent: number | null; markupPercent: number | null;
   inventoryValueAtCost: number | null; inventoryValueAtRetail: number | null;
   lastReceivedAt: string | null; lastSoldAt: string | null; status: string; inCatalog: boolean;
@@ -65,6 +65,10 @@ export function ProductCard({ item }: { item: InvV2ItemClient }) {
     minimumStock: r.minimumStock ?? '', additionalUnitCost: '', retailPriceOverride: '', clubPriceOverride: '',
   });
   const [saving, setSaving] = useState(false);
+  const [adjQty, setAdjQty] = useState('');
+  const [adjReason, setAdjReason] = useState('');
+  const [adjBusy, setAdjBusy] = useState(false);
+  const [adjMsg, setAdjMsg] = useState<string | null>(null);
 
   const post = async (body: object) => {
     const res = await fetch(`/api/crm/inventory-v2/${encodeURIComponent(r.sku)}`, {
@@ -89,6 +93,17 @@ export function ProductCard({ item }: { item: InvV2ItemClient }) {
     const data = await post({ action: 'saveNotes', notes });
     setNotesSaving(false);
     setNotesMsg(data.ok ? 'נשמר ✓' : (data.error || 'נכשל'));
+  };
+
+  const adjust = async (sign: 1 | -1) => {
+    const q = Math.abs(Math.round(Number(adjQty) || 0));
+    if (!q) { setAdjMsg('הזן כמות'); return; }
+    if (!adjReason.trim()) { setAdjMsg('חובה לציין סיבה'); return; }
+    setAdjBusy(true); setAdjMsg(null);
+    const data = await post({ action: 'adjust', delta: sign * q, reason: adjReason.trim() });
+    setAdjBusy(false);
+    if (data.ok) { setAdjMsg(`עודכן ✓ מלאי חדש: ${data.after}`); setAdjQty(''); setAdjReason(''); setTimeout(() => location.reload(), 800); }
+    else setAdjMsg(data.error || 'נכשל');
   };
 
   const input = 'w-full rounded-lg border border-gold/20 bg-[#0B132B] px-3 py-2 text-sm text-cream outline-none focus:border-gold/60';
@@ -166,12 +181,30 @@ export function ProductCard({ item }: { item: InvV2ItemClient }) {
         )}
 
         {tab === 1 && (
-          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <Field label="מלאי פיזי" value={nf(r.quantityOnHand)} tone={r.quantityOnHand < 0 ? 'text-red-300' : 'text-cream'} />
-            <Field label="תקין" value={nf(r.quantityGood)} tone="text-emerald-300" />
-            <Field label="פגום" value={nf(r.quantityDamaged)} tone={r.quantityDamaged > 0 ? 'text-red-300' : 'text-cream/50'} />
-            <Field label="מלאי מינימום" value={r.minimumStock != null ? nf(r.minimumStock) : '—'} />
-            <Field label="שווי מלאי (עלות)" value={money(r.inventoryValueAtCost)} tone="text-gold" />
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <Field label="מלאי פיזי" value={nf(r.quantityOnHand)} tone={r.quantityOnHand < 0 ? 'text-red-300' : 'text-cream'} />
+              <Field label="תקין" value={nf(r.quantityGood)} tone="text-emerald-300" />
+              <Field label="פגום" value={nf(r.quantityDamaged)} tone={r.quantityDamaged > 0 ? 'text-red-300' : 'text-cream/50'} />
+              <Field label="מלאי מינימום" value={r.minimumStock != null ? nf(r.minimumStock) : '—'} />
+              <Field label="שווי מלאי (עלות)" value={money(r.inventoryValueAtCost)} tone="text-gold" />
+            </div>
+            {/* תיקון מלאי ידני — יוצר תנועת מלאי מתועדת */}
+            <div className="rounded-2xl border border-gold/15 bg-white/5 p-4">
+              <div className="mb-3 text-sm font-medium text-cream/80">תיקון מלאי ידני</div>
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="block text-xs text-cream/50">כמות
+                  <input type="number" min="1" value={adjQty} onChange={(e) => setAdjQty(e.target.value)} className="mt-1 block w-28 rounded-lg border border-gold/20 bg-[#0B132B] px-3 py-2 text-sm text-cream outline-none focus:border-gold/60" dir="ltr" />
+                </label>
+                <label className="block flex-1 text-xs text-cream/50">סיבה
+                  <input value={adjReason} onChange={(e) => setAdjReason(e.target.value)} placeholder="למשל: ספירת מלאי / שבירה / החזרה" className="mt-1 block w-full rounded-lg border border-gold/20 bg-[#0B132B] px-3 py-2 text-sm text-cream placeholder:text-cream/30 outline-none focus:border-gold/60" />
+                </label>
+                <button onClick={() => adjust(1)} disabled={adjBusy} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/90 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">{adjBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : '＋'} הוסף למלאי</button>
+                <button onClick={() => adjust(-1)} disabled={adjBusy} className="inline-flex items-center gap-1.5 rounded-xl bg-red-500/90 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">{adjBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : '－'} הורד מהמלאי</button>
+              </div>
+              {adjMsg && <div className="mt-2 text-xs text-gold">{adjMsg}</div>}
+              <div className="mt-2 text-[11px] text-cream/40">כל תיקון נרשם כתנועת מלאי מתועדת (בלשונית «תנועות מלאי»).</div>
+            </div>
           </div>
         )}
 
@@ -180,8 +213,9 @@ export function ProductCard({ item }: { item: InvV2ItemClient }) {
         {tab === 3 && (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              <Field label="עלות אחרונה" value={money(r.lastPurchaseCost)} />
-              <Field label="עלות (כולל מע״מ 18%)" value={money(r.landedCost)} tone="text-cream" />
+              <Field label="עלות לפני מע״מ" value={money(r.costPreVat)} />
+              <Field label="מע״מ 18%" value={money(r.vatAmount)} tone="text-amber-300" />
+              <Field label="עלות כולל מע״מ" value={money(r.landedCost)} tone="text-cream" />
               <Field label="מחיר לצרכן" value={money(r.retailPrice)} />
               <Field label="מחיר חבר מועדון" value={r.clubPrice != null ? money(r.clubPrice) : 'לא הוגדר'} />
               <Field label="רווח ליחידה" value={money(r.profitAmount)} tone="text-emerald-300" />
