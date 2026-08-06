@@ -48,6 +48,13 @@ export function ReceivingForm() {
     } catch { setLine(i, { status: 'idle' }); }
   }, []);
 
+  function mimeOf(file: File): string {
+    if (file.type) return file.type;
+    const ext = file.name.toLowerCase().split('.').pop() ?? '';
+    const map: Record<string, string> = { heic: 'image/heic', heif: 'image/heif', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', pdf: 'application/pdf' };
+    return map[ext] ?? 'image/jpeg';
+  }
+
   async function onScanFile(file: File | undefined) {
     if (!file || scanning) return;
     setScanning(true); setScanMsg(null); setMsg(null);
@@ -60,7 +67,7 @@ export function ReceivingForm() {
       });
       const res = await fetch('/api/crm/receiving/scan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64, mimeType: file.type }),
+        body: JSON.stringify({ image: base64, mimeType: mimeOf(file) }),
       });
       const data = await res.json();
       if (!data.ok) {
@@ -127,7 +134,7 @@ export function ReceivingForm() {
 
       {/* ⭐ סריקה חכמה — צלם/העלה חשבונית וה-AI ימלא את השורות */}
       <label className={'mb-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gold/30 bg-gold/[0.04] px-4 py-6 text-center transition-colors hover:border-gold/60 hover:bg-gold/[0.08] ' + (scanning ? 'pointer-events-none opacity-70' : '')}>
-        <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={(e) => onScanFile(e.target.files?.[0])} disabled={scanning} />
+        <input type="file" accept="image/*,.heic,.heif,application/pdf,.pdf" className="hidden" onChange={(e) => onScanFile(e.target.files?.[0])} disabled={scanning} />
         {scanning ? (
           <><Loader2 className="h-7 w-7 animate-spin text-gold" /><span className="text-sm font-medium text-cream/80">סורק את החשבונית…</span></>
         ) : (
