@@ -246,10 +246,11 @@ export async function sendShippingNotification(o: FulfillmentOrder, tracking?: s
   return { ok: r.ok, detail: r.detail };
 }
 
-// קישור לכתיבת ביקורת בפרופיל Google Business של העסק.
-// GOOGLE_REVIEW_URL = הקישור הישיר מ-GBP ("בקש ביקורות"); ברירת מחדל: חיפוש מפות.
+// קישור לפרופיל Google Business של העסק (אומת: CID → "אמונה וביטחון | יודאיקה יוקרתית",
+// דוד אלעזר 9 אור יהודה). פותח את הכרטיס עם 5.0★ וכפתור "כתיבת ביקורת" בראש.
+// GOOGLE_REVIEW_URL יכול לדרוס (למשל קישור "בקש ביקורות" הישיר מ-GBP: g.page/r/.../review).
 function googleReviewUrl(): string {
-  return process.env.GOOGLE_REVIEW_URL || 'https://www.google.com/maps/search/?api=1&query=אמונה+וביטחון+יודאיקה';
+  return process.env.GOOGLE_REVIEW_URL || 'https://www.google.com/maps?cid=10399552846163931430';
 }
 
 // ---- בקשת חוות דעת (נשלח כשההזמנה מסומנת "בוצעה בהצלחה") ----
