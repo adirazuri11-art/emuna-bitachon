@@ -246,23 +246,50 @@ export async function sendShippingNotification(o: FulfillmentOrder, tracking?: s
   return { ok: r.ok, detail: r.detail };
 }
 
+// קישור לכתיבת ביקורת בפרופיל Google Business של העסק.
+// GOOGLE_REVIEW_URL = הקישור הישיר מ-GBP ("בקש ביקורות"); ברירת מחדל: חיפוש מפות.
+function googleReviewUrl(): string {
+  return process.env.GOOGLE_REVIEW_URL || 'https://www.google.com/maps/search/?api=1&query=אמונה+וביטחון+יודאיקה';
+}
+
 // ---- בקשת חוות דעת (נשלח כשההזמנה מסומנת "בוצעה בהצלחה") ----
+// CTA ראשי = דירוג בגוגל של העסק; משני = חוות דעת על המוצר באתר.
 export async function sendReviewRequest(o: FulfillmentOrder): Promise<{ ok: boolean; detail?: string }> {
   const c = o.customer;
   if (!c.email) return { ok: false, detail: 'no customer email' };
   const biz = process.env.BUSINESS_ORDER_EMAIL;
-  // קישור לעמוד המוצר הראשון שנרכש, ישירות לאזור חוות הדעת.
   const first = o.items[0];
   const slug = first ? String(first.id).toLowerCase() : '';
-  const reviewHref = slug ? `${SITE}/product/${slug}#reviews` : `${SITE}`;
-  const stars = `<div style="text-align:center;font-size:30px;letter-spacing:6px;color:${GOLD};margin:4px 0 2px">★★★★★</div>`;
+  const productHref = slug ? `${SITE}/product/${slug}#reviews` : `${SITE}`;
+  const gHref = googleReviewUrl();
+  const stars = `<a href="${esc(gHref)}" style="text-decoration:none"><div style="text-align:center;font-size:32px;letter-spacing:6px;color:${GOLD};margin:6px 0 2px">★★★★★</div></a>`;
   const inner = `
-    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">שלום ${esc(c.name || '')},<br>מקווים שאתם נהנים מ${first?.title ? `“${esc(first.title)}”` : 'ההזמנה'} 🙏<br>נשמח מאוד אם תשתפו חוות דעת קצרה — זה עוזר למשפחות אחרות לבחור, ולנו להמשיך להשתפר.</p>
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">שלום ${esc(c.name || '')},<br>מקווים שאתם נהנים מ${first?.title ? `“${esc(first.title)}”` : 'ההזמנה'} 🙏<br>נשמח מאוד אם תדרגו אותנו ב־<b style="color:${INK}">Google</b> — דקה אחת שעוזרת מאוד לעסק קטן כמונו ולמשפחות שמחפשות יודאיקה איכותית.</p>
     ${stars}
-    ${ctaButton(reviewHref, 'לכתיבת חוות דעת ✍️')}
-    <div style="text-align:center;font-size:12px;color:${MUTED};margin-top:4px">דקה אחת, ומשמעותי מאוד עבורנו 💛</div>`;
+    ${ctaButton(gHref, 'לדירוג בגוגל ⭐')}
+    <div style="text-align:center;font-size:13px;color:${MUTED};margin-top:10px">רוצים גם לחוות דעת על המוצר עצמו?<br><a href="${esc(productHref)}" style="color:${GOLD};text-decoration:none;font-weight:600">כתיבת חוות דעת על ${first?.title ? esc(first.title) : 'המוצר'} באתר ✍️</a></div>
+    <div style="text-align:center;font-size:12px;color:${MUTED};margin-top:12px">תודה מכל הלב 💛</div>`;
   const html = shell('איך הייתה החוויה? 🌟', inner, 'תודה שבחרתם באמונה וביטחון. לכל שאלה אפשר להשיב למייל הזה.');
-  const r = await resendSend(c.email, 'נשמח לשמוע — חוות דעת על ההזמנה שלך 🌟', html, biz || undefined);
+  const r = await resendSend(c.email, 'נשמח לדירוג קטן בגוגל ⭐ — אמונה וביטחון', html, biz || undefined);
+  return { ok: r.ok, detail: r.detail };
+}
+
+// ---- התראה לעסק: הזמנה הושלמה (נשלח כשמסמנים "בוצעה בהצלחה") ----
+export async function sendOrderCompletedBusiness(o: FulfillmentOrder): Promise<{ ok: boolean; detail?: string }> {
+  const biz = process.env.BUSINESS_ORDER_EMAIL;
+  if (!biz) return { ok: false, detail: 'no business email' };
+  const c = o.customer;
+  const inner = `
+    <p style="margin:2px 0 0;font-size:15px;color:${MUTED};line-height:1.7">ההזמנה של <b style="color:${INK}">${esc(c.name || '—')}</b> סומנה כהושלמה בהצלחה ✅<br>נשלחה ללקוח בקשת דירוג בגוגל אוטומטית.</p>
+    <div style="margin-top:12px;font-size:13px;color:${MUTED}">מספר הזמנה <b style="color:${INK}">${esc(o.orderNumber)}</b></div>
+    ${itemsBlock(o)}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;font-size:14px;color:${INK};line-height:1.9">
+      <tr><td style="color:${MUTED};width:70px">לקוח</td><td>${esc(c.name || '—')}</td></tr>
+      <tr><td style="color:${MUTED}">טלפון</td><td><a href="tel:${esc(c.phone || '')}" style="color:${INK};text-decoration:none">${esc(c.phone || '—')}</a></td></tr>
+      <tr><td style="color:${MUTED}">אימייל</td><td>${esc(c.email || '—')}</td></tr>
+    </table>`;
+  const html = shell(`✅ הזמנה הושלמה — ${money(o.amount)}`, inner, 'התראה אוטומטית ממרכז השליטה. הזמנה זו טופלה במלואה.');
+  const r = await resendSend(biz, `✅ הזמנה ${o.orderNumber} הושלמה — ${esc(c.name || '')} · ${money(o.amount)}`, html, c.email || undefined);
   return { ok: r.ok, detail: r.detail };
 }
 

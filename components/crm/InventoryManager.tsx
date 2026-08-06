@@ -13,6 +13,8 @@ export interface InvItemClient {
   quantityOnHand: number;
   lastPurchasePrice: number | null;
   salePrice: number | null;
+  margin: number | null;
+  marginPct: number | null;
   lastReceivedAt: string | null;
   lastSoldAt: string | null;
   tracked: boolean;
@@ -93,6 +95,7 @@ export function InventoryManager({ initialItems }: { initialItems: InvItemClient
                   <th className="px-3 py-2.5 font-medium">מלאי</th>
                   <th className="px-3 py-2.5 font-medium">עלות</th>
                   <th className="px-3 py-2.5 font-medium">מכירה</th>
+                  <th className="px-3 py-2.5 font-medium">רווח</th>
                   <th className="px-3 py-2.5 font-medium">כניסה אחרונה</th>
                   <th className="px-5 py-2.5"></th>
                 </tr>
@@ -113,6 +116,9 @@ export function InventoryManager({ initialItems }: { initialItems: InvItemClient
                     <td className="px-3 py-2.5">{qtyPill(it.quantityOnHand)}</td>
                     <td className="px-3 py-2.5 text-cream/70" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(it.lastPurchasePrice)}</td>
                     <td className="px-3 py-2.5 text-cream/90" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(it.salePrice)}</td>
+                    <td className="px-3 py-2.5" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {it.margin != null ? <span className="text-emerald-300">{money(it.margin)}{it.marginPct != null && <span className="text-cream/40 text-xs"> · {it.marginPct}%</span>}</span> : <span className="text-cream/30">—</span>}
+                    </td>
                     <td className="px-3 py-2.5 text-xs text-cream/50">{fmtDate(it.lastReceivedAt)}</td>
                     <td className="px-5 py-2.5 text-left">
                       <Link href={`/crm/inventory/${encodeURIComponent(it.sku)}`} className="inline-flex items-center gap-1 text-xs text-gold hover:text-gold/80">

@@ -16,7 +16,8 @@ export async function GET(_req: NextRequest, { params }: { params: { sku: string
 
   for (const [path, type] of [[`webp/${digits}.webp`, 'image/webp'], [`big/${digits}.jpg`, 'image/jpeg']] as const) {
     try {
-      const r = await fetch(`${ART}/${path}?v=1`, { headers: { Referer: REF, 'User-Agent': 'Mozilla/5.0' }, cache: 'no-store' });
+      // ⚠️ בלי query string — ART מחזיר 302→HTML כשיש ?param. הכתובת הנקייה מחזירה את התמונה.
+      const r = await fetch(`${ART}/${path}`, { headers: { Referer: REF, 'User-Agent': 'Mozilla/5.0' }, redirect: 'follow', cache: 'no-store' });
       const ct = r.headers.get('content-type') || '';
       if (r.ok && ct.startsWith('image')) {
         const buf = Buffer.from(await r.arrayBuffer());

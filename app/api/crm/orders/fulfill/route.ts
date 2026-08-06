@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCrmAuthed } from '@/lib/crm/auth';
 import { updateOrderFulfillment, claimNotification, type Fulfillment } from '@/lib/crm/orders';
 import { getOrderForFulfillment } from '@/lib/orders';
-import { sendShippingNotification, sendReviewRequest } from '@/lib/order-email';
+import { sendShippingNotification, sendReviewRequest, sendOrderCompletedBusiness } from '@/lib/order-email';
 import { deductOrderStock } from '@/lib/crm/inventory';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,13 @@ export async function POST(req: NextRequest) {
     if (o) await sendShippingNotification(o).catch(() => {});
   } else if (ok && status === 'completed' && (await claimNotification(orderNumber, 'review_requested_at'))) {
     const o = await getOrderForFulfillment(orderNumber);
-    if (o) await sendReviewRequest(o).catch(() => {});
+    if (o) {
+      // ללקוח: בקשת דירוג בגוגל. לעסק: התראה שההזמנה הושלמה. שניהם best-effort.
+      await Promise.all([
+        sendReviewRequest(o).catch(() => {}),
+        sendOrderCompletedBusiness(o).catch(() => {}),
+      ]);
+    }
   }
 
   return NextResponse.json({ ok });

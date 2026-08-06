@@ -12,11 +12,11 @@ const nf = (n: number) => n.toLocaleString('he-IL');
 const money = (n: number | null) => (n != null ? `₪${nf(Math.round(n))}` : '—');
 const fmtDateTime = (iso: string) => (iso ? new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—');
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+    <div className={`rounded-xl border p-3.5 ${accent ? 'border-gold/30 bg-gold/5' : 'border-white/10 bg-white/5'}`}>
       <div className="text-xs text-cream/40">{label}</div>
-      <div className="mt-1 text-lg font-bold text-cream" style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      <div className={`mt-1 text-lg font-bold ${accent ? 'text-gold' : 'text-cream'}`} style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</div>
     </div>
   );
 }
@@ -57,10 +57,15 @@ export default async function InventoryItemPage({ params }: { params: { sku: str
       </div>
 
       {/* נתונים */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
-        <Stat label="מחיר עלות" value={money(item.lastPurchasePrice)} />
-        <Stat label="מחיר מכירה" value={money(item.salePrice)} />
-        <Stat label="עלות ממוצעת" value={money(item.avgCost)} />
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <Stat label="מחיר עלות (ספק)" value={money(item.lastPurchasePrice)} />
+        <Stat label="מחיר מכירה (אתר)" value={money(item.salePrice)} />
+        <Stat label="רווח ליחידה" value={item.margin != null ? `${money(item.margin)}${item.marginPct != null ? ` · ${item.marginPct}%` : ''}` : '—'} accent />
+        <Stat label="שווי מלאי (עלות)" value={item.lastPurchasePrice != null ? money(item.lastPurchasePrice * Math.max(q, 0)) : '—'} />
+      </div>
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <Stat label="עלות ממוצעת (חשבוניות)" value={money(item.avgCost)} />
+        <Stat label="רווח פוטנציאלי במלאי" value={item.margin != null ? money(item.margin * Math.max(q, 0)) : '—'} />
         <Stat label="סה״כ נכנס" value={nf(item.totalReceived)} />
         <Stat label="סה״כ נמכר" value={nf(item.totalSold)} />
       </div>

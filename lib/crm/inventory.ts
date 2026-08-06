@@ -10,15 +10,22 @@
 import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { PRODUCTS } from '@/lib/catalog';
+import supplierData from '@/lib/supplier-products.json';
 
 const num = (v: unknown) => Number(v ?? 0);
 const skuOf = (id: string) => (id || '').replace(/^art-/i, '').toUpperCase();
 // תמונת ART אוטומטית לכל מוצר (proxy) — כשאין תמונה מקומית/מותאמת.
 const artProxy = (sku: string) => `/api/crm/inventory/art-image/${encodeURIComponent(sku)}`;
 
-interface Meta { title: string; image?: string; category: string; salePrice: number }
+// מחיר עלות ספק ליחידה (ARt/israel-judaica) לפי SKU — המקור ל"מחיר עלות" לפני קליטת חשבונית.
+const SUPPLIER_COST = new Map<string, number>();
+for (const it of (supplierData as { items: Array<{ id: string; cost: number }> }).items) {
+  SUPPLIER_COST.set(it.id.toUpperCase(), num(it.cost));
+}
+
+interface Meta { title: string; image?: string; category: string; salePrice: number; cost?: number }
 const META = new Map<string, Meta>();
-for (const p of PRODUCTS) META.set(p.sku.toUpperCase(), { title: p.titleHe, image: p.imageUrl, category: p.category, salePrice: p.discountPrice ?? p.basePrice });
+for (const p of PRODUCTS) META.set(p.sku.toUpperCase(), { title: p.titleHe, image: p.imageUrl, category: p.category, salePrice: p.discountPrice ?? p.basePrice, cost: SUPPLIER_COST.get(p.sku.toUpperCase()) });
 
 // חיפוש מוצר בקטלוג לפי קוד ספק (=SKU). משמש את קליטת החשבוניות (Phase 2).
 export function productMeta(sku: string): { sku: string; title: string; image?: string; category: string; salePrice: number } | undefined {
@@ -62,8 +69,11 @@ export interface InventoryRow {
   image?: string;
   category: string;
   quantityOnHand: number;
-  lastPurchasePrice: number | null; // מחיר עלות
-  salePrice: number | null;         // מחיר מכירה (מהקטלוג)
+  lastPurchasePrice: number | null; // מחיר עלות בפועל (חשבונית) אם קיים, אחרת עלות ספק מהקטלוג
+  salePrice: number | null;         // מחיר מכירה (מהקטלוג = המחיר באתר)
+  supplierCost: number | null;      // עלות ספק ליחידה מהקטלוג (ART)
+  margin: number | null;            // רווח ליחידה = מכירה − עלות
+  marginPct: number | null;         // אחוז רווח
   avgCost: number | null;
   totalReceived: number;
   totalSold: number;
@@ -84,12 +94,20 @@ async function loadInventoryMap(): Promise<Map<string, Record<string, unknown>>>
   }
 }
 
-function rowFromInv(sku: string, title: string, image: string | undefined, category: string, salePrice: number | null, r: Record<string, unknown> | undefined, inCatalog: boolean): InventoryRow {
+function rowFromInv(sku: string, title: string, image: string | undefined, category: string, salePrice: number | null, r: Record<string, unknown> | undefined, inCatalog: boolean, catalogCost: number | null = null): InventoryRow {
+  // מחיר עלות מוצג: עלות בפועל מחשבונית אם קיימת, אחרת עלות ספק מהקטלוג.
+  const invoiceCost = r && r.last_purchase_price != null ? num(r.last_purchase_price) : null;
+  const cost = invoiceCost != null ? invoiceCost : catalogCost;
+  const margin = cost != null && salePrice != null ? Math.round((salePrice - cost) * 100) / 100 : null;
+  const marginPct = margin != null && salePrice ? Math.round((margin / salePrice) * 100) : null;
   return {
     sku, title, image, category,
     quantityOnHand: r ? num(r.quantity_on_hand) : 0,
-    lastPurchasePrice: r && r.last_purchase_price != null ? num(r.last_purchase_price) : null,
+    lastPurchasePrice: cost,
     salePrice,
+    supplierCost: catalogCost,
+    margin,
+    marginPct,
     avgCost: r && r.avg_cost != null ? num(r.avg_cost) : null,
     totalReceived: r ? num(r.total_received) : 0,
     totalSold: r ? num(r.total_sold) : 0,
@@ -119,14 +137,14 @@ export async function listInventory(search = '', filter: InvFilter = 'all', limi
     const title = (r?.name as string) || p.titleHe;
     const image = (r?.image_url as string) || p.imageUrl || artProxy(p.sku);
     if (!pass(title, p.sku, r ? num(r.quantity_on_hand) : 0, !!r)) continue;
-    rows.push(rowFromInv(p.sku, title, image, p.category, p.discountPrice ?? p.basePrice, r, true));
+    rows.push(rowFromInv(p.sku, title, image, p.category, p.discountPrice ?? p.basePrice, r, true, SUPPLIER_COST.get(sku) ?? null));
   }
   // 2) מוצרים שנקלטו מחשבונית ואינם בקטלוג — שם/תמונה מהעריכה
   for (const [sku, r] of Array.from(inv)) {
     if (META.has(sku)) continue;
     const title = String(r.name ?? sku);
     if (!pass(title, sku, num(r.quantity_on_hand), true)) continue;
-    rows.push(rowFromInv(sku, title, (r.image_url as string) || artProxy(sku), 'לא בקטלוג', null, r, false));
+    rows.push(rowFromInv(sku, title, (r.image_url as string) || artProxy(sku), 'לא בקטלוג', null, r, false, null));
   }
   rows.sort((a, b) => a.quantityOnHand - b.quantityOnHand);
   return rows.slice(0, limit);
@@ -223,7 +241,7 @@ export async function getInventoryItem(sku: string): Promise<InventoryItemDetail
   const title = (r?.name as string) || meta?.title || S;
   const image = (r?.image_url as string) || meta?.image || artProxy(S);
   return {
-    ...rowFromInv(S, title, image, meta?.category ?? 'לא בקטלוג', meta ? meta.salePrice : null, r, !!meta),
+    ...rowFromInv(S, title, image, meta?.category ?? 'לא בקטלוג', meta ? meta.salePrice : null, r, !!meta, meta?.cost ?? SUPPLIER_COST.get(S) ?? null),
     notes: (r?.notes as string) ?? null,
     movements,
   };
