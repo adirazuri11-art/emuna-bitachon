@@ -17,16 +17,18 @@ export interface ParsedInvoice {
   lines: ParsedLine[];
 }
 
-const PROMPT = `אתה קורא חשבונית ספק של חנות יודאיקה (הספק: ART Judaica / israel-judaica.com).
-חלץ את שורות המוצרים. החזר JSON בלבד במבנה:
-{"invoiceNumber": string, "invoiceDate": "YYYY-MM-DD", "lines": [{"supplierCode": string, "name": string, "quantity": number, "unitCost": number}]}
-כללים:
-- supplierCode = קוד המוצר/קטלוג של הספק (בד"כ בפורמט כמו "UK49849" או "UK67651"). זהו השדה הכי חשוב — קרא אותו בדיוק.
-- name = שם/תיאור המוצר כפי שמופיע בשורה.
-- quantity = כמות (מספר שלם).
-- unitCost = מחיר עלות ליחידה **לפני מע"מ** (מספר). זהו מחיר יחידה בודדת, לא סך השורה. אם מופיע רק סכום שורה — חלק בכמות. אם המחיר כולל מע"מ — החזר את המחיר ללא המע"מ (חלק ב-1.17).
-- קרא את המספרים בדייקנות מלאה (כולל אגורות, למשל 49.99). אל תעגל ואל תמציא.
-- אם שדה לא ברור — השמט אותו. החזר אך ורק JSON תקין, בלי טקסט נוסף.`;
+const PROMPT = `אתה קורא חשבונית ספק של חנות יודאיקה מהספק ART Judaica (ארט יודאיקה / Food Appeal / israel-judaica.com).
+מבנה טבלת המוצרים (עמודות מימין לשמאל): כמות | מפתח פריט | שם פריט | מחיר | סה"כ.
+חלץ את כל שורות המוצרים במדויק. החזר JSON בלבד:
+{"invoiceNumber": string, "invoiceDate": "YYYY-MM-DD", "lines": [{"supplierCode": string, "name": string, "quantity": number, "unitCost": number, "lineTotal": number}]}
+כללים מחייבים:
+- supplierCode = עמודת "מפתח פריט", כמעט תמיד בפורמט UK + מספר (למשל UK10478, UK81668). העתק בדיוק, בלי רווחים.
+- quantity = עמודת "כמות" (מספר שלם, למשל 12 או 2).
+- unitCost = עמודת "מחיר" — מחיר ליחידה **בדיוק כפי שמופיע (כבר לפני מע"מ)**. אסור לחלק במע"מ, אסור לשנות. המע"מ (18%) מתווסף פעם אחת בתחתית החשבונית בלבד, לא לכל שורה.
+- lineTotal = עמודת "סה"כ" של השורה (= כמות × מחיר, למשל 239.88).
+- invoiceNumber = מספר החשבונית ("חשבונית מס מס' ...", למשל 451729).
+- קרא כל ספרה בדיוק כולל אגורות (19.99, 54.99). אל תעגל, אל תמציא, אל תדלג על אף שורה.
+- החזר אך ורק JSON תקין, בלי טקסט נוסף.`;
 
 export async function parseInvoiceImage(base64: string, mimeType: string): Promise<ParsedInvoice> {
   const key = process.env.GEMINI_API_KEY;
