@@ -19,7 +19,7 @@ for (const it of (supplierData as { items: Array<{ id: string; cost: number }> }
   CAT_COST.set(it.id.toUpperCase(), Number(it.cost) || 0);
 }
 for (const p of PRODUCTS) CAT_NAME.set(p.sku.toUpperCase(), p.titleHe);
-const CODES = Array.from(new Set([...CAT_COST.keys(), ...CAT_NAME.keys()]));
+const CODES = Array.from(new Set(Array.from(CAT_COST.keys()).concat(Array.from(CAT_NAME.keys()))));
 
 export type LineStatus = 'confirmed' | 'price_changed' | 'review' | 'not_found' | 'inconsistent';
 export interface ParsedLineV2 {
