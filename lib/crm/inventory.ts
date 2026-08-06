@@ -110,19 +110,21 @@ export async function listInventory(search = '', filter: InvFilter = 'all', limi
     return true;
   };
   const rows: InventoryRow[] = [];
-  // 1) מוצרי קטלוג (799) עם המלאי שלהם
+  // 1) מוצרי קטלוג (799) — שם/תמונה מהעריכה הידנית אם קיימת, אחרת מהקטלוג
   for (const p of PRODUCTS) {
     const sku = p.sku.toUpperCase();
     const r = inv.get(sku);
-    if (!pass(p.titleHe, p.sku, r ? num(r.quantity_on_hand) : 0, !!r)) continue;
-    rows.push(rowFromInv(p.sku, p.titleHe, p.imageUrl, p.category, p.discountPrice ?? p.basePrice, r, true));
+    const title = (r?.name as string) || p.titleHe;
+    const image = (r?.image_url as string) || p.imageUrl;
+    if (!pass(title, p.sku, r ? num(r.quantity_on_hand) : 0, !!r)) continue;
+    rows.push(rowFromInv(p.sku, title, image, p.category, p.discountPrice ?? p.basePrice, r, true));
   }
-  // 2) מוצרים שנקלטו מחשבונית ואינם בקטלוג (קוד שלא זוהה) — מוצגים לפי השם מהחשבונית
+  // 2) מוצרים שנקלטו מחשבונית ואינם בקטלוג — שם/תמונה מהעריכה
   for (const [sku, r] of Array.from(inv)) {
     if (META.has(sku)) continue;
     const title = String(r.name ?? sku);
     if (!pass(title, sku, num(r.quantity_on_hand), true)) continue;
-    rows.push(rowFromInv(sku, title, undefined, 'לא בקטלוג', null, r, false));
+    rows.push(rowFromInv(sku, title, (r.image_url as string) || undefined, 'לא בקטלוג', null, r, false));
   }
   rows.sort((a, b) => a.quantityOnHand - b.quantityOnHand);
   return rows.slice(0, limit);
@@ -216,12 +218,65 @@ export async function getInventoryItem(sku: string): Promise<InventoryItemDetail
   } catch { /* no DB → empty */ }
   // מוצר לא בקטלוג ולא במלאי — לא קיים
   if (!meta && !r) return null;
-  const title = meta?.title ?? String(r?.name ?? S);
+  const title = (r?.name as string) || meta?.title || S;
+  const image = (r?.image_url as string) || meta?.image;
   return {
-    ...rowFromInv(S, title, meta?.image, meta?.category ?? 'לא בקטלוג', meta ? meta.salePrice : null, r, !!meta),
+    ...rowFromInv(S, title, image, meta?.category ?? 'לא בקטלוג', meta ? meta.salePrice : null, r, !!meta),
     notes: (r?.notes as string) ?? null,
     movements,
   };
+}
+
+// ---------- עריכת מוצר (שם + תמונה) — override על הקטלוג ----------
+export async function updateProduct(sku: string, patch: { name?: string; imageUrl?: string }, user = 'admin'): Promise<{ ok: boolean; error?: string }> {
+  const S = (sku || '').trim().toUpperCase();
+  if (!S) return { ok: false, error: 'חסר קוד מוצר' };
+  const name = patch.name != null ? patch.name.trim() : undefined;
+  const imageUrl = patch.imageUrl != null ? patch.imageUrl.trim() : undefined;
+  if (name === undefined && imageUrl === undefined) return { ok: false, error: 'אין מה לעדכן' };
+  if (imageUrl && imageUrl.length > 3_500_000) return { ok: false, error: 'התמונה גדולה מדי' };
+  try {
+    await prisma.$executeRawUnsafe(`insert into public.inventory_items (sku, supplier_code) values ($1,$1) on conflict (sku) do nothing`, S);
+    if (name !== undefined) await prisma.$executeRawUnsafe(`update public.inventory_items set name=$2, updated_at=now() where sku=$1`, S, name || null);
+    if (imageUrl !== undefined) await prisma.$executeRawUnsafe(`update public.inventory_items set image_url=$2, updated_at=now() where sku=$1`, S, imageUrl || null);
+    await auditLog(user, 'PRODUCT_EDITED', 'inventory_item', S, null, { name, hasImage: !!imageUrl });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message.slice(0, 140) : 'שגיאת DB' };
+  }
+}
+
+// ---------- יצירת מוצר חדש ידני ----------
+export async function createProduct(input: { sku: string; name: string; imageUrl?: string; quantity?: number; cost?: number }, user = 'admin'): Promise<{ ok: boolean; error?: string }> {
+  const S = (input.sku || '').trim().toUpperCase();
+  const name = (input.name || '').trim();
+  if (!S) return { ok: false, error: 'חסר קוד מוצר' };
+  if (!name && !META.has(S)) return { ok: false, error: 'חסר שם מוצר' };
+  const qty = Math.max(0, Math.round(num(input.quantity)));
+  const cost = num(input.cost);
+  try {
+    const exists = (await prisma.$queryRawUnsafe(`select 1 from public.inventory_items where sku=$1`, S)) as unknown[];
+    if (exists.length) return { ok: false, error: 'מוצר עם קוד זה כבר קיים במלאי' };
+    await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `insert into public.inventory_items (sku, supplier_code, name, image_url, last_purchase_price) values ($1,$1,$2,$3,$4::numeric)`,
+        S, name || null, input.imageUrl?.trim() || null, cost || null,
+      );
+      if (qty > 0) {
+        await tx.$executeRawUnsafe(
+          `update public.inventory_items set quantity_on_hand=$2::int, total_received=$2::int, last_received_at=now() where sku=$1`, S, qty,
+        );
+        await tx.$executeRawUnsafe(
+          `insert into public.inventory_movements (sku, movement_type, quantity_change, quantity_before, quantity_after, source_type, reason, created_by)
+           values ($1,'MANUAL_ADJUSTMENT_IN',$2::int,0,$2::int,'manual','יצירת מוצר חדש',$3)`, S, qty, user,
+        );
+      }
+    });
+    await auditLog(user, 'PRODUCT_CREATED', 'inventory_item', S, null, { name, qty });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message.slice(0, 140) : 'שגיאת DB' };
+  }
 }
 
 // ---------- Manual adjustment (creates a movement — never a bare quantity edit) ----------

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import { getInventoryItem, MOVEMENT_LABELS, type MovementType } from '@/lib/crm/inventory';
 import { StockAdjuster } from '@/components/crm/StockAdjuster';
+import { ProductEditor } from '@/components/crm/ProductEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,13 +36,17 @@ export default async function InventoryItemPage({ params }: { params: { sku: str
       {/* כותרת המוצר */}
       <div className="flex flex-col gap-5 rounded-2xl border border-gold/15 bg-white/5 p-5 sm:flex-row">
         <span className="relative h-32 w-32 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white">
-          {item.image ? <Image src={item.image} alt={item.title} fill className="object-contain p-1" sizes="128px" /> : <span className="flex h-full items-center justify-center text-3xl">🎁</span>}
+          {item.image ? <Image src={item.image} alt={item.title} fill className="object-contain p-1" sizes="128px" unoptimized /> : <span className="flex h-full items-center justify-center text-3xl">🎁</span>}
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-xl font-bold text-cream">{item.title}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h1 className="font-display text-xl font-bold text-cream">{item.title}</h1>
+            <ProductEditor sku={item.sku} initialName={item.title} initialImage={item.image} />
+          </div>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-cream/50">
             <span>קוד ספק: <span className="font-mono text-cream/70" dir="ltr">{item.sku}</span></span>
             <span>קטגוריה: {item.category}</span>
+            {!item.inCatalog && <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-amber-300">לא בקטלוג האתר</span>}
           </div>
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-sm text-cream/50">מלאי נוכחי:</span>

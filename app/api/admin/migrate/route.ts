@@ -70,8 +70,9 @@ const STATEMENTS = [
     updated_at          timestamptz not null default now()
   )`,
   `create index if not exists inv_items_low_idx on public.inventory_items (quantity_on_hand)`,
-  // שם מוצר למוצרים שאינם בקטלוג (נקלטו מחשבונית עם קוד שלא זוהה).
+  // שם + תמונה לעריכה ידנית / מוצרים שאינם בקטלוג (override על נתוני הקטלוג).
   `alter table public.inventory_items add column if not exists name text`,
+  `alter table public.inventory_items add column if not exists image_url text`,
   // הורדת מלאי בסימון "נשלחה" — idempotent ברמת הזמנה (במקום קבלה).
   `alter table public.orders add column if not exists stock_deducted_at timestamptz`,
   `alter table public.orders add column if not exists stock_reversed_at timestamptz`,

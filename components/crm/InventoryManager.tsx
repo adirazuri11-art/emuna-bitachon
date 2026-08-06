@@ -103,7 +103,7 @@ export function InventoryManager({ initialItems }: { initialItems: InvItemClient
                     <td className="px-5 py-2.5">
                       <div className="flex items-center gap-3">
                         <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white">
-                          {it.image ? <Image src={it.image} alt="" fill className="object-contain p-0.5" sizes="44px" /> : <span className="flex h-full items-center justify-center text-lg">🎁</span>}
+                          {it.image ? <Image src={it.image} alt="" fill className="object-contain p-0.5" sizes="44px" unoptimized /> : <span className="flex h-full items-center justify-center text-lg">🎁</span>}
                         </span>
                         <span className="line-clamp-2 max-w-[22rem] text-cream/90">{it.title}</span>
                       </div>

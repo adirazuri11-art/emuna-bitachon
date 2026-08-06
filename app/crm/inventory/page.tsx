@@ -1,6 +1,7 @@
 import { Boxes, PackageCheck, AlertTriangle, PackageX, TrendingDown, Activity } from 'lucide-react';
 import { listInventory, getInventoryStats } from '@/lib/crm/inventory';
 import { InventoryManager } from '@/components/crm/InventoryManager';
+import { AddProductButton } from '@/components/crm/AddProductButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,11 +23,14 @@ export default async function InventoryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold text-cream">ניהול מלאי</h1>
-        <p className="mt-1 text-sm text-cream/50">
-          מלאי פנימי לניהול הסחורה שלך — נפרד לחלוטין מהאתר. המלאי יורד אוטומטית רק בהפקת קבלה סופית ללקוח.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-cream">ניהול מלאי</h1>
+          <p className="mt-1 text-sm text-cream/50">
+            מלאי פנימי לניהול הסחורה שלך — נפרד לחלוטין מהאתר. המלאי יורד אוטומטית כשמסמנים הזמנה "נשלחה".
+          </p>
+        </div>
+        <AddProductButton />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">

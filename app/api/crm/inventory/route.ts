@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { isCrmAuthed } from '@/lib/crm/auth';
-import { listInventory, getInventoryStats, adjustStock, reverseOrderStock, type InvFilter, type MovementType } from '@/lib/crm/inventory';
+import { listInventory, getInventoryStats, adjustStock, reverseOrderStock, updateProduct, createProduct, type InvFilter, type MovementType } from '@/lib/crm/inventory';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +36,23 @@ export async function POST(req: NextRequest) {
   }
   if (body.action === 'reverseOrder') {
     const res = await reverseOrderStock(String(body.orderNumber ?? ''), String(body.reason ?? 'זיכוי/ביטול'));
+    return NextResponse.json(res, { status: res.ok ? 200 : 400 });
+  }
+  if (body.action === 'updateProduct') {
+    const res = await updateProduct(String(body.sku ?? ''), {
+      name: body.name != null ? String(body.name) : undefined,
+      imageUrl: body.imageUrl != null ? String(body.imageUrl) : undefined,
+    });
+    return NextResponse.json(res, { status: res.ok ? 200 : 400 });
+  }
+  if (body.action === 'createProduct') {
+    const res = await createProduct({
+      sku: String(body.sku ?? ''),
+      name: String(body.name ?? ''),
+      imageUrl: body.imageUrl != null ? String(body.imageUrl) : undefined,
+      quantity: body.quantity != null ? Number(body.quantity) : 0,
+      cost: body.cost != null ? Number(body.cost) : 0,
+    });
     return NextResponse.json(res, { status: res.ok ? 200 : 400 });
   }
   return NextResponse.json({ ok: false, error: 'unknown action' }, { status: 400 });
