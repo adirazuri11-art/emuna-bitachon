@@ -8,6 +8,12 @@ export async function GET(req: NextRequest) {
   }
   const key = process.env.GEMINI_API_KEY;
   if (!key) return NextResponse.json({ ok: false, hasKey: false, error: 'GEMINI_API_KEY עדיין לא נטען (צריך redeploy אחרי ההוספה)' });
+  // רשימת המודלים הזמינים למפתח הזה — כדי לבחור שם מודל תקף
+  if (new URL(req.url).searchParams.get('models') === '1') {
+    const m = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`).then((r) => r.json()).catch((e) => ({ error: String(e) }));
+    const names = Array.isArray(m?.models) ? m.models.filter((x: { supportedGenerationMethods?: string[] }) => x.supportedGenerationMethods?.includes('generateContent')).map((x: { name: string }) => x.name) : m;
+    return NextResponse.json({ models: names });
+  }
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
