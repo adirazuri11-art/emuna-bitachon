@@ -19,13 +19,14 @@ export interface ParsedInvoice {
 
 const PROMPT = `אתה קורא חשבונית ספק של חנות יודאיקה (הספק: ART Judaica / israel-judaica.com).
 חלץ את שורות המוצרים. החזר JSON בלבד במבנה:
-{"invoiceNumber": string, "invoiceDate": "YYYY-MM-DD", "lines": [{"supplierCode": string, "quantity": number, "unitCost": number}]}
+{"invoiceNumber": string, "invoiceDate": "YYYY-MM-DD", "lines": [{"supplierCode": string, "name": string, "quantity": number, "unitCost": number}]}
 כללים:
-- supplierCode = קוד המוצר/קטלוג של הספק (בד"כ בפורמט כמו "UK49849" או "UK67651"). זהו השדה הכי חשוב.
+- supplierCode = קוד המוצר/קטלוג של הספק (בד"כ בפורמט כמו "UK49849" או "UK67651"). זהו השדה הכי חשוב — קרא אותו בדיוק.
+- name = שם/תיאור המוצר כפי שמופיע בשורה.
 - quantity = כמות (מספר שלם).
-- unitCost = מחיר ליחידה (מספר). אם מופיע רק סכום שורה, חלק בכמות.
-- אם שדה לא ברור — השמט אותו. אל תמציא ערכים.
-- החזר אך ורק JSON תקין, בלי טקסט נוסף.`;
+- unitCost = מחיר עלות ליחידה **לפני מע"מ** (מספר). זהו מחיר יחידה בודדת, לא סך השורה. אם מופיע רק סכום שורה — חלק בכמות. אם המחיר כולל מע"מ — החזר את המחיר ללא המע"מ (חלק ב-1.17).
+- קרא את המספרים בדייקנות מלאה (כולל אגורות, למשל 49.99). אל תעגל ואל תמציא.
+- אם שדה לא ברור — השמט אותו. החזר אך ורק JSON תקין, בלי טקסט נוסף.`;
 
 export async function parseInvoiceImage(base64: string, mimeType: string): Promise<ParsedInvoice> {
   const key = process.env.GEMINI_API_KEY;
@@ -67,7 +68,7 @@ export async function parseInvoiceImage(base64: string, mimeType: string): Promi
           supplierCode: String(o.supplierCode ?? '').trim().toUpperCase(),
           quantity: Math.round(Number(o.quantity ?? 0)),
           unitCost: o.unitCost != null ? Number(o.unitCost) : undefined,
-          rawName: o.rawName ? String(o.rawName) : undefined,
+          rawName: o.name ? String(o.name) : (o.rawName ? String(o.rawName) : undefined),
         };
       })
       .filter((l) => l.supplierCode && l.quantity > 0);

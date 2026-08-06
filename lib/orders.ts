@@ -158,15 +158,8 @@ export async function saveReceipt(orderNumber: string, receiptNumber: string, re
   } catch {
     /* noop */
   }
-  // ⭐ ניהול מלאי פנימי ב-CRM: הרגע היחיד שבו מלאי יורד — הפקת קבלה סופית
-  // (= הרגע שבו הלקוח מקבל מייל אישור). idempotent לפי מספר קבלה, best-effort:
-  // כשל במלאי לעולם לא חוסם הפקת קבלה, ואינו נוגע באתר החי בשום צורה.
-  try {
-    const { applyReceiptToInventory } = await import('@/lib/crm/inventory');
-    await applyReceiptToInventory(orderNumber, receiptNumber);
-  } catch {
-    /* inventory never blocks receipts */
-  }
+  // הערה: הורדת המלאי אינה כאן — היא מתבצעת בסימון ההזמנה "נשלחה" (fulfill route),
+  // דרך deductOrderStock, כי המלאי הפיזי יוצא רק כששולחים בפועל.
 }
 
 export async function markOrderFailed(orderNumber: string): Promise<void> {

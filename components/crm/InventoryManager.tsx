@@ -11,12 +11,16 @@ export interface InvItemClient {
   image?: string;
   category: string;
   quantityOnHand: number;
+  lastPurchasePrice: number | null;
+  salePrice: number | null;
   lastReceivedAt: string | null;
   lastSoldAt: string | null;
   tracked: boolean;
+  inCatalog: boolean;
 }
 
 const nf = (n: number) => n.toLocaleString('he-IL');
+const money = (n: number | null) => (n != null ? `₪${nf(Math.round(n))}` : '—');
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—');
 
 const FILTERS: { key: string; label: string }[] = [
@@ -87,8 +91,9 @@ export function InventoryManager({ initialItems }: { initialItems: InvItemClient
                   <th className="px-3 py-2.5 font-medium">קוד ספק</th>
                   <th className="px-3 py-2.5 font-medium">קטגוריה</th>
                   <th className="px-3 py-2.5 font-medium">מלאי</th>
+                  <th className="px-3 py-2.5 font-medium">עלות</th>
+                  <th className="px-3 py-2.5 font-medium">מכירה</th>
                   <th className="px-3 py-2.5 font-medium">כניסה אחרונה</th>
-                  <th className="px-3 py-2.5 font-medium">מכירה אחרונה</th>
                   <th className="px-5 py-2.5"></th>
                 </tr>
               </thead>
@@ -106,8 +111,9 @@ export function InventoryManager({ initialItems }: { initialItems: InvItemClient
                     <td className="px-3 py-2.5 font-mono text-xs text-cream/50" dir="ltr">{it.sku}</td>
                     <td className="px-3 py-2.5 text-xs text-cream/50">{it.category}</td>
                     <td className="px-3 py-2.5">{qtyPill(it.quantityOnHand)}</td>
+                    <td className="px-3 py-2.5 text-cream/70" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(it.lastPurchasePrice)}</td>
+                    <td className="px-3 py-2.5 text-cream/90" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(it.salePrice)}</td>
                     <td className="px-3 py-2.5 text-xs text-cream/50">{fmtDate(it.lastReceivedAt)}</td>
-                    <td className="px-3 py-2.5 text-xs text-cream/50">{fmtDate(it.lastSoldAt)}</td>
                     <td className="px-5 py-2.5 text-left">
                       <Link href={`/crm/inventory/${encodeURIComponent(it.sku)}`} className="inline-flex items-center gap-1 text-xs text-gold hover:text-gold/80">
                         ניהול <ChevronLeft className="h-3.5 w-3.5" />

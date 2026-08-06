@@ -40,7 +40,7 @@ export interface IntakeResult {
   duplicate?: boolean;
   invoiceId?: string;
   matched?: number;
-  unmatched?: number;
+  newProducts?: number;
   unitsTotal?: number;
 }
 
@@ -75,24 +75,30 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
       )) as Array<{ id: string }>;
       const invoiceId = String(invRows[0].id);
 
-      let matched = 0, unmatched = 0, units = 0;
+      let matched = 0, newProducts = 0, units = 0;
       for (const l of lines) {
         const qty = Math.round(num(l.quantity));
         const cost = num(l.unitCost);
         const meta = productMeta(l.supplierCode);
-        const sku = meta?.sku ?? null;
+        // מוצר בקטלוג → SKU מהקטלוג. קוד שלא זוהה → נוסף כמוצר חדש עם הקוד עצמו כ-SKU.
+        const sku = meta?.sku ?? l.supplierCode.trim().toUpperCase();
+        const name = l.rawName || meta?.title || null;
         units += qty;
+        if (meta) matched++; else newProducts++;
 
         await tx.$executeRawUnsafe(
           `insert into public.supplier_invoice_lines (supplier_invoice_id, supplier_product_code, raw_product_name, product_sku, quantity, unit_cost, line_total, match_method, status)
-           values ($1::uuid,$2,$3,$4,$5::int,$6::numeric,$7::numeric,$8,$9)`,
-          invoiceId, l.supplierCode.trim(), l.rawName || meta?.title || null, sku, qty, cost, cost * qty,
-          sku ? 'supplier_code' : null, sku ? 'matched' : 'unmatched',
+           values ($1::uuid,$2,$3,$4,$5::int,$6::numeric,$7::numeric,$8,'matched')`,
+          invoiceId, l.supplierCode.trim(), name, sku, qty, cost, cost * qty,
+          meta ? 'supplier_code' : 'new_product',
         );
 
-        if (!sku) { unmatched++; continue; }
-        matched++;
-        await tx.$executeRawUnsafe(`insert into public.inventory_items (sku, supplier_code) values ($1,$1) on conflict (sku) do nothing`, sku);
+        // מוצר בקטלוג: name נשאר null (מגיע מהקטלוג). מוצר חדש: שומרים את השם מהחשבונית.
+        await tx.$executeRawUnsafe(
+          `insert into public.inventory_items (sku, supplier_code, name) values ($1,$1,$2)
+           on conflict (sku) do update set name = coalesce(public.inventory_items.name, excluded.name)`,
+          sku, name,
+        );
         // עלות ממוצעת משוקללת — כל ביטויי ה-SET רואים את ערכי השורה הישנים. casts מפורשים (Prisma שולח כ-text).
         const upd = (await tx.$queryRawUnsafe(
           `update public.inventory_items set
@@ -116,9 +122,9 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
 
       await tx.$executeRawUnsafe(
         `update public.supplier_invoices set line_count=$2::int, matched_count=$3::int, units_total=$4::int where id=$1::uuid`,
-        invoiceId, lines.length, matched, units,
+        invoiceId, lines.length, matched + newProducts, units,
       );
-      return { invoiceId, matched, unmatched, unitsTotal: units };
+      return { invoiceId, matched, newProducts, unitsTotal: units };
     });
 
     try {

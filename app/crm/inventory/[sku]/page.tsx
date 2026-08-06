@@ -52,11 +52,12 @@ export default async function InventoryItemPage({ params }: { params: { sku: str
       </div>
 
       {/* נתונים */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+        <Stat label="מחיר עלות" value={money(item.lastPurchasePrice)} />
+        <Stat label="מחיר מכירה" value={money(item.salePrice)} />
+        <Stat label="עלות ממוצעת" value={money(item.avgCost)} />
         <Stat label="סה״כ נכנס" value={nf(item.totalReceived)} />
         <Stat label="סה״כ נמכר" value={nf(item.totalSold)} />
-        <Stat label="מחיר רכישה אחרון" value={money(item.lastPurchasePrice)} />
-        <Stat label="עלות ממוצעת" value={money(item.avgCost)} />
       </div>
 
       <StockAdjuster sku={item.sku} />

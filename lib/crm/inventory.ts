@@ -14,12 +14,12 @@ import { PRODUCTS } from '@/lib/catalog';
 const num = (v: unknown) => Number(v ?? 0);
 const skuOf = (id: string) => (id || '').replace(/^art-/i, '').toUpperCase();
 
-interface Meta { title: string; image?: string; category: string }
+interface Meta { title: string; image?: string; category: string; salePrice: number }
 const META = new Map<string, Meta>();
-for (const p of PRODUCTS) META.set(p.sku.toUpperCase(), { title: p.titleHe, image: p.imageUrl, category: p.category });
+for (const p of PRODUCTS) META.set(p.sku.toUpperCase(), { title: p.titleHe, image: p.imageUrl, category: p.category, salePrice: p.discountPrice ?? p.basePrice });
 
 // חיפוש מוצר בקטלוג לפי קוד ספק (=SKU). משמש את קליטת החשבוניות (Phase 2).
-export function productMeta(sku: string): { sku: string; title: string; image?: string; category: string } | undefined {
+export function productMeta(sku: string): { sku: string; title: string; image?: string; category: string; salePrice: number } | undefined {
   const S = (sku || '').trim().toUpperCase();
   const m = META.get(S);
   return m ? { sku: S, ...m } : undefined;
@@ -60,13 +60,15 @@ export interface InventoryRow {
   image?: string;
   category: string;
   quantityOnHand: number;
-  lastPurchasePrice: number | null;
+  lastPurchasePrice: number | null; // מחיר עלות
+  salePrice: number | null;         // מחיר מכירה (מהקטלוג)
   avgCost: number | null;
   totalReceived: number;
   totalSold: number;
   lastReceivedAt: string | null;
   lastSoldAt: string | null;
-  tracked: boolean; // האם יש שורת מלאי (נקלט/נמכר) או רק מהקטלוג
+  tracked: boolean;   // האם יש שורת מלאי (נקלט/נמכר) או רק מהקטלוג
+  inCatalog: boolean; // false = נקלט מחשבונית עם קוד שלא בקטלוג האתר
 }
 
 export type InvFilter = 'all' | 'low' | 'zero' | 'negative' | 'tracked';
@@ -80,35 +82,48 @@ async function loadInventoryMap(): Promise<Map<string, Record<string, unknown>>>
   }
 }
 
+function rowFromInv(sku: string, title: string, image: string | undefined, category: string, salePrice: number | null, r: Record<string, unknown> | undefined, inCatalog: boolean): InventoryRow {
+  return {
+    sku, title, image, category,
+    quantityOnHand: r ? num(r.quantity_on_hand) : 0,
+    lastPurchasePrice: r && r.last_purchase_price != null ? num(r.last_purchase_price) : null,
+    salePrice,
+    avgCost: r && r.avg_cost != null ? num(r.avg_cost) : null,
+    totalReceived: r ? num(r.total_received) : 0,
+    totalSold: r ? num(r.total_sold) : 0,
+    lastReceivedAt: r?.last_received_at ? new Date(r.last_received_at as string).toISOString() : null,
+    lastSoldAt: r?.last_sold_at ? new Date(r.last_sold_at as string).toISOString() : null,
+    tracked: !!r,
+    inCatalog,
+  };
+}
+
 export async function listInventory(search = '', filter: InvFilter = 'all', limit = 300): Promise<InventoryRow[]> {
   const inv = await loadInventoryMap();
   const q = search.trim().toLowerCase();
+  const pass = (title: string, sku: string, qty: number, tracked: boolean) => {
+    if (q && !(`${title} ${sku}`.toLowerCase().includes(q))) return false;
+    if (filter === 'low' && !(qty > 0 && qty <= 3)) return false;
+    if (filter === 'zero' && qty !== 0) return false;
+    if (filter === 'negative' && !(qty < 0)) return false;
+    if (filter === 'tracked' && !tracked) return false;
+    return true;
+  };
   const rows: InventoryRow[] = [];
+  // 1) מוצרי קטלוג (799) עם המלאי שלהם
   for (const p of PRODUCTS) {
     const sku = p.sku.toUpperCase();
     const r = inv.get(sku);
-    const qty = r ? num(r.quantity_on_hand) : 0;
-    if (q && !(`${p.titleHe} ${p.sku}`.toLowerCase().includes(q))) continue;
-    if (filter === 'low' && !(qty > 0 && qty <= 3)) continue;
-    if (filter === 'zero' && qty !== 0) continue;
-    if (filter === 'negative' && !(qty < 0)) continue;
-    if (filter === 'tracked' && !r) continue;
-    rows.push({
-      sku: p.sku,
-      title: p.titleHe,
-      image: p.imageUrl,
-      category: p.category,
-      quantityOnHand: qty,
-      lastPurchasePrice: r && r.last_purchase_price != null ? num(r.last_purchase_price) : null,
-      avgCost: r && r.avg_cost != null ? num(r.avg_cost) : null,
-      totalReceived: r ? num(r.total_received) : 0,
-      totalSold: r ? num(r.total_sold) : 0,
-      lastReceivedAt: r?.last_received_at ? new Date(r.last_received_at as string).toISOString() : null,
-      lastSoldAt: r?.last_sold_at ? new Date(r.last_sold_at as string).toISOString() : null,
-      tracked: !!r,
-    });
+    if (!pass(p.titleHe, p.sku, r ? num(r.quantity_on_hand) : 0, !!r)) continue;
+    rows.push(rowFromInv(p.sku, p.titleHe, p.imageUrl, p.category, p.discountPrice ?? p.basePrice, r, true));
   }
-  // מיון: תקוע/שלילי קודם (דורש תשומת לב), ואז לפי מלאי עולה
+  // 2) מוצרים שנקלטו מחשבונית ואינם בקטלוג (קוד שלא זוהה) — מוצגים לפי השם מהחשבונית
+  for (const [sku, r] of Array.from(inv)) {
+    if (META.has(sku)) continue;
+    const title = String(r.name ?? sku);
+    if (!pass(title, sku, num(r.quantity_on_hand), true)) continue;
+    rows.push(rowFromInv(sku, title, undefined, 'לא בקטלוג', null, r, false));
+  }
   rows.sort((a, b) => a.quantityOnHand - b.quantityOnHand);
   return rows.slice(0, limit);
 }
@@ -178,7 +193,6 @@ export interface InventoryItemDetail extends InventoryRow {
 export async function getInventoryItem(sku: string): Promise<InventoryItemDetail | null> {
   const S = sku.toUpperCase();
   const meta = META.get(S);
-  if (!meta) return null;
   let r: Record<string, unknown> | undefined;
   let movements: MovementRow[] = [];
   try {
@@ -200,19 +214,11 @@ export async function getInventoryItem(sku: string): Promise<InventoryItemDetail
       createdAt: m.created_at ? new Date(m.created_at as string).toISOString() : '',
     }));
   } catch { /* no DB → empty */ }
+  // מוצר לא בקטלוג ולא במלאי — לא קיים
+  if (!meta && !r) return null;
+  const title = meta?.title ?? String(r?.name ?? S);
   return {
-    sku: meta.title ? S : S,
-    title: meta.title,
-    image: meta.image,
-    category: meta.category,
-    quantityOnHand: r ? num(r.quantity_on_hand) : 0,
-    lastPurchasePrice: r && r.last_purchase_price != null ? num(r.last_purchase_price) : null,
-    avgCost: r && r.avg_cost != null ? num(r.avg_cost) : null,
-    totalReceived: r ? num(r.total_received) : 0,
-    totalSold: r ? num(r.total_sold) : 0,
-    lastReceivedAt: r?.last_received_at ? new Date(r.last_received_at as string).toISOString() : null,
-    lastSoldAt: r?.last_sold_at ? new Date(r.last_sold_at as string).toISOString() : null,
-    tracked: !!r,
+    ...rowFromInv(S, title, meta?.image, meta?.category ?? 'לא בקטלוג', meta ? meta.salePrice : null, r, !!meta),
     notes: (r?.notes as string) ?? null,
     movements,
   };
@@ -224,9 +230,15 @@ export async function adjustStock(
 ): Promise<{ ok: boolean; error?: string; after?: number }> {
   const S = sku.toUpperCase();
   const d = Math.round(num(delta));
-  if (!META.has(S)) return { ok: false, error: 'מוצר לא קיים בקטלוג' };
   if (!d) return { ok: false, error: 'שינוי חייב להיות שונה מ-0' };
   if (!reason.trim()) return { ok: false, error: 'חובה לציין סיבה' };
+  if (!META.has(S)) {
+    // מותר גם למוצר שנקלט מחשבונית (קיים ב-inventory_items), לא רק לקטלוג
+    try {
+      const ex = (await prisma.$queryRawUnsafe(`select 1 from public.inventory_items where sku=$1 limit 1`, S)) as unknown[];
+      if (!ex.length) return { ok: false, error: 'מוצר לא קיים' };
+    } catch { return { ok: false, error: 'מוצר לא קיים' }; }
+  }
   try {
     const after = await prisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(`insert into public.inventory_items (sku, supplier_code) values ($1,$1) on conflict (sku) do nothing`, S);
@@ -254,106 +266,84 @@ export async function adjustStock(
   }
 }
 
-// ---------- ⭐ הורדת מלאי בהפקת קבלה סופית — idempotent ----------
-// נקרא מ-lib/orders.saveReceipt (הרגע שבו הלקוח מקבל מייל אישור + נרשם מספר קבלה).
-// אותה קבלה מורידה מלאי פעם אחת בלבד (processed_receipts.receipt_number PK).
-export async function applyReceiptToInventory(orderNumber: string, receiptNumber: string): Promise<{ applied: boolean; reason?: string; lines?: number }> {
-  const rn = (receiptNumber || '').trim();
-  if (!rn) return { applied: false, reason: 'no receipt number' };
+// עזר: איחוד כמויות שנקנו לפי SKU מתוך פריטי הזמנה.
+function orderQtyBySku(items: Array<{ id?: string; quantity?: number }>): Map<string, number> {
+  const bySku = new Map<string, number>();
+  for (const it of items) {
+    const sku = skuOf(String(it.id ?? ''));
+    if (!sku || !META.has(sku)) continue;
+    bySku.set(sku, (bySku.get(sku) ?? 0) + Math.max(1, Math.floor(num(it.quantity) || 1)));
+  }
+  return bySku;
+}
+
+// ---------- ⭐ הורדת מלאי בסימון הזמנה "נשלחה" — idempotent ברמת הזמנה ----------
+// נקרא מ-fulfill route כשההזמנה עוברת ל-status='shipping'. הכמות המדויקת שנקנתה
+// יורדת מהמלאי. אותה הזמנה מורידה מלאי פעם אחת בלבד (orders.stock_deducted_at).
+export async function deductOrderStock(orderNumber: string): Promise<{ applied: boolean; reason?: string; lines?: number }> {
+  const on = (orderNumber || '').trim();
+  if (!on) return { applied: false, reason: 'no order number' };
   try {
-    const orows = (await prisma.$queryRawUnsafe(`select items from public.orders where order_number=$1 limit 1`, orderNumber)) as Array<{ items: Array<{ id?: string; quantity?: number }> }>;
-    const items = Array.isArray(orows?.[0]?.items) ? orows[0].items : [];
-    // איחוד כמויות לפי SKU (מספר שורות לאותו מוצר → ירידה אחת מדויקת)
-    const bySku = new Map<string, number>();
-    for (const it of items) {
-      const sku = skuOf(String(it.id ?? ''));
-      if (!sku || !META.has(sku)) continue;
-      bySku.set(sku, (bySku.get(sku) ?? 0) + Math.max(1, Math.floor(num(it.quantity) || 1)));
-    }
-
     const result = await prisma.$transaction(async (tx) => {
-      // 1) תפיסת idempotency אטומית — אם הקבלה כבר עובדה, claim=0
-      const claim = await tx.$executeRawUnsafe(
-        `insert into public.processed_receipts (receipt_number, order_number, issued_at, status)
-         values ($1,$2,now(),'processing') on conflict (receipt_number) do nothing`,
-        rn, orderNumber,
-      );
-      if (claim === 0) return { applied: false, reason: 'already processed' as const };
-
-      // 2) הורדה אטומית לכל SKU + תנועת SALE_OUT
+      // תפיסת idempotency אטומית — רק אם ההזמנה שולמה וטרם הורד ממנה מלאי
+      const claim = (await tx.$queryRawUnsafe(
+        `update public.orders set stock_deducted_at=now()
+         where order_number=$1 and status='paid' and stock_deducted_at is null returning items`,
+        on,
+      )) as Array<{ items: Array<{ id?: string; quantity?: number }> }>;
+      if (claim.length === 0) return { applied: false, reason: 'כבר הורד מלאי / הזמנה לא משולמת' as const };
+      const bySku = orderQtyBySku(Array.isArray(claim[0].items) ? claim[0].items : []);
       for (const [sku, qty] of Array.from(bySku)) {
         await tx.$executeRawUnsafe(`insert into public.inventory_items (sku, supplier_code) values ($1,$1) on conflict (sku) do nothing`, sku);
         const upd = (await tx.$queryRawUnsafe(
-          `update public.inventory_items
-             set quantity_on_hand = quantity_on_hand - $2, total_sold = total_sold + $2, last_sold_at = now(), updated_at = now()
-           where sku=$1 returning quantity_on_hand`,
+          `update public.inventory_items set quantity_on_hand = quantity_on_hand - $2::int, total_sold = total_sold + $2::int, last_sold_at = now(), updated_at = now() where sku=$1 returning quantity_on_hand`,
           sku, qty,
         )) as Array<{ quantity_on_hand: number }>;
         const after = num(upd[0]?.quantity_on_hand);
-        const before = after + qty;
         await tx.$executeRawUnsafe(
           `insert into public.inventory_movements (sku, movement_type, quantity_change, quantity_before, quantity_after, source_type, source_id, source_document_number, created_by)
-           values ($1,'SALE_OUT',$2,$3,$4,'receipt',$5,$6,'system')`,
-          sku, -qty, before, after, orderNumber, rn,
+           values ($1,'SALE_OUT',$2::int,$3::int,$4::int,'order_shipped',$5,$5,'system')`,
+          sku, -qty, after + qty, after, on,
         );
       }
-
-      // 3) סימון הקבלה כעובדה
-      await tx.$executeRawUnsafe(`update public.processed_receipts set inventory_processed_at=now(), status='done' where receipt_number=$1`, rn);
       return { applied: true as const, lines: bySku.size };
     });
-
-    if (result.applied) {
-      await auditLog('system', 'RECEIPT_STOCK_OUT', 'receipt', rn, null, { orderNumber, lines: result.lines });
-    } else {
-      await auditLog('system', 'RECEIPT_DUPLICATE_SKIPPED', 'receipt', rn, null, { orderNumber });
-    }
+    if (result.applied) await auditLog('system', 'ORDER_SHIPPED_STOCK_OUT', 'order', on, null, { lines: result.lines });
     return result;
   } catch (e) {
     return { applied: false, reason: e instanceof Error ? e.message.slice(0, 140) : 'error' };
   }
 }
 
-// ---------- ↩︎ החזרת מלאי בעקבות זיכוי/ביטול קבלה — idempotent ----------
-// מחזיר את המלאי שירד ב-SALE_OUT של קבלה מסוימת. רק אם הקבלה עובדה (status='done')
-// וטרם בוטלה. אותה קבלה מבוטלת פעם אחת בלבד (status → 'reversed').
-export async function reverseReceipt(receiptNumber: string, reason = 'זיכוי/ביטול', user = 'admin'): Promise<{ ok: boolean; reason?: string; lines?: number }> {
-  const rn = (receiptNumber || '').trim();
-  if (!rn) return { ok: false, reason: 'no receipt number' };
+// ---------- ↩︎ החזרת מלאי בעקבות זיכוי/ביטול הזמנה — idempotent ----------
+export async function reverseOrderStock(orderNumber: string, reason = 'זיכוי/ביטול', user = 'admin'): Promise<{ ok: boolean; reason?: string; lines?: number }> {
+  const on = (orderNumber || '').trim();
+  if (!on) return { ok: false, reason: 'no order number' };
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // תופס לביטול רק אם עובד (done) וטרם בוטל — אטומי
+      // רק אם ירד מלאי (stock_deducted_at) וטרם הוחזר (stock_reversed_at) — אטומי
       const claim = (await tx.$queryRawUnsafe(
-        `update public.processed_receipts set status='reversed' where receipt_number=$1 and status='done' returning order_number`,
-        rn,
-      )) as Array<{ order_number: string }>;
-      if (claim.length === 0) return { ok: false, reason: 'לא ניתן לבטל — הקבלה לא עובדה או כבר בוטלה' as const };
-      const orderNumber = String(claim[0].order_number);
-
-      const orows = (await tx.$queryRawUnsafe(`select items from public.orders where order_number=$1 limit 1`, orderNumber)) as Array<{ items: Array<{ id?: string; quantity?: number }> }>;
-      const items = Array.isArray(orows?.[0]?.items) ? orows[0].items : [];
-      const bySku = new Map<string, number>();
-      for (const it of items) {
-        const sku = skuOf(String(it.id ?? ''));
-        if (!sku || !META.has(sku)) continue;
-        bySku.set(sku, (bySku.get(sku) ?? 0) + Math.max(1, Math.floor(num(it.quantity) || 1)));
-      }
+        `update public.orders set stock_reversed_at=now()
+         where order_number=$1 and stock_deducted_at is not null and stock_reversed_at is null returning items`,
+        on,
+      )) as Array<{ items: Array<{ id?: string; quantity?: number }> }>;
+      if (claim.length === 0) return { ok: false, reason: 'לא ניתן לבטל — לא ירד מלאי או כבר הוחזר' as const };
+      const bySku = orderQtyBySku(Array.isArray(claim[0].items) ? claim[0].items : []);
       for (const [sku, qty] of Array.from(bySku)) {
         const upd = (await tx.$queryRawUnsafe(
-          `update public.inventory_items set quantity_on_hand = quantity_on_hand + $2, total_sold = greatest(total_sold - $2, 0), updated_at=now() where sku=$1 returning quantity_on_hand`,
+          `update public.inventory_items set quantity_on_hand = quantity_on_hand + $2::int, total_sold = greatest(total_sold - $2::int, 0), updated_at=now() where sku=$1 returning quantity_on_hand`,
           sku, qty,
         )) as Array<{ quantity_on_hand: number }>;
         const after = num(upd[0]?.quantity_on_hand);
-        const before = after - qty;
         await tx.$executeRawUnsafe(
           `insert into public.inventory_movements (sku, movement_type, quantity_change, quantity_before, quantity_after, source_type, source_id, source_document_number, reason, created_by)
-           values ($1,'CANCELLED_RECEIPT_REVERSAL',$2,$3,$4,'receipt_reversal',$5,$6,$7,$8)`,
-          sku, qty, before, after, orderNumber, rn, reason, user,
+           values ($1,'CANCELLED_RECEIPT_REVERSAL',$2::int,$3::int,$4::int,'order_reversal',$5,$5,$6,$7)`,
+          sku, qty, after - qty, after, on, reason, user,
         );
       }
       return { ok: true as const, lines: bySku.size };
     });
-    if (result.ok) await auditLog(user, 'RECEIPT_REVERSED', 'receipt', rn, null, { reason, lines: result.lines });
+    if (result.ok) await auditLog(user, 'ORDER_STOCK_REVERSED', 'order', on, null, { reason, lines: result.lines });
     return result;
   } catch (e) {
     return { ok: false, reason: e instanceof Error ? e.message.slice(0, 140) : 'error' };

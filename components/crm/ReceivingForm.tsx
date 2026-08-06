@@ -13,6 +13,7 @@ interface Line {
   title?: string;
   image?: string;
   currentStock?: number;
+  scanName?: string; // שם מהחשבונית (למוצר שלא בקטלוג)
 }
 
 const emptyLine = (): Line => ({ code: '', qty: '', cost: '', status: 'idle' });
@@ -76,8 +77,8 @@ export function ReceivingForm() {
       }
       if (data.invoiceNumber) setInvoiceNumber(String(data.invoiceNumber));
       if (data.invoiceDate) setInvoiceDate(String(data.invoiceDate));
-      const newLines: Line[] = (data.lines || []).map((l: { supplierCode: string; quantity: number; unitCost?: number }) => ({
-        ...emptyLine(), code: l.supplierCode, qty: String(l.quantity ?? ''), cost: l.unitCost != null ? String(l.unitCost) : '',
+      const newLines: Line[] = (data.lines || []).map((l: { supplierCode: string; quantity: number; unitCost?: number; rawName?: string }) => ({
+        ...emptyLine(), code: l.supplierCode, qty: String(l.quantity ?? ''), cost: l.unitCost != null ? String(l.unitCost) : '', scanName: l.rawName,
       }));
       if (newLines.length === 0) { setScanMsg({ t: 'err', text: 'לא זוהו שורות מוצרים — נסה תמונה ברורה יותר, או הזן ידנית.' }); return; }
       setLines(newLines);
@@ -103,7 +104,7 @@ export function ReceivingForm() {
 
   const valid = lines.filter((l) => l.code.trim() && Number(l.qty) > 0);
   const matched = valid.filter((l) => l.status === 'found').length;
-  const unmatched = valid.filter((l) => l.status === 'notfound').length;
+  const newProds = valid.filter((l) => l.status === 'notfound').length;
   const unitsTotal = valid.reduce((s, l) => s + Math.round(Number(l.qty) || 0), 0);
   const costTotal = valid.reduce((s, l) => s + (Number(l.cost) || 0) * (Math.round(Number(l.qty)) || 0), 0);
 
@@ -117,12 +118,12 @@ export function ReceivingForm() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'approve', supplierName: supplier, invoiceNumber: invoiceNumber.trim(), invoiceDate: invoiceDate || null,
-          lines: valid.map((l) => ({ supplierCode: l.code.trim(), quantity: Math.round(Number(l.qty)), unitCost: Number(l.cost) || 0, rawName: l.title })),
+          lines: valid.map((l) => ({ supplierCode: l.code.trim(), quantity: Math.round(Number(l.qty)), unitCost: Number(l.cost) || 0, rawName: l.title || l.scanName })),
         }),
       });
       const data = await res.json();
       if (!data.ok) { setMsg({ t: 'err', text: data.duplicate ? '⚠️ חשבונית זו כבר נקלטה בעבר' : (data.error || 'שגיאה') }); return; }
-      setMsg({ t: 'ok', text: `✅ נקלטו ${data.unitsTotal} יחידות · ${data.matched} מוצרים${data.unmatched ? ` · ${data.unmatched} לא הותאמו` : ''}` });
+      setMsg({ t: 'ok', text: `✅ נקלטו ${data.unitsTotal} יחידות${data.newProducts ? ` · ${data.newProducts} מוצרים חדשים נוספו` : ''}` });
       setInvoiceNumber(''); setInvoiceDate(''); setLines([emptyLine()]);
       router.refresh();
     } catch { setMsg({ t: 'err', text: 'שגיאת רשת' }); } finally { setBusy(false); }
@@ -180,7 +181,7 @@ export function ReceivingForm() {
             <div className="min-w-0 flex-1 text-xs">
               {l.status === 'checking' && <span className="text-cream/40">מחפש…</span>}
               {l.status === 'found' && <span className="text-emerald-300">✓ {l.title} · במלאי כעת: {nf(l.currentStock ?? 0)}{l.qty ? ` → ${nf((l.currentStock ?? 0) + Math.round(Number(l.qty) || 0))}` : ''}</span>}
-              {l.status === 'notfound' && <span className="text-red-300">✗ קוד לא נמצא בקטלוג — לא יעודכן מלאי</span>}
+              {l.status === 'notfound' && <span className="text-amber-300">⊕ מוצר חדש (לא בקטלוג) — ייווסף למלאי{l.scanName ? `: ${l.scanName}` : ''}</span>}
             </div>
             <button onClick={() => removeLine(i)} className="shrink-0 rounded-lg p-1.5 text-red-300/70 hover:bg-red-400/10"><Trash2 className="h-4 w-4" /></button>
           </div>
@@ -194,7 +195,7 @@ export function ReceivingForm() {
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-cream/60">
           <span>{nf(unitsTotal)} יחידות</span>
           <span className="text-emerald-300">{matched} מותאמים</span>
-          {unmatched > 0 && <span className="text-red-300"><AlertTriangle className="mb-0.5 me-1 inline h-3.5 w-3.5" />{unmatched} לא מותאמים</span>}
+          {newProds > 0 && <span className="text-amber-300"><AlertTriangle className="mb-0.5 me-1 inline h-3.5 w-3.5" />{newProds} מוצרים חדשים</span>}
           <span className="text-cream/40">עלות: ₪{nf(Math.round(costTotal))}</span>
         </div>
         <div className="flex items-center gap-3">
