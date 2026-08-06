@@ -63,7 +63,7 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
 
   let subtotal = 0;
   for (const l of lines) subtotal += num(l.unitCost) * Math.round(num(l.quantity));
-  const vat = input.vat != null ? num(input.vat) : Math.round(subtotal * 0.17 * 100) / 100;
+  const vat = Math.round(subtotal * 0.18 * 100) / 100;
   const total = Math.round((subtotal + vat) * 100) / 100;
 
   try {
@@ -93,23 +93,23 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
           meta ? 'supplier_code' : 'new_product',
         );
 
-        // מוצר בקטלוג: name נשאר null (מגיע מהקטלוג). מוצר חדש: שומרים את השם מהחשבונית.
-        await tx.$executeRawUnsafe(
-          `insert into public.inventory_items (sku, supplier_code, name) values ($1,$1,$2)
-           on conflict (sku) do update set name = coalesce(public.inventory_items.name, excluded.name)`,
-          sku, name,
-        );
-        // עלות ממוצעת משוקללת — כל ביטויי ה-SET רואים את ערכי השורה הישנים. casts מפורשים (Prisma שולח כ-text).
+        // upsert יחיד (פחות round-trips): יוצר/מעדכן מלאי + עלות ממוצעת משוקללת בשאילתה אחת.
+        // מוצר בקטלוג: name נשאר מהקטלוג (coalesce). מוצר חדש: שומר שם מהחשבונית.
         const upd = (await tx.$queryRawUnsafe(
-          `update public.inventory_items set
-             avg_cost = case when (total_received + $2::int) > 0 then ((coalesce(avg_cost,0)*total_received) + ($3::numeric * $2::int)) / (total_received + $2::int) else $3::numeric end,
-             quantity_on_hand = quantity_on_hand + $2::int,
-             total_received   = total_received + $2::int,
-             last_purchase_price = $3::numeric,
+          `insert into public.inventory_items (sku, supplier_code, name, quantity_on_hand, total_received, last_purchase_price, avg_cost, last_received_at, updated_at)
+           values ($1,$1,$2,$3::int,$3::int,$4::numeric,$4::numeric, now(), now())
+           on conflict (sku) do update set
+             name = coalesce(public.inventory_items.name, excluded.name),
+             avg_cost = case when (public.inventory_items.total_received + $3::int) > 0
+                          then ((coalesce(public.inventory_items.avg_cost,0)*public.inventory_items.total_received) + ($4::numeric * $3::int)) / (public.inventory_items.total_received + $3::int)
+                          else $4::numeric end,
+             quantity_on_hand = public.inventory_items.quantity_on_hand + $3::int,
+             total_received   = public.inventory_items.total_received + $3::int,
+             last_purchase_price = $4::numeric,
              last_received_at = now(),
              updated_at = now()
-           where sku=$1 returning quantity_on_hand`,
-          sku, qty, cost,
+           returning quantity_on_hand`,
+          sku, name, qty, cost,
         )) as Array<{ quantity_on_hand: number }>;
         const after = num(upd[0]?.quantity_on_hand);
         const before = after - qty;
@@ -125,7 +125,7 @@ export async function approveIntake(input: IntakeInput): Promise<IntakeResult> {
         invoiceId, lines.length, matched + newProducts, units,
       );
       return { invoiceId, matched, newProducts, unitsTotal: units };
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     try {
       await prisma.$executeRawUnsafe(

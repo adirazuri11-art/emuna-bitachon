@@ -15,7 +15,7 @@ interface ScanResult {
   lines: Line[]; warnings: string[];
   stats: { linesFound: number; confirmed: number; needsReview: number; sumLines: number };
 }
-interface Row extends Line { include: boolean }
+interface Row extends Line { include: boolean; name: string }
 
 const nf = (n: number) => n.toLocaleString('he-IL');
 const money = (n?: number | null) => (n != null ? `₪${nf(Math.round(n * 100) / 100)}` : '—');
@@ -54,7 +54,7 @@ export function InvoiceScanner() {
       const data: ScanResult = await res.json();
       if (!data.ok) { setErr(data.needsKey ? 'חסר מפתח AI תקין בהגדרות' : (data.error || 'הסריקה נכשלה')); setBusy(false); return; }
       setResult(data);
-      setRows(data.lines.map((l) => ({ ...l, include: l.status !== 'inconsistent' })));
+      setRows(data.lines.map((l) => ({ ...l, include: l.status !== 'inconsistent', name: l.catalogName ?? '' })));
     } catch { setErr('שגיאת רשת/קובץ'); } finally { setBusy(false); }
   };
 
@@ -64,7 +64,7 @@ export function InvoiceScanner() {
     if (!result) return;
     setApproving(true); setErr(null);
     try {
-      const lines = rows.filter((r) => r.include && r.quantity > 0).map((r) => ({ supplierCode: r.supplierCode, quantity: r.quantity, unitCost: r.unitCost, rawName: r.catalogName }));
+      const lines = rows.filter((r) => r.include && r.quantity > 0).map((r) => ({ supplierCode: r.supplierCode, quantity: r.quantity, unitCost: r.unitCost, rawName: (r.name || r.catalogName || '').trim() || undefined }));
       const res = await fetch('/api/crm/receiving', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ action: 'approve', supplierName: 'ART Judaica', invoiceNumber: result.invoiceNumber, invoiceDate: result.invoiceDate, vat: 18, lines }),
@@ -138,7 +138,9 @@ export function InvoiceScanner() {
                           <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white">
                             <Image src={artProxy(r.supplierCode)} alt="" fill className="object-contain p-0.5" sizes="36px" />
                           </span>
-                          <span className="line-clamp-2 max-w-[16rem] text-cream/90">{r.catalogName ?? <span className="text-sky-300">מוצר חדש</span>}</span>
+                          {r.catalogName
+                            ? <span className="line-clamp-2 max-w-[16rem] text-cream/90">{r.catalogName}</span>
+                            : <input className="w-44 rounded-lg border border-sky-400/40 bg-[#0B132B] px-2 py-1 text-sm text-cream placeholder:text-sky-300/50 outline-none focus:border-sky-400" placeholder="שם מוצר חדש — מלא כאן" value={r.name} onChange={(e) => upd(i, { name: e.target.value })} />}
                         </div>
                       </td>
                       <td className="px-3 py-2.5 font-mono text-xs text-cream/60" dir="ltr">{r.supplierCode}{r.rawCode !== r.supplierCode && <span className="text-amber-300/60"> ←{r.rawCode}</span>}</td>
