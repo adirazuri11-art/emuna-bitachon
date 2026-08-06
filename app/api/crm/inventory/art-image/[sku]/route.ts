@@ -17,18 +17,16 @@ const BROWSER_HEADERS = {
   'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
 } as const;
 
-export async function GET(req: NextRequest, { params }: { params: { sku: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: { sku: string } }) {
   const digits = decodeURIComponent(params.sku || '').replace(/\D/g, ''); // "UK81668" → "81668"
   if (!digits) return new Response(null, { status: 404 });
-  const debug = new URL(req.url).searchParams.get('debug') === '1';
-  const diag: Array<Record<string, unknown>> = [];
 
   for (const [path, type] of [[`webp/${digits}.webp`, 'image/webp'], [`big/${digits}.jpg`, 'image/jpeg']] as const) {
     try {
-      // ⚠️ בלי query string — ART מחזיר 302→HTML כשיש ?param. הכתובת הנקייה מחזירה את התמונה.
+      // ⚠️ בלי query string — ART מחזיר 302→HTML כשיש ?param. חובה User-Agent מלא של דפדפן
+      // (UA מינימלי מקבל 302 מ-IP של datacenter). הכתובת הנקייה מחזירה את התמונה.
       const r = await fetch(`${ART}/${path}`, { headers: BROWSER_HEADERS, redirect: 'follow', cache: 'no-store' });
       const ct = r.headers.get('content-type') || '';
-      if (debug) diag.push({ path, status: r.status, ct, finalUrl: r.url, len: r.headers.get('content-length') });
       if (r.ok && ct.startsWith('image')) {
         const buf = Buffer.from(await r.arrayBuffer());
         if (buf.length > 500) {
@@ -37,8 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: { sku: string 
           });
         }
       }
-    } catch (e) { if (debug) diag.push({ path, error: e instanceof Error ? e.message : 'err' }); }
+    } catch { /* try next */ }
   }
-  if (debug) return new Response(JSON.stringify({ digits, diag }, null, 2), { headers: { 'content-type': 'application/json' } });
   return new Response(null, { status: 404 });
 }
