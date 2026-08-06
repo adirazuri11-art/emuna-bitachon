@@ -20,9 +20,11 @@ export async function GET(req: NextRequest) {
       body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply with exactly: OK' }] }], generationConfig: { temperature: 0 } }),
       cache: 'no-store',
     });
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    return NextResponse.json({ ok: res.ok, hasKey: true, geminiStatus: res.status, geminiReply: String(text).trim().slice(0, 40), keyLen: key.length });
+    const raw = await res.text();
+    let data: Record<string, unknown> = {};
+    try { data = JSON.parse(raw); } catch { /* keep raw */ }
+    const text = (data as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    return NextResponse.json({ ok: res.ok, hasKey: true, geminiStatus: res.status, geminiReply: String(text).trim().slice(0, 40), errBody: res.ok ? undefined : raw.slice(0, 300), keyLen: key.length });
   } catch (e) {
     return NextResponse.json({ ok: false, hasKey: true, error: e instanceof Error ? e.message.slice(0, 120) : 'error' });
   }
