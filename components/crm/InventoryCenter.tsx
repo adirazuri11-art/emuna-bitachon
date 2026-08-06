@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Loader2, ChevronLeft, Download, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { QuickEditProduct } from './QuickEditProduct';
 
 export interface InvV2RowClient {
   sku: string; supplierCode: string | null; barcode: string | null; name: string;
+  internalDescription: string | null;
   category: string; supplierName: string | null; brand: string | null; image?: string;
   warehouseLocation: string | null;
   quantityOnHand: number; quantityGood: number; quantityDamaged: number; minimumStock: number | null;
@@ -79,7 +81,7 @@ export function InventoryCenter({ initialRows, initialKpis }: { initialRows: Inv
     { key: 'quantityDamaged', label: 'פגום', def: true, num: true, get: (r) => r.quantityDamaged, render: (r) => <span className={r.quantityDamaged > 0 ? 'text-red-300' : 'text-cream/30'}>{nf(r.quantityDamaged)}</span> },
     { key: 'minimumStock', label: 'מינ׳', def: false, num: true, get: (r) => r.minimumStock ?? -1, render: (r) => <span className="text-cream/50">{r.minimumStock != null ? nf(r.minimumStock) : '—'}</span> },
     { key: 'lastPurchaseCost', label: 'עלות אחרונה', def: false, num: true, get: (r) => r.lastPurchaseCost ?? -1, render: (r) => <span className="text-cream/70">{money(r.lastPurchaseCost)}</span> },
-    { key: 'landedCost', label: 'עלות אמיתית', def: true, num: true, get: (r) => r.landedCost ?? -1, render: (r) => r.landedCost != null ? <span className="text-cream/80">{money(r.landedCost)}</span> : <span className="text-amber-300/70 text-xs">חסרה עלות</span> },
+    { key: 'landedCost', label: 'עלות (כולל מע״מ)', def: true, num: true, get: (r) => r.landedCost ?? -1, render: (r) => r.landedCost != null ? <span className="text-cream/80">{money(r.landedCost)}</span> : <span className="text-amber-300/70 text-xs">חסרה עלות</span> },
     { key: 'retailPrice', label: 'מחיר לצרכן', def: true, num: true, get: (r) => r.retailPrice ?? -1, render: (r) => r.retailPrice != null ? <span className="text-cream">{money(r.retailPrice)}</span> : <span className="text-amber-300/70 text-xs">חסר מחיר</span> },
     { key: 'clubPrice', label: 'מחיר חבר', def: false, num: true, get: (r) => r.clubPrice ?? -1, render: (r) => <span className="text-cream/70">{r.clubPrice != null ? money(r.clubPrice) : 'לא הוגדר'}</span> },
     { key: 'profitAmount', label: 'רווח ליח׳', def: true, num: true, get: (r) => r.profitAmount ?? -99999, render: (r) => r.profitAmount != null ? <span className="text-emerald-300">{money(r.profitAmount)}</span> : <span className="text-cream/30">—</span> },
@@ -219,9 +221,12 @@ export function InventoryCenter({ initialRows, initialKpis }: { initialRows: Inv
                       <td key={c.key} className="whitespace-nowrap px-3 py-2.5">{c.render ? c.render(r) : String(c.get(r))}</td>
                     ))}
                     <td className="px-5 py-2.5 text-left">
-                      <Link href={`/crm/inventory/${encodeURIComponent(r.sku)}`} className="inline-flex items-center gap-1 text-xs text-gold hover:text-gold/80">
-                        ניהול <ChevronLeft className="h-3.5 w-3.5" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1">
+                        <QuickEditProduct sku={r.sku} name={r.name} description={r.internalDescription} retailPrice={r.retailPrice} image={r.image} compact />
+                        <Link href={`/crm/inventory-v2/${encodeURIComponent(r.sku)}`} className="inline-flex items-center gap-1 text-xs text-gold hover:text-gold/80">
+                          ניהול <ChevronLeft className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

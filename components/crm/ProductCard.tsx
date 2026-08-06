@@ -5,9 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { ImageManager } from './ImageManager';
+import { QuickEditProduct } from './QuickEditProduct';
 
 interface Row {
-  sku: string; supplierCode: string | null; barcode: string | null; name: string; category: string;
+  sku: string; supplierCode: string | null; barcode: string | null; name: string; internalDescription: string | null; category: string;
   supplierName: string | null; brand: string | null; image?: string; warehouseLocation: string | null;
   quantityOnHand: number; quantityGood: number; quantityDamaged: number; minimumStock: number | null;
   lastPurchaseCost: number | null; landedCost: number | null; retailPrice: number | null; clubPrice: number | null;
@@ -104,7 +105,10 @@ export function ProductCard({ item }: { item: InvV2ItemClient }) {
           {r.image ? <Image src={r.image} alt={r.name} fill className="object-contain p-1" sizes="112px" unoptimized={dataUrl(r.image)} /> : <span className="flex h-full items-center justify-center text-3xl">🎁</span>}
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-xl font-bold text-cream">{r.name}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <h1 className="font-display text-xl font-bold text-cream">{r.name}</h1>
+            <QuickEditProduct sku={r.sku} name={r.name} description={r.internalDescription} retailPrice={r.retailPrice} image={r.image} />
+          </div>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-cream/50">
             <span>קוד ספק: <span className="font-mono text-cream/70" dir="ltr">{r.supplierCode ?? '—'}</span></span>
             <span>SKU: <span className="font-mono text-cream/70" dir="ltr">{r.sku}</span></span>
@@ -177,7 +181,7 @@ export function ProductCard({ item }: { item: InvV2ItemClient }) {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <Field label="עלות אחרונה" value={money(r.lastPurchaseCost)} />
-              <Field label="עלות אמיתית (landed)" value={money(r.landedCost)} tone="text-cream" />
+              <Field label="עלות (כולל מע״מ 18%)" value={money(r.landedCost)} tone="text-cream" />
               <Field label="מחיר לצרכן" value={money(r.retailPrice)} />
               <Field label="מחיר חבר מועדון" value={r.clubPrice != null ? money(r.clubPrice) : 'לא הוגדר'} />
               <Field label="רווח ליחידה" value={money(r.profitAmount)} tone="text-emerald-300" />

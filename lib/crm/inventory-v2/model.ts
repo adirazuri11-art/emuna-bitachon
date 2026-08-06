@@ -41,6 +41,7 @@ export interface InvV2Row {
   supplierCode: string | null;
   barcode: string | null;
   name: string;
+  internalDescription: string | null;
   category: string;
   supplierName: string | null;
   brand: string | null;
@@ -92,7 +93,8 @@ function buildRow(sku: string, r: Record<string, unknown> | undefined, meta: Cat
     : r && r.last_purchase_price != null ? num(r.last_purchase_price) : null;
   const baseCost = invoiceCost != null ? invoiceCost : (meta?.cost ?? null);
   const addCost = r ? num(r.additional_unit_cost) : 0;
-  const landedCost = baseCost != null ? round2(baseCost + addCost) : null;
+  // עלות אמיתית כוללת מע"מ 18% (מחירי הספק לפני מע"מ; זו העלות בפועל ששולמה).
+  const landedCost = baseCost != null ? round2((baseCost + addCost) * 1.18) : null;
 
   // מחיר: override פנימי → קטלוג. מחיר חבר: override → memberPriceFor.
   const retail = r && r.retail_price_override != null ? num(r.retail_price_override)
@@ -111,6 +113,7 @@ function buildRow(sku: string, r: Record<string, unknown> | undefined, meta: Cat
     supplierCode: (r?.supplier_code as string) || (inCatalog ? S : null),
     barcode: (r?.barcode as string) || null,
     name,
+    internalDescription: (r?.internal_description as string) || null,
     category: (r?.category_name as string) || meta?.category || 'לא בקטלוג',
     supplierName: (r?.supplier_name as string) || (inCatalog ? 'ART Judaica' : null),
     brand: (r?.brand as string) || null,
