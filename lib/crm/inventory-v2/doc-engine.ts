@@ -100,6 +100,16 @@ async function extractPdfText(base64: string): Promise<string> {
   } catch { return ''; }
 }
 
+// המרת HEIC/HEIF (צילומי אייפון) ל-JPEG בצד השרת — דפדפנים לא ממירים, ו-Gemini לא מקבל HEIC.
+async function heicToJpeg(base64: string): Promise<string> {
+  try {
+    const mod = await import('heic-convert');
+    const convert = ((mod as unknown as { default?: unknown }).default ?? mod) as (o: { buffer: Buffer; format: 'JPEG'; quality: number }) => Promise<ArrayBuffer>;
+    const out = await convert({ buffer: Buffer.from(base64, 'base64'), format: 'JPEG', quality: 0.92 });
+    return Buffer.from(out).toString('base64');
+  } catch { return base64; }
+}
+
 // ---- יישור מול הקטלוג + סטטוס לכל שורה ----
 function reconcile(rawLines: Array<Record<string, unknown>>): ParsedLineV2[] {
   return rawLines.map((l) => {
@@ -156,10 +166,15 @@ export async function parseInvoiceSmart(base64: string, mimeType: string, fileNa
     best = g; passes = 1;
   } else {
     method = 'vision';
+    // צילומי אייפון (HEIC) → JPEG בצד השרת לפני ה-AI.
+    let visionB64 = base64, visionMime = mimeType;
+    if (/heic|heif/i.test(mimeType) || /\.(heic|heif)$/i.test(fileName)) {
+      visionB64 = await heicToJpeg(base64); visionMime = 'image/jpeg';
+    }
     // מספר מעברים — בוחרים את התקין ביותר (סכום תואם / הכי הרבה שורות ודאיות).
     let bestScore = -1e9;
     for (let i = 0; i < 3; i++) {
-      const g = await callGemini([{ text: visionPrompt }, { inline_data: { mime_type: mimeType, data: base64 } }]);
+      const g = await callGemini([{ text: visionPrompt }, { inline_data: { mime_type: visionMime, data: visionB64 } }]);
       if ('error' in g) { if (i === 0) return { ...empty, method, error: g.error, needsKey: g.needsKey }; continue; }
       passes++;
       const sc = scoreResult(reconcile(g.lines), g.total);
