@@ -193,6 +193,20 @@ export async function listInventoryV2(search = '', filter: InvV2Filter = 'all', 
   return filtered.slice(0, limit);
 }
 
+// שורה עשירה למוצר בודד (לכרטיס המוצר).
+export async function getRowV2(sku: string): Promise<InvV2Row | null> {
+  const S = (sku || '').trim().toUpperCase();
+  if (!S) return null;
+  const meta = META.get(S);
+  let r: Record<string, unknown> | undefined;
+  try {
+    const rows = (await prisma.$queryRawUnsafe(`select * from public.inventory_items where sku=$1 limit 1`, S)) as Array<Record<string, unknown>>;
+    r = rows[0];
+  } catch { /* no DB */ }
+  if (!meta && !r) return null;
+  return buildRow(S, r, meta);
+}
+
 export interface InvV2Kpis {
   totalProducts: number;
   totalUnits: number;
