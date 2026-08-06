@@ -15,16 +15,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ models: names });
   }
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply with exactly: OK' }] }], generationConfig: { temperature: 0 } }),
-      cache: 'no-store',
-    });
-    const raw = await res.text();
-    let data: Record<string, unknown> = {};
-    try { data = JSON.parse(raw); } catch { /* keep raw */ }
-    const text = (data as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    return NextResponse.json({ ok: res.ok, hasKey: true, geminiStatus: res.status, geminiReply: String(text).trim().slice(0, 40), errBody: res.ok ? undefined : raw.slice(0, 300), keyLen: key.length });
+    const candidates = ['gemini-2.0-flash-lite', 'gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 'gemini-2.0-flash'];
+    const results: Array<{ model: string; status: number }> = [];
+    let working = '';
+    for (const model of candidates) {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply OK' }] }], generationConfig: { temperature: 0 } }),
+        cache: 'no-store',
+      });
+      results.push({ model, status: res.status });
+      if (res.ok) { working = model; break; }
+    }
+    return NextResponse.json({ ok: !!working, hasKey: true, workingModel: working || null, results, keyLen: key.length });
   } catch (e) {
     return NextResponse.json({ ok: false, hasKey: true, error: e instanceof Error ? e.message.slice(0, 120) : 'error' });
   }
