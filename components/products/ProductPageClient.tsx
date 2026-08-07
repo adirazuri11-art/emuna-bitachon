@@ -300,7 +300,7 @@ export function ProductPageClient({
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-navy">
-                  בחרו מידה{selectedVariant ? <span className="text-gold-soft"> · {selectedVariant.size}</span> : ''}
+                  בחרו מידה{selectedVariant ? <span className="text-gold-soft"> · {selectedVariant.unit === 'cm' ? `${selectedVariant.size} ס״מ` : `גודל ${selectedVariant.size}`}</span> : ''}
                 </span>
                 <button type="button" onClick={() => setShowSizeGuide(true)}
                   className="text-xs text-gold-soft underline underline-offset-2 hover:text-navy">
@@ -311,11 +311,13 @@ export function ProductPageClient({
                 {product.sizeVariants!.map((v) => (
                   <button key={v.code} type="button" onClick={() => setSelectedSize(v.size)}
                     aria-pressed={selectedSize === v.size}
-                    className={cn('min-h-[44px] min-w-[52px] rounded-xl border px-4 text-sm font-semibold transition-colors',
+                    aria-label={v.unit === 'cm' ? `מידה ${v.size} סנטימטר` : `גודל ${v.size}`}
+                    className={cn('flex min-h-[48px] min-w-[56px] flex-col items-center justify-center rounded-xl border px-3 py-1.5 transition-colors',
                       selectedSize === v.size
                         ? 'border-gold bg-gold/15 text-navy shadow-sm'
                         : 'border-navy/15 text-navy/70 hover:border-gold/60')}>
-                    {v.size}
+                    <span className="text-base font-bold leading-none">{v.size}</span>
+                    <span className="mt-0.5 text-[10px] leading-none text-navy/45">{v.unit === 'cm' ? 'ס״מ' : 'גודל'}</span>
                   </button>
                 ))}
               </div>

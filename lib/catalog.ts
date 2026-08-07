@@ -149,7 +149,7 @@ export interface CatalogProduct extends ProductCardData {
   priceType?: 'fixed' | 'from' | 'quote'; // "החל מ־" / "לקבלת הצעת מחיר"
   variantGroups?: VariantGroup[];
   // וריאנטי מידה (כיפות) — מוצר ראשי אחד עם בחירת מידה. code=SKU של הספק לכל מידה.
-  sizeVariants?: { code: string; size: string; price: number; slug: string }[];
+  sizeVariants?: { code: string; size: string; price: number; slug: string; unit?: 'cm' | 'grade'; diameterCm?: number }[];
   sizes?: string[];
   customization?: CustomizationConfig;
   gallery: GalleryView[];
