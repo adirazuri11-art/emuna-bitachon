@@ -41,7 +41,7 @@ function baseName(it: RawItem): string {
   t = t.replace(/(גודל|מידה)\s*\d+/g, '');
   const sz = it.sz;
   if (sz) t = t.split(sz).join('');
-  return t.replace(/\.{2,}|…/g, '').replace(/\s+/g, ' ').replace(/[–\-]+\s*$/, '').replace(/["״]\s*$/, '').trim();
+  return t.replace(/\.{2,}|…/g, '').replace(/\(\s*\)/g, '').replace(/\s+/g, ' ').replace(/[–\-]+\s*$/, '').replace(/["״]\s*$/, '').trim();
 }
 
 // גודל → ס"מ — נגזר מנתוני ART עצמם (61 מוצרים שמציינים גם גודל וגם ס"מ בשם).
