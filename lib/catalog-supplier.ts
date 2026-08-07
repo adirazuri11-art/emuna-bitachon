@@ -304,7 +304,7 @@ export const SUPPLIER_PRODUCTS: CatalogProduct[] = RAW
     return {
       ...p,
       titleHe: g.baseName || p.titleHe,
-      sizeVariants: g.variants.map((v) => ({ code: v.code, size: v.size, price: v.price, slug: v.slug, unit: v.unit })),
+      sizeVariants: g.variants.map((v) => ({ code: v.code, size: v.size, price: v.price, slug: v.slug, unit: v.unit, ...(v.diameterCm ? { diameterCm: v.diameterCm } : {}) })),
       sizes: g.variants.map((v) => v.size),
       basePrice: Math.min(...prices),
       priceType: (varied ? 'from' : 'fixed') as CatalogProduct['priceType'],

@@ -44,10 +44,15 @@ function baseName(it: RawItem): string {
   return t.replace(/\.{2,}|…/g, '').replace(/\s+/g, ' ').replace(/[–\-]+\s*$/, '').replace(/["״]\s*$/, '').trim();
 }
 
+// גודל → ס"מ — נגזר מנתוני ART עצמם (61 מוצרים שמציינים גם גודל וגם ס"מ בשם).
+// רק ערכים ברורים ושכיחים; גודל 2 ו-7 הושמטו (נתוני ART לא חד-משמעיים). אין המצאה.
+const GRADE_TO_CM: Record<string, number> = { '3': 19, '4': 20, '5': 21, '6': 22, '8': 24 };
+
 export interface KippahVariant {
   code: string;        // supplierCode = SKU
   size: string;        // המידה (ס"מ או גודל)
   unit: 'cm' | 'grade'; // יחידת המידה
+  diameterCm?: number; // קוטר בס"מ למידת "גודל" — מנתוני ART בלבד
   price: number;       // מחיר אתר (retail)
   cost: number;        // עלות ספק (לפני מע"מ)
   slug: string;        // ה-slug ההיסטורי (art-<code>) — לצורך 301
@@ -97,14 +102,18 @@ for (const items of Array.from(groupsByKey.values())) {
   // מייצג = המידה האמצעית (יציב וסביר לאינדוקס), אחרת הראשון
   const rep = sorted[Math.floor(sorted.length / 2)].it;
   const first = items[0];
-  const variants: KippahVariant[] = sorted.map(({ it, size }) => ({
-    code: it.id,
-    size: size!,
-    unit: parseFloat(size!) >= 10 ? 'cm' : 'grade',
-    price: retail(it.cost),
-    cost: it.cost,
-    slug: `art-${it.id.toLowerCase()}`,
-  }));
+  const variants: KippahVariant[] = sorted.map(({ it, size }) => {
+    const unit: 'cm' | 'grade' = parseFloat(size!) >= 10 ? 'cm' : 'grade';
+    return {
+      code: it.id,
+      size: size!,
+      unit,
+      ...(unit === 'grade' && GRADE_TO_CM[size!] ? { diameterCm: GRADE_TO_CM[size!] } : {}),
+      price: retail(it.cost),
+      cost: it.cost,
+      slug: `art-${it.id.toLowerCase()}`,
+    };
+  });
   const group: KippahGroup = {
     parentCode: rep.id,
     parentSlug: `art-${rep.id.toLowerCase()}`,

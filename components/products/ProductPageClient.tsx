@@ -300,7 +300,7 @@ export function ProductPageClient({
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-navy">
-                  בחרו מידה{selectedVariant ? <span className="text-gold-soft"> · {selectedVariant.unit === 'cm' ? `${selectedVariant.size} ס״מ` : `גודל ${selectedVariant.size}`}</span> : ''}
+                  בחרו מידה{selectedVariant ? <span className="text-gold-soft"> · {selectedVariant.unit === 'cm' ? `${selectedVariant.size} ס״מ` : `גודל ${selectedVariant.size}${selectedVariant.diameterCm ? ` · ≈${selectedVariant.diameterCm} ס״מ` : ''}`}</span> : ''}
                 </span>
                 <button type="button" onClick={() => setShowSizeGuide(true)}
                   className="text-xs text-gold-soft underline underline-offset-2 hover:text-navy">
@@ -317,7 +317,7 @@ export function ProductPageClient({
                         ? 'border-gold bg-gold/15 text-navy shadow-sm'
                         : 'border-navy/15 text-navy/70 hover:border-gold/60')}>
                     <span className="text-base font-bold leading-none">{v.size}</span>
-                    <span className="mt-0.5 text-[10px] leading-none text-navy/45">{v.unit === 'cm' ? 'ס״מ' : 'גודל'}</span>
+                    <span className="mt-0.5 text-[10px] leading-none text-navy/45">{v.unit === 'cm' ? 'ס״מ' : v.diameterCm ? `≈${v.diameterCm} ס״מ` : 'גודל'}</span>
                   </button>
                 ))}
               </div>
