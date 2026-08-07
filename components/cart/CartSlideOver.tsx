@@ -164,7 +164,12 @@ export function CartSlideOver() {
                       className="flex items-center gap-3 rounded-xl border border-navy/5 bg-white p-3 shadow-card"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-navy">{item.title}</p>
+                        <p className="truncate text-sm font-medium text-navy">{item.title.split(' · מידה ')[0]}</p>
+                        {item.size && (
+                          <span className="mt-0.5 inline-block rounded-md bg-gold/15 px-1.5 py-0.5 text-[11px] font-semibold text-navy">
+                            מידה {item.size}
+                          </span>
+                        )}
                         {item.customization && (
                           <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-navy/50">
                             {Object.entries(item.customization)
