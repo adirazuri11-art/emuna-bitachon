@@ -307,20 +307,38 @@ export function ProductPageClient({
                   איך בוחרים מידה?
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {product.sizeVariants!.map((v) => (
+              {(() => {
+                const all = product.sizeVariants!;
+                const cm = all.filter((v) => (v.unit ?? 'cm') === 'cm').sort((a, b) => parseFloat(a.size) - parseFloat(b.size));
+                const gr = all.filter((v) => v.unit === 'grade').sort((a, b) => parseFloat(a.size) - parseFloat(b.size));
+                const both = cm.length > 0 && gr.length > 0;
+                const btn = (v: NonNullable<typeof product.sizeVariants>[number]) => (
                   <button key={v.code} type="button" onClick={() => setSelectedSize(v.size)}
                     aria-pressed={selectedSize === v.size}
-                    aria-label={v.unit === 'cm' ? `מידה ${v.size} סנטימטר` : `גודל ${v.size}`}
+                    aria-label={v.unit === 'cm' ? `מידה ${v.size} סנטימטר` : `גודל ${v.size}${v.diameterCm ? ` כ-${v.diameterCm} סנטימטר` : ''}`}
                     className={cn('flex min-h-[48px] min-w-[56px] flex-col items-center justify-center rounded-xl border px-3 py-1.5 transition-colors',
-                      selectedSize === v.size
-                        ? 'border-gold bg-gold/15 text-navy shadow-sm'
-                        : 'border-navy/15 text-navy/70 hover:border-gold/60')}>
+                      selectedSize === v.size ? 'border-gold bg-gold/15 text-navy shadow-sm' : 'border-navy/15 text-navy/70 hover:border-gold/60')}>
                     <span className="text-base font-bold leading-none">{v.size}</span>
                     <span className="mt-0.5 text-[10px] leading-none text-navy/45">{v.unit === 'cm' ? 'ס״מ' : v.diameterCm ? `≈${v.diameterCm} ס״מ` : 'גודל'}</span>
                   </button>
-                ))}
-              </div>
+                );
+                return (
+                  <div className="space-y-3">
+                    {cm.length > 0 && (
+                      <div>
+                        {both && <div className="mb-1.5 text-xs font-medium text-navy/45">מידה בסנטימטרים</div>}
+                        <div className="flex flex-wrap gap-2">{cm.map(btn)}</div>
+                      </div>
+                    )}
+                    {gr.length > 0 && (
+                      <div>
+                        {both && <div className="mb-1.5 text-xs font-medium text-navy/45">מידת גודל</div>}
+                        <div className="flex flex-wrap gap-2">{gr.map(btn)}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {!selectedVariant && <p className="mt-2 text-xs text-navy/45">בחרו מידה כדי להוסיף לסל</p>}
             </div>
           )}

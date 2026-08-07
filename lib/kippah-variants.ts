@@ -69,18 +69,13 @@ export interface KippahGroup {
   variants: KippahVariant[]; // ממוינות לפי מידה
 }
 
-// יחידת מידה: ס"מ (16–24) לעומת "גודל" (2–8). אסור למזג ביניהן באותו מוצר.
-function sizeUnit(it: RawItem): 'cm' | 'grade' | 'none' {
-  const s = sizeOf(it);
-  if (!s) return 'none';
-  return parseFloat(s) >= 10 ? 'cm' : 'grade';
-}
-
 const groupsByKey = new Map<string, RawItem[]>();
 for (const it of RAW) {
   if (it.c !== 'kippot') continue;
-  // המפתח כולל יחידת מידה → ס"מ ו"גודל" לא מתמזגים לאותו דגם.
-  const key = [baseName(it), it.mat ?? '', it.col ?? '', it.s ?? '', sizeUnit(it)].join('|');
+  // אותו דגם (שם-בסיס+חומר+צבע) — כולל ס"מ וגם "גודל". בבורר הם מוצגים
+  // בשתי קבוצות נפרדות ("בס"מ" / "גודל") כדי שלא תהיה קפיצה מבלבלת. אין חפיפת מספרים
+  // בין המערכות (ס"מ 16–24, גודל 2–8) ולכן המידות נשארות ייחודיות.
+  const key = [baseName(it), it.mat ?? '', it.col ?? '', it.s ?? ''].join('|');
   const arr = groupsByKey.get(key) ?? [];
   arr.push(it);
   groupsByKey.set(key, arr);

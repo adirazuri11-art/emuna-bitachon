@@ -52,10 +52,14 @@ test('no SKU is duplicated in the catalog', () => {
   assert.equal(new Set(ids).size, ids.length, 'duplicate SKU ids found');
 });
 
-test('no variant group mixes cm and grade units', () => {
+test('cm (>=10) and grade (<10) size numbers never collide within a group', () => {
+  // דגם יכול לכלול גם ס"מ וגם גודל (מוצגים בבוררים נפרדים), אך המספרים לא חופפים
+  // כדי שבחירת מידה (לפי מספר) תישאר חד-משמעית.
   for (const ws of groups()) {
-    const units = new Set(ws.map((x) => unitOf(x.it)));
-    assert.equal(units.size, 1, `mixed units in group: ${baseName(ws[0].it)}`);
+    const cm = ws.filter((x) => parseFloat(x.size) >= 10).map((x) => x.size);
+    const gr = ws.filter((x) => parseFloat(x.size) < 10).map((x) => x.size);
+    const overlap = cm.filter((s) => gr.includes(s));
+    assert.deepEqual(overlap, [], `size number collision in ${baseName(ws[0].it)}`);
   }
 });
 
