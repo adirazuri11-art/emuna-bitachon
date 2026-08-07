@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { PRODUCTS, getProduct, getRelatedProducts, CATEGORIES } from '@/lib/catalog';
+import { VARIANT_TO_PARENT } from '@/lib/kippah-variants';
 import { ProductPageClient } from '@/components/products/ProductPageClient';
 import { ProductReviews } from '@/components/products/ProductReviews';
 import { getApprovedReviews, getReviewStats } from '@/lib/reviews';
@@ -44,11 +45,18 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 
 export default async function ProductPage({ params }: { params: { slug: string } }) {
   const product = getProduct(params.slug);
-  if (!product) notFound();
+  if (!product) {
+    // וריאנט-מידה שאוחד למוצר ראשי → 301 קבוע (שמירת SEO וקישורים ישנים)
+    const code = params.slug.replace(/^art-/i, '').toUpperCase();
+    const parentSlug = VARIANT_TO_PARENT.get(code);
+    if (parentSlug) permanentRedirect(`/product/${parentSlug}`);
+    notFound();
+  }
 
   const related = getRelatedProducts(product);
   const category = CATEGORIES.find((c) => c.nameHe === product.category);
   const price = product.discountPrice ?? product.basePrice;
+  const sv = product.sizeVariants ?? [];
 
   // ביקורות מאושרות (מזין aggregateRating + סקשן חוות דעת). נכשל בחן → ריק.
   const [reviewStats, reviews] = await Promise.all([
@@ -95,9 +103,10 @@ export default async function ProductPage({ params }: { params: { slug: string }
             }
           : {}),
         offers: {
-          '@type': 'Offer',
+          ...(sv.length > 0
+            ? { '@type': 'AggregateOffer', lowPrice: Math.min(...sv.map((v) => v.price)), highPrice: Math.max(...sv.map((v) => v.price)), offerCount: sv.length }
+            : { '@type': 'Offer', price }),
           url: `${SITE_URL}/product/${product.slug}`,
-          price,
           priceCurrency: 'ILS',
           priceValidUntil: new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10),
           itemCondition: 'https://schema.org/NewCondition',
