@@ -8,6 +8,7 @@ import type { CatalogProduct } from '@/lib/catalog';
 import type { ProductIconKey } from '@/types';
 import supplierData from '@/lib/supplier-products.json';
 import { PLAIN_KIPPAH_EMBOSS } from '@/lib/customization-presets';
+import { HIDDEN_VARIANT_CODES, groupForParent } from '@/lib/kippah-variants';
 
 interface RawItem {
   id: string;
@@ -290,4 +291,22 @@ function toProduct(item: RawItem): CatalogProduct {
   };
 }
 
-export const SUPPLIER_PRODUCTS: CatalogProduct[] = RAW.map(toProduct);
+export const SUPPLIER_PRODUCTS: CatalogProduct[] = RAW
+  // מסתירים קודי-בן של וריאנטי מידה — מוצג רק המוצר הראשי (301 מפנה מהבן לראשי).
+  .filter((item) => !HIDDEN_VARIANT_CODES.has(item.id.toUpperCase()))
+  .map(toProduct)
+  // מצרפים למוצר ראשי את וריאנטי המידה + שם-דגם נקי (בלי מידה) + תמחור "החל מ־".
+  .map((p) => {
+    const g = groupForParent(p.sku);
+    if (!g) return p;
+    const prices = g.variants.map((v) => v.price);
+    const varied = prices.some((x) => x !== prices[0]);
+    return {
+      ...p,
+      titleHe: g.baseName || p.titleHe,
+      sizeVariants: g.variants.map((v) => ({ code: v.code, size: v.size, price: v.price, slug: v.slug })),
+      sizes: g.variants.map((v) => v.size),
+      basePrice: Math.min(...prices),
+      priceType: (varied ? 'from' : 'fixed') as CatalogProduct['priceType'],
+    };
+  });

@@ -148,6 +148,9 @@ export interface CatalogProduct extends ProductCardData {
   occasions?: string[]; // אירועים רלוונטיים — מזין את מאתר המתנות
   priceType?: 'fixed' | 'from' | 'quote'; // "החל מ־" / "לקבלת הצעת מחיר"
   variantGroups?: VariantGroup[];
+  // וריאנטי מידה (כיפות) — מוצר ראשי אחד עם בחירת מידה. code=SKU של הספק לכל מידה.
+  sizeVariants?: { code: string; size: string; price: number; slug: string }[];
+  sizes?: string[];
   customization?: CustomizationConfig;
   gallery: GalleryView[];
   isPlaceholderImage: boolean; // true = איור המחשה זמני, יוחלף בצילום אמיתי
