@@ -36,6 +36,26 @@ for (const p of PRODUCTS) {
   });
 }
 
+// ⭐ מלאי לפי מידה: כל וריאנט מידה (כיפות) הוא SKU פיזי נפרד למעקב מלאי ב-CRM.
+// המוצר הראשי בקטלוג מוסתר כאן; במקומו מוצגות כל המידות (כולל זו של הראשי).
+const VARIANT_META = new Map<string, CatMeta & { parentSku: string; size: string }>();
+for (const p of PRODUCTS) {
+  const sv = p.sizeVariants;
+  if (!sv || sv.length === 0) continue;
+  for (const v of sv) {
+    const label = v.unit === 'cm' ? `${v.size} ס״מ` : `גודל ${v.size}${v.diameterCm ? ` (≈${v.diameterCm} ס״מ)` : ''}`;
+    VARIANT_META.set(v.code.toUpperCase(), {
+      title: `${p.titleHe} · מידה ${label}`,
+      image: `/images/supplier-real/${v.code}.jpg`,
+      category: p.category,
+      retail: v.price,
+      cost: SUPPLIER_COST.get(v.code.toUpperCase()),
+      parentSku: p.sku.toUpperCase(),
+      size: v.size,
+    });
+  }
+}
+
 export interface InvV2Row {
   sku: string;
   supplierCode: string | null;
@@ -183,6 +203,17 @@ export async function listInventoryV2(search = '', filter: InvV2Filter = 'all', 
   const rows: InvV2Row[] = [];
   const seen = new Set<string>();
   for (const p of PRODUCTS) {
+    const sv = p.sizeVariants;
+    if (sv && sv.length) {
+      // מוצר עם מידות → שורה נפרדת לכל מידה (SKU פיזי) למעקב מלאי מדויק.
+      for (const v of sv) {
+        const VS = v.code.toUpperCase();
+        if (seen.has(VS)) continue;
+        seen.add(VS);
+        rows.push(buildRow(VS, inv.get(VS), VARIANT_META.get(VS)));
+      }
+      continue;
+    }
     const S = p.sku.toUpperCase();
     seen.add(S);
     rows.push(buildRow(S, inv.get(S), META.get(S)));
@@ -206,7 +237,7 @@ export async function listInventoryV2(search = '', filter: InvV2Filter = 'all', 
 export async function getRowV2(sku: string): Promise<InvV2Row | null> {
   const S = (sku || '').trim().toUpperCase();
   if (!S) return null;
-  const meta = META.get(S);
+  const meta = VARIANT_META.get(S) ?? META.get(S);
   let r: Record<string, unknown> | undefined;
   try {
     const rows = (await prisma.$queryRawUnsafe(`select * from public.inventory_items where sku=$1 limit 1`, S)) as Array<Record<string, unknown>>;
