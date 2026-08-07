@@ -346,7 +346,8 @@ function orderQtyBySku(items: Array<{ id?: string; quantity?: number }>): Map<st
   const bySku = new Map<string, number>();
   for (const it of items) {
     const sku = skuOf(String(it.id ?? ''));
-    if (!sku || !META.has(sku)) continue;
+    // כל SKU בקטלוג (כולל וריאנטי-מידה מוסתרים) — SUPPLIER_COST מכיל את כולם, META רק ראשיים.
+    if (!sku || !SUPPLIER_COST.has(sku)) continue;
     bySku.set(sku, (bySku.get(sku) ?? 0) + Math.max(1, Math.floor(num(it.quantity) || 1)));
   }
   return bySku;
