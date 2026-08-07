@@ -22,6 +22,7 @@ interface RawItem {
   img?: string; // מזהה תמונה מרוחקת (ארט יודאיקה webp); קיים = תמונת hotlink + לוגו-שכבה
   imgFull?: string; // כתובת תמונה מלאה (למשל /big/<code>.jpg) — גובר על img
   pk?: number; // כמות יחידות במארז (המחיר הוא למארז שלם)
+  nw?: number; // 1 = דגם כיפה חדש (סדר קטגוריה: מעל המארזים)
 }
 
 const RAW = (supplierData as { items: RawItem[] }).items;
@@ -255,6 +256,9 @@ function toProduct(item: RawItem): CatalogProduct {
     material: [item.mat, packNote].filter(Boolean).join(' · ') || undefined,
     basePrice: finalPrice,
     ...(minOrderUnits ? { minOrderUnits } : {}),
+    // סדר קטגוריית כיפות: מארז (packQty>1/סטנד/מינ׳-הזמנה) בתחתית; דגם חדש מעליהם.
+    isPack: packQty > 1 || !!minOrderUnits || !!standUnits,
+    isNewModel: !!item.nw,
     isCustomizable: engravable,
     ...(engravable ? { customization: PLAIN_KIPPAH_EMBOSS } : {}),
     iconKey: CAT_ICON[item.c] ?? 'gift',

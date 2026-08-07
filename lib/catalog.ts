@@ -150,6 +150,8 @@ export interface CatalogProduct extends ProductCardData {
   variantGroups?: VariantGroup[];
   // וריאנטי מידה (כיפות) — מוצר ראשי אחד עם בחירת מידה. code=SKU של הספק לכל מידה.
   sizeVariants?: { code: string; size: string; price: number; slug: string; unit?: 'cm' | 'grade'; diameterCm?: number }[];
+  isPack?: boolean;      // מגיע במארז/מינ׳-הזמנה — בתחתית קטגוריית הכיפות
+  isNewModel?: boolean;  // דגם חדש — מעל המארזים
   sizes?: string[];
   customization?: CustomizationConfig;
   gallery: GalleryView[];
@@ -835,7 +837,10 @@ export const getSubcategories = (categorySlug: string): string[] => {
 export const getProductsByCategory = (categorySlug: string) => {
   const cat = getCategory(categorySlug);
   if (!cat) return [];
-  return PRODUCTS.filter((p) => p.category === cat.nameHe);
+  const list = PRODUCTS.filter((p) => p.category === cat.nameHe);
+  // סדר תצוגה: רגילות (0) → דגמים חדשים (1) → מארזים בתחתית (2). מיון יציב.
+  const rank = (p: CatalogProduct) => (p.isPack ? 2 : p.isNewModel ? 1 : 0);
+  return list.map((p, i) => ({ p, i })).sort((a, b) => rank(a.p) - rank(b.p) || a.i - b.i).map((x) => x.p);
 };
 
 // קטגוריות פעילות בלבד — כאלה שיש בהן מוצרים (מסתיר קטגוריות ריקות מהניווט/דף הבית).
