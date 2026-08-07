@@ -8,6 +8,8 @@ export interface CartItem {
   price: number;
   quantity: number;
   minQty?: number; // מינימום יחידות (כיפות זולות: 5)
+  size?: string; // מידת וריאנט (כיפות) — נשמרת דרך כל התהליך
+  sku?: string; // קוד ספק של הווריאנט הנבחר
   customization?: Record<string, string>; // { text: "לחתן היקר", font: "..." }
 }
 

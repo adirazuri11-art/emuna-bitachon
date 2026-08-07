@@ -79,6 +79,8 @@ export function ProductPageClient({
   const addRecent = useRecentlyViewedStore((s) => s.add);
   const showToast = useToastStore((s) => s.show);
   const [mounted, setMounted] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -91,6 +93,10 @@ export function ProductPageClient({
   }, [product.slug]);
 
   const price = computePrice({ product, variantSelections });
+  // וריאנטי מידה (כיפות) — מחיר נגזר מהמידה הנבחרת; "החל מ־" עד לבחירה.
+  const hasSizes = (product.sizeVariants?.length ?? 0) > 0;
+  const selectedVariant = hasSizes ? product.sizeVariants!.find((v) => v.size === selectedSize) : undefined;
+  const unitPrice = hasSizes ? (selectedVariant?.price ?? Math.min(...product.sizeVariants!.map((v) => v.price))) : price.unitPrice;
   const view = product.gallery[activeView] ?? product.gallery[0];
 
   const recentlyViewed = useMemo(
@@ -104,6 +110,11 @@ export function ProductPageClient({
   );
 
   const handleQuickAdd = () => {
+    // כיפות עם מידות — חובה לבחור מידה לפני הוספה לסל (הודעה מעוצבת, לא alert).
+    if (hasSizes && !selectedVariant) {
+      showToast('יש לבחור מידה לפני ההוספה לסל', 'info');
+      return;
+    }
     const customization =
       product.variantGroups && product.variantGroups.length > 0
         ? Object.fromEntries(
@@ -113,16 +124,19 @@ export function ProductPageClient({
             ])
           )
         : undefined;
+    const itemId = selectedVariant ? selectedVariant.slug : `${product.id}${customization ? `-${Object.values(customization).join('-')}` : ''}`;
+    const itemTitle = selectedVariant ? `${product.titleHe} · מידה ${selectedVariant.size}` : product.titleHe;
     addItem({
-      id: `${product.id}${customization ? `-${Object.values(customization).join('-')}` : ''}`,
-      title: product.titleHe,
-      price: price.unitPrice,
+      id: itemId,
+      title: itemTitle,
+      price: unitPrice,
       minQty: product.minOrderUnits,
+      ...(selectedVariant ? { size: selectedVariant.size, sku: selectedVariant.code } : {}),
       customization,
     });
     trackEvent('add_to_cart', {
-      value: price.unitPrice,
-      items: [{ id: product.id, name: product.titleHe, price: price.unitPrice }],
+      value: unitPrice,
+      items: [{ id: selectedVariant?.code ?? product.id, name: itemTitle, price: unitPrice }],
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
@@ -228,12 +242,12 @@ export function ProductPageClient({
               <span className="font-display text-2xl font-bold text-navy">לקבלת הצעת מחיר</span>
             ) : (
               <>
-                {product.priceType === 'from' && <span className="mb-1 text-sm font-medium text-navy/50">החל מ־</span>}
+                {product.priceType === 'from' && !selectedVariant && <span className="mb-1 text-sm font-medium text-navy/50">החל מ־</span>}
                 {product.discountPrice && (
                   <span className="text-lg text-navy/40 line-through">{formatPrice(product.basePrice)}</span>
                 )}
                 <span className="font-display text-3xl font-bold text-navy">
-                  {formatPrice(price.unitPrice)}
+                  {formatPrice(unitPrice)}
                   {product.minOrderUnits && <span className="text-sm font-medium text-navy/50"> ליחידה</span>}
                 </span>
                 {product.minOrderUnits && (
@@ -279,6 +293,34 @@ export function ProductPageClient({
               </Link>{' '}
               ולהוראות חוק הגנת הצרכן.
             </p>
+          )}
+
+          {/* בורר מידות (כיפות) */}
+          {hasSizes && (
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-navy">
+                  בחרו מידה{selectedVariant ? <span className="text-gold-soft"> · {selectedVariant.size}</span> : ''}
+                </span>
+                <button type="button" onClick={() => setShowSizeGuide(true)}
+                  className="text-xs text-gold-soft underline underline-offset-2 hover:text-navy">
+                  איך בוחרים מידה?
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {product.sizeVariants!.map((v) => (
+                  <button key={v.code} type="button" onClick={() => setSelectedSize(v.size)}
+                    aria-pressed={selectedSize === v.size}
+                    className={cn('min-h-[44px] min-w-[52px] rounded-xl border px-4 text-sm font-semibold transition-colors',
+                      selectedSize === v.size
+                        ? 'border-gold bg-gold/15 text-navy shadow-sm'
+                        : 'border-navy/15 text-navy/70 hover:border-gold/60')}>
+                    {v.size}
+                  </button>
+                ))}
+              </div>
+              {!selectedVariant && <p className="mt-2 text-xs text-navy/45">בחרו מידה כדי להוסיף לסל</p>}
+            </div>
           )}
 
           {/* וריאציות */}
@@ -423,14 +465,34 @@ export function ProductPageClient({
         </section>
       )}
 
+      {/* ===== מדריך מידות ===== */}
+      {showSizeGuide && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center" onClick={() => setShowSizeGuide(false)}>
+          <div onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl" dir="rtl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-navy">איך בוחרים מידה?</h3>
+              <button onClick={() => setShowSizeGuide(false)} aria-label="סגירה"
+                className="rounded-lg p-1 text-navy/40 hover:bg-navy/5">✕</button>
+            </div>
+            <div className="space-y-3 text-sm leading-relaxed text-navy/75">
+              <p>מידות הכיפות עשויות להשתנות מעט בין דגמים. הדרך הנוחה ביותר היא לקחת כיפה שכבר מתאימה לכם, למדוד אותה מצד לצד בנקודה הרחבה ביותר ולהשוות למידות המופיעות בדגם.</p>
+              <p>כאשר קיים קוטר מדויק מטעם היצרן, הוא יוצג לצד המידה.</p>
+              <p className="text-navy/60">מתלבטים בין שתי מידות? <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="text-gold-soft underline">צרו איתנו קשר</a> ונשמח לעזור.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ===== Sticky add-to-cart במובייל ===== */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gold/20 bg-white/95 p-3 backdrop-blur-md lg:hidden">
         <div className="flex items-center gap-3">
           <div className="leading-tight">
             <span className="block text-[11px] text-navy/50">{product.titleHe.slice(0, 28)}…</span>
             <span className="font-bold text-navy">
-              {product.priceType === 'quote' ? 'הצעת מחיר' : formatPrice(price.unitPrice)}
+              {product.priceType === 'quote' ? 'הצעת מחיר' : `${hasSizes && !selectedVariant ? 'החל מ־' : ''}${formatPrice(unitPrice)}`}
             </span>
+            {hasSizes && !selectedVariant && <span className="block text-[10px] font-medium text-gold-soft">בחרו מידה</span>}
           </div>
           {product.priceType === 'quote' ? (
             <Link href={`/quote?product=${encodeURIComponent(product.titleHe)}&sku=${product.sku}`}
