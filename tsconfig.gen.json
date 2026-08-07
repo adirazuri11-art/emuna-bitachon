@@ -20,6 +20,7 @@
   "include": [
     "lib/catalog.ts",
     "lib/catalog-supplier.ts",
+    "lib/kippah-variants.ts",
     "lib/customization-presets.ts",
     "lib/catalog-constants.ts",
     "types/index.ts"

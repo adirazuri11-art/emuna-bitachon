@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "gen:index": "tsc -p tsconfig.gen.json && node scripts/gen-search-index.cjs",
-    "prebuild": "tsc -p tsconfig.gen.json && node scripts/gen-search-index.cjs",
+    "gen:index": "tsc -p tsconfig.gen.json && node scripts/gen-search-index.cjs && node scripts/gen-variant-redirects.cjs",
+    "prebuild": "tsc -p tsconfig.gen.json && node scripts/gen-search-index.cjs && node scripts/gen-variant-redirects.cjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

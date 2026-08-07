@@ -1,6 +1,22 @@
 // STATIC_EXPORT=1 → בילד סטטי ל-Surge (בלי API routes / ISR).
 // בלי הדגל → מצב שרת מלא (פיתוח מקומי / Vercel).
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
 const isStaticExport = process.env.STATIC_EXPORT === '1';
+
+// 301/308 קבוע מ-slug של וריאנט-מידה שאוחד → מוצר ראשי (SEO). נוצר ב-prebuild
+// (scripts/gen-variant-redirects.cjs) מ-VARIANT_TO_PARENT. חסר/ריק → [] (dev).
+function variantRedirects() {
+  try {
+    const p = join(dirname(fileURLToPath(import.meta.url)), 'lib', 'variant-redirects.json');
+    const arr = JSON.parse(readFileSync(p, 'utf8'));
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
 
 // ============================================================
 // Security Headers — מוגנות מכל ההתקפות (CSP, clickjacking, etc.)
@@ -67,6 +83,9 @@ const nextConfig = isStaticExport
             headers: securityHeaders,
           },
         ];
+      },
+      async redirects() {
+        return variantRedirects();
       },
     };
 
